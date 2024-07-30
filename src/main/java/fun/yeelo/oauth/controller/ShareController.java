@@ -187,6 +187,53 @@ public class ShareController {
         return HttpResult.success(true);
     }
 
+    @PatchMapping("/activate")
+    public HttpResult<Boolean> activate(HttpServletRequest request, @RequestParam Integer id) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Share share = shareService.getById(id);
+
+        HttpHeaders headers = new HttpHeaders();
+        //headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        Share updateShare = new Share();
+        updateShare.setId(share.getId());
+
+        //ObjectNode personJsonObject = objectMapper.createObjectNode();
+        MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
+
+        personJsonObject.add("access_token", accountService.getById(share.getAccountId()).getAccessToken());
+        personJsonObject.add("unique_name", share.getUniqueName());
+        personJsonObject.add("expires_in", 0);
+        personJsonObject.add("gpt35_limit", -1);
+        personJsonObject.add("gpt4_limit", -1);
+        personJsonObject.add("site_limit", "");
+        personJsonObject.add("show_userinfo", false);
+        personJsonObject.add("show_conversations", false);
+        personJsonObject.add("reset_limit", true);
+        personJsonObject.add("temporary_chat", false);
+        ResponseEntity<String> stringResponseEntity = restTemplate.exchange(SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
+        try {
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            updateShare.setShareToken(map.get("token_key").toString());
+        } catch (IOException e) {
+            log.error("Check user error:", e);
+            return HttpResult.error("系统内部异常");
+        }
+        shareService.updateById(updateShare);
+
+        return HttpResult.success(true);
+
+    }
+
     @PatchMapping("/update")
     public HttpResult<Boolean> update(HttpServletRequest request, @RequestBody Share dto) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
@@ -228,6 +275,80 @@ public class ShareController {
         }
 
         return HttpResult.success(account);
+    }
+
+    @PostMapping("/distribute")
+    public HttpResult<Boolean> distribute(HttpServletRequest request, @RequestBody Share share) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Account account = accountService.getById(share.getAccountId());
+        if (account == null) {
+            return HttpResult.error("账号不存在");
+        }
+
+        Share byId = shareService.getById(share.getId());
+        if (byId.getAccountId().equals(share.getAccountId())) {
+            return HttpResult.success();
+        }
+        String formerAccessToken = accountService.getById(byId.getAccountId()).getAccessToken();
+        byId.setAccountId(share.getAccountId());
+
+        // 删除旧的share token
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
+            personJsonObject.add("access_token", formerAccessToken);
+            personJsonObject.add("unique_name", share.getUniqueName());
+            personJsonObject.add("expires_in", -1);
+            personJsonObject.add("gpt35_limit", -1);
+            personJsonObject.add("gpt4_limit", -1);
+            personJsonObject.add("site_limit", "");
+            personJsonObject.add("show_userinfo", false);
+            personJsonObject.add("show_conversations", false);
+            personJsonObject.add("reset_limit", true);
+            personJsonObject.add("temporary_chat", false);
+            ResponseEntity<String> stringResponseEntity = restTemplate.exchange(SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            if (map.containsKey("detail") && map.get("detail").equals("revoke token key successfully")) {
+                log.info("delete success");
+            }
+        } catch (Exception e) {
+            log.error("Check user error:", e);
+        }
+
+        // 新建shareToken
+        try {
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
+            personJsonObject.add("access_token", account.getAccessToken());
+            personJsonObject.add("unique_name", share.getUniqueName());
+            personJsonObject.add("expires_in", 0);
+            personJsonObject.add("gpt35_limit", -1);
+            personJsonObject.add("gpt4_limit", -1);
+            personJsonObject.add("site_limit", "");
+            personJsonObject.add("show_userinfo", false);
+            personJsonObject.add("show_conversations", false);
+            personJsonObject.add("reset_limit", true);
+            personJsonObject.add("temporary_chat", false);
+            ResponseEntity<String> stringResponseEntity = restTemplate.exchange(SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            share.setShareToken(map.get("token_key").toString());
+        } catch (IOException e) {
+            log.error("Check user error:", e);
+            return HttpResult.error("系统内部异常");
+        }
+        shareService.updateById(share);
+        return HttpResult.success(true);
     }
 
 }

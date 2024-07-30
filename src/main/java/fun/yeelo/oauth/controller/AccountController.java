@@ -3,6 +3,7 @@ package fun.yeelo.oauth.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.Account;
+import fun.yeelo.oauth.domain.EmailDto;
 import fun.yeelo.oauth.domain.Share;
 import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.ShareService;
@@ -188,6 +189,17 @@ public class AccountController {
         }
 
         return HttpResult.success(account);
+    }
+
+
+    @GetMapping("/options")
+    public HttpResult<List<EmailDto>> emailOptions(HttpServletRequest request) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        List<EmailDto> emails = accountService.list().stream().map(e -> new EmailDto(e.getId().toString(), e.getEmail())).collect(Collectors.toList());
+        return HttpResult.success(emails);
     }
 
 }

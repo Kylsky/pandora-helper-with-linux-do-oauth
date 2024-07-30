@@ -124,6 +124,11 @@
             color: white;
         }
 
+        .distribute-btn {
+            background-color: #6fafd2;
+            color: white;
+        }
+
         .edit-btn {
             background-color: #f0ad4e;
             color: white;
@@ -472,6 +477,24 @@
     </div>
 </div>
 
+<div id="configModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('configModal')">&times;</span>
+        <h2>换车</h2>
+        <form>
+            <input type="hidden" id="distribute_share_id" name="distribute_share_id">
+            <label for="configSelect">选择账号：</label>
+            <select id="configSelect">
+<!--                <option value="option1">选项1</option>-->
+<!--                <option value="option2">选项2</option>-->
+                <!-- 根据需要添加更多选项 -->
+            </select>
+            <button class="tanchuang-button" type="button" onclick="submitDistribute()">保存</button>
+        </form>
+    </div>
+</div>
+
+
 <div id="shareUpdateModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('shareUpdateModal')">&times;</span>
@@ -694,6 +717,49 @@
 
     }
 
+    function activateShare(id) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("PATCH", "/share/activate?id="+id, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    alert("激活成功")
+                } else {
+                    alert("激活失败");
+                }
+            }
+        }
+        xhr.send();
+    }
+
+
+    function submitDistribute() {
+        var selectedConfig = document.getElementById('configSelect').value;
+        var shareId = document.getElementById('distribute_share_id').value;
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/share/distribute", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        // 设置token
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('configModal');
+                var result = JSON.parse(xhr.responseText);
+                if (result.status === 200) {
+                    alert("换车成功");
+                } else {
+                    alert("换车失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({ id: shareId, accountId: selectedConfig }));
+
+    }
+
+
 
     function refreshAccount(accountId) {
         var xhr = new XMLHttpRequest();
@@ -778,8 +844,10 @@
                     <td style="width: 120px;">${share.expiresAt}</td>
 <!--                    <td>${share.gpt4Limit}</td>-->
                     <td>
-                        <button class="edit-btn" onclick="openShareUpdateModel('${share.id}','${share.uniqueName}','${share.password}','${share.expiresAt}','${share.comment}','${share.email}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteShare('${share.id}','${share.email}')">Delete</button>
+                        <button class="open-share-btn" onclick="activateShare('${share.id}')">激活</button>
+                        <button class="distribute-btn" onclick="openEmailModal('${share.id}')">换车</button>
+                        <button class="edit-btn" onclick="openShareUpdateModel('${share.id}','${share.uniqueName}','${share.password}','${share.expiresAt}','${share.comment}','${share.email}')">编辑</button>
+                        <button class="delete-btn" onclick="deleteShare('${share.id}','${share.email}')">删除</button>
                     </td>
                 </tr>
             `;
@@ -794,6 +862,28 @@
         }
         xhr.send()
     }
+
+    function fetchConfigOptions() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/account/options", true);
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                var options = JSON.parse(xhr.responseText).data;
+                var select = document.getElementById('configSelect');
+                select.innerHTML = ''; // 清空现有选项
+
+                options.forEach(function (option) {
+                    var opt = document.createElement('option');
+                    opt.value = option.value;
+                    opt.innerHTML = option.label;
+                    select.appendChild(opt);
+                });
+            }
+        };
+        xhr.send();
+    }
+
 
     function editAccount(id, email, password, shared, refresh, access) {
         openModal('accountUpdateModal', id, email, password, shared, refresh, access)
@@ -858,6 +948,13 @@
         document.getElementById(modalId).style.display = 'flex';
     }
 
+    function openEmailModal(id) {
+        fetchConfigOptions(); // 获取配置选项
+        document.getElementById('distribute_share_id').value = id;
+        document.getElementById('configModal').style.display = 'flex';
+    }
+
+
     function openModal(modalId, id, email, password, shared, refresh, access) {
         document.getElementById(modalId).style.display = 'flex';
         const userId = document.getElementById('update-userId')
@@ -907,6 +1004,8 @@
 
         fetchShares('')
     });
+
+
 
 
 </script>

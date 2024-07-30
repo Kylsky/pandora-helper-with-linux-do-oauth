@@ -86,7 +86,7 @@ public class PandoraController {
             share.setIsShared(false);
             share.setPassword(passwordEncoder.encode("123456"));
             share.setComment("unassigned");
-            share.setAccountId(3);
+            share.setAccountId(1);
             share.setExpiresIn(0);
             share.setGpt4Limit(-1);
             share.setGpt35Limit(-1);
@@ -102,7 +102,7 @@ public class PandoraController {
         }
 
         ShareVO res = new ShareVO();
-        res.setIsShared(!user.getAccountId().equals(3));
+        res.setIsShared(user.getShareToken()!=null);
         if (!res.getIsShared()) {
             return new ResponseEntity<>(res, HttpStatus.OK);
         }
@@ -219,17 +219,4 @@ public class PandoraController {
         return new ResponseEntity<>("验证成功", HttpStatus.OK);
     }
 
-    @GetMapping("/adminLogin")
-    public HttpEntity<String> adminLogin(HttpServletRequest request, @RequestParam String password) {
-        if (!StringUtils.hasText(password)) {
-            return new ResponseEntity<>("密码不能为空", HttpStatus.BAD_REQUEST);
-        }
-        if (!password.equals(adminPassword)) {
-            return new ResponseEntity<>("密码错误", HttpStatus.UNAUTHORIZED);
-        }
-        SecureRandom random = new SecureRandom();
-        String jmc = new BigInteger(130, random).toString(32);
-        request.getSession().setAttribute("author", jmc);
-        return new ResponseEntity<>(jmc, HttpStatus.OK);
-    }
 }
