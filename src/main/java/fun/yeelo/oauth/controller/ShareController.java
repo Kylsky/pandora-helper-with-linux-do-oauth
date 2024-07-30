@@ -224,6 +224,7 @@ public class ShareController {
         try {
             Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
             updateShare.setShareToken(map.get("token_key").toString());
+            updateShare.setComment("activated");
         } catch (IOException e) {
             log.error("Check user error:", e);
             return HttpResult.error("系统内部异常");
