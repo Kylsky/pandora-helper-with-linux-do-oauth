@@ -227,7 +227,7 @@
     function initiateOAuth() {
         // Implement your OAuth logic here
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/oauth2/initiate", true);  // true 代表异步
+        xhr.open("GET", "/oauth2/initiate?panel=true", true);  // true 代表异步
 
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {

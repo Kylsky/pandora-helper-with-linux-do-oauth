@@ -46,10 +46,10 @@ public class OAuthController {
     private String userEndpoint;
 
     @GetMapping("/initiate")
-    public String initiateAuth(HttpServletRequest request) {
+    public String initiateAuth(HttpServletRequest request,@RequestParam(required = false)Boolean panel) {
         HttpSession session = request.getSession();
         String state = new BigInteger(130, new SecureRandom()).toString(32);
-        session.setAttribute("oauth2State", state);
+        session.setAttribute("oauth2State", state+(panel!=null && panel ? "-panel" : ""));
         String redirectUrl = String.format("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s&state=%s",
                 authorizationEndpoint, clientId, redirectUri, "read,write", state);
         return redirectUrl;

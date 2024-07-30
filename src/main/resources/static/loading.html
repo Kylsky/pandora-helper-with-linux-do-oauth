@@ -78,7 +78,8 @@
                         var data = JSON.parse(xhr.responseText);
                         // 获取data中的username
                         if (data.isShared === false) {
-                            alert("您没有权限访问该页面")
+                            alert("您的账号未激活，请联系管理员")
+                            localStorage.setItem('token', data.token)
                             window.location.href = 'https://connect.yeelo.fun';
                         }else {
                             console.log('Token fetched and stored:', data);

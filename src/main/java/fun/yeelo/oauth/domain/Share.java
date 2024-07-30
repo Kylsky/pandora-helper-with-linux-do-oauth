@@ -55,5 +55,6 @@ public class Share {
     private Boolean temporaryChat;
 
 
+
     // Getters and setters
 }

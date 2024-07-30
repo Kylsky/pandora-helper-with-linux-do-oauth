@@ -11,4 +11,6 @@ public class ShareVO extends Share{
     private String jmc;
 
     private String email;
+
+    private String token;
 }

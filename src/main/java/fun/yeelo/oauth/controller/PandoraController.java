@@ -9,12 +9,15 @@ import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.ShareService;
+import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -38,6 +41,11 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/pandora")
 public class PandoraController {
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+
     @Value("${password}")
     private String adminPassword;
 
@@ -87,6 +95,9 @@ public class PandoraController {
             share.setTemporaryChat(false);
             share.setShowConversations(false);
             shareService.save(share);
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            final String jwt = jwtTokenUtil.generateToken(userDetails);
+            share.setToken(jwt);
             return new ResponseEntity<>(share, HttpStatus.OK);
         }
 
