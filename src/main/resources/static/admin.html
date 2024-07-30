@@ -606,6 +606,11 @@
                     document.getElementById('add-share-expiration').value = '';
                 } else {
                     alert("添加失败");
+                    document.getElementById('add-share-id').value = '';
+                    document.getElementById('add-share-unique-name').value = '';
+                    document.getElementById('add-share-password').value = '';
+                    document.getElementById('add-share-comment').value = '';
+                    document.getElementById('add-share-expiration').value = '';
                 }
             }
         }
@@ -748,7 +753,7 @@
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 closeModal('configModal');
                 var result = JSON.parse(xhr.responseText);
-                if (result.status === 200) {
+                if (result.status) {
                     alert("换车成功");
                 } else {
                     alert("换车失败");

@@ -306,7 +306,7 @@ public class ShareController {
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
             personJsonObject.add("access_token", formerAccessToken);
-            personJsonObject.add("unique_name", share.getUniqueName());
+            personJsonObject.add("unique_name", byId.getUniqueName());
             personJsonObject.add("expires_in", -1);
             personJsonObject.add("gpt35_limit", -1);
             personJsonObject.add("gpt4_limit", -1);
@@ -331,7 +331,7 @@ public class ShareController {
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
             personJsonObject.add("access_token", account.getAccessToken());
-            personJsonObject.add("unique_name", share.getUniqueName());
+            personJsonObject.add("unique_name", byId.getUniqueName());
             personJsonObject.add("expires_in", 0);
             personJsonObject.add("gpt35_limit", -1);
             personJsonObject.add("gpt4_limit", -1);

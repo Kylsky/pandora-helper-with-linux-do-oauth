@@ -174,7 +174,7 @@ public class PandoraController {
         if (user == null) {
             return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
         }
-        if (user.getAccountId() == null || user.getAccountId() == 99) {
+        if (user.getAccountId() == null || !StringUtils.hasText(user.getShareToken())) {
             return new ResponseEntity<>("用户未激活", HttpStatus.UNAUTHORIZED);
         }
         if (passwordEncoder.matches(user.getPassword(),password)){

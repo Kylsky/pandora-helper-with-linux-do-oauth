@@ -50,7 +50,7 @@ public class LoginController {
         if (user == null) {
             return HttpResult.error("用户不存在，请重试");
         }
-        if (user.getAccountId() == null || user.getAccountId() == 99) {
+        if (user.getAccountId() == null || !StringUtils.hasText(user.getShareToken())) {
             return HttpResult.error("用户未激活");
         }
         if (passwordEncoder.matches(user.getPassword(),password)) {
