@@ -1,0 +1,28 @@
+server:
+  port: 8181
+
+linux-do:
+  oaifree:
+    auth-api: ${OAIFREE_PROXY}
+    token-api: https://new.oaifree.com/api/auth/oauth_token
+  oauth2:
+    client:
+      registration:
+        client-id: ${CLIENT_ID}
+        client-secret: ${CLIENT_SECRET}
+        redirect-uri: ${REDIRECT_URI}
+        authorization-grant-type: authorization_code
+        scope: read,write
+      provider:
+        authorization-uri: https://connect.linux.do/oauth2/authorize
+        token-uri: https://connect.linux.do/oauth2/token
+        user-info-uri: https://connect.linux.do/api/user
+        user-name-attribute: id
+spring:
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+    url: jdbc:sqlite:/Users/kyle/IdeaProjects/linuxdo-auth/src/main/resources/db/data1.db
+    username:
+    password:
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml

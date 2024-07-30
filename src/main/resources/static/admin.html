@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helper - Account and Share Management</title>
+    <style>
+        body, html {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 220px;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed; /* 固定导航栏 */
+            height: 100%; /* 确保导航栏占满左侧高度 */
+        }
+
+        .sidebar h2 {
+            color: #0e8f6f;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 15px;
+        }
+
+        .sidebar a {
+            color: #333;
+            text-decoration: none;
+            font-size: 18px;
+            display: block;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #0e8f6f;
+            color: #fff;
+        }
+
+        .main-content {
+            margin-left: 240px; /* 确保内容部分从导航栏右侧开始 */
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .panel {
+            background-color: #ffffff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-bar {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .search-bar button {
+            padding: 10px 20px;
+            background-color: #0e8f6f;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .action-buttons button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .refresh-btn {
+            background-color: #0e8f6f;
+            color: white;
+        }
+
+        .open-share-btn {
+            background-color: #0e8f6f;
+            color: white;
+        }
+
+        .edit-btn {
+            background-color: #f0ad4e;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .create-new {
+            float: right;
+            padding: 10px 20px;
+            background-color: #0e8f6f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        /*.modal {*/
+        /*    display: none;*/
+        /*    position: fixed;*/
+        /*    z-index: 1;*/
+        /*    left: 0;*/
+        /*    top: 0;*/
+        /*    width: 100%;*/
+        /*    height: 100%;*/
+        /*    overflow: auto;*/
+        /*    background-color: rgba(0, 0, 0, 0.4);*/
+        /*}*/
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border: 1px solid #888;
+            width: auto; /* 适应内容宽度 */
+            max-width: 500px; /* 最大宽度 */
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .modal-content {
+                max-width: 90%; /* 在小屏幕上占更大比例的宽度 */
+            }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .ellipsis {
+            max-width: 120px; /* 设置最大宽度，根据实际需求调整 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block; /* 确保应用block布局 */
+        }
+
+        .modal {
+            display: none;
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        form {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .checkbox-container label {
+            margin-top: 0;
+            margin-left: 0.5rem;
+        }
+
+        .tanchuang-button {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #0e8f6f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+        }
+
+        /* 基本开关样式 */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        /* 隐藏默认的复选框 */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* 滑块样式 */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        /* 滑块::before 伪元素样式 */
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        /* 检查复选框是否被选中，更改滑块颜色 */
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        /* 检查复选框是否被选中，移动滑块位置 */
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* 可选：增加鼠标悬停效果 */
+        .slider:hover {
+            background-color: #7b7b7b;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>Pandora Helper</h2>
+        <ul>
+            <li><a href="#" id="accountNav" class="active">账号管理</a></li>
+            <li><a href="#" id="shareNav">分享管理</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div id="accountPanel" class="panel">
+            <h2>账号管理</h2>
+            <div class="search-bar">
+                <input id="email-query" type="email-query" placeholder="Email">
+                <button onclick="emailQuery()">查询</button>
+            </div>
+            <button class="create-new" onclick="openModal('accountModal')">新增</button>
+            <table>
+                <thead>
+                <tr>
+                    <th>邮箱</th>
+                    <!--                    <th>密码</th>-->
+                    <th>Refresh Token</th>
+                    <th>Access Token</th>
+                    <th>共享状态</th>
+                    <th>更新时间</th>
+                    <th>共享</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="accountTableBody">
+
+                </tbody>
+            </table>
+        </div>
+        <div id="sharePanel" class="panel" style="display:none;">
+            <h2>分享管理</h2>
+            <div class="search-bar">
+                <input id="share-email-query" type="email-query" placeholder="Email">
+                <button onclick="shareEmailQuery()">查询</button>
+            </div>
+            <table>
+                <thead>
+                <tr>
+                    <th>邮箱</th>
+                    <th>用户名</th>
+                    <th>备注</th>
+                    <th>过期时间</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="shareTableBody">
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="accountModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('accountModal')">&times;</span>
+        <h2>新增账号</h2>
+        <form style="padding-top: 20px; padding-bottom: 20px">
+            <label for="add-email">邮箱</label>
+            <input type="email" id="add-email" name="add-email" required>
+
+            <label for="add-password">密码</label>
+            <input type="password" id="add-password" name="add-password" required>
+
+            <!--            <div class="checkbox-container">-->
+            <label for="toggleSwitch">是否共享</label>
+            <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
+                <input type="checkbox" id="toggleSwitch">
+                <span class="slider round"></span>
+            </label>
+
+            <!--                <input type="checkbox" id="toggleSwitch">-->
+            <!--            </div>-->
+            <input type="hidden" id="toggleValue" name="toggleValue" value="0">
+
+
+            <label for="add-account-refresh-token">Refresh Token</label>
+            <input type="text" id="add-account-refresh-token" name="add-account-refresh-token">
+
+            <label for="add-account-access-token">Access Token</label>
+            <input type="text" id="add-account-access-token" name="add-account-access-token">
+
+            <!--            <label for="add-account-comment">备注</label>-->
+            <!--            <input type="text" id="add-account-comment" name="add-account-comment">-->
+
+            <button class="tanchuang-button" type="button" onclick="addAccount()">保存</button>
+        </form>
+    </div>
+</div>
+
+<div id="accountUpdateModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('accountUpdateModal')">&times;</span>
+        <h2>修改账号</h2>
+        <form style="padding-top: 20px; padding-bottom: 20px">
+            <input type="hidden" id="update-userId" name="userId">
+            <label for="update-email">邮箱</label>
+            <input type="email" id="update-email" name="update-email">
+
+            <label for="update-password">密码</label>
+            <input type="password" id="update-password" name="update-password" required>
+
+            <!--            <div class="checkbox-container">-->
+            <label for="toggleSwitch">是否共享</label>
+            <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
+                <input type="checkbox" id="toggleSwitchUpdate">
+                <span class="slider round"></span>
+            </label>
+
+            <!--                <input type="checkbox" id="toggleSwitch">-->
+            <!--            </div>-->
+            <input type="hidden" id="toggleValueUpdate" name="toggleValue" value="0">
+
+
+            <label for="update-account-refresh-token">Refresh Token</label>
+            <input type="text" id="update-account-refresh-token" name="update-account-refresh-token">
+
+            <label for="update-account-access-token">Access Token</label>
+            <input type="text" id="update-account-access-token" name="update-account-access-token">
+
+            <!--            <label for="update-account-comment">备注</label>-->
+            <!--            <input type="text" id="update-account-comment" name="update-account-comment">-->
+
+            <button class="tanchuang-button" type="button" onclick="updateAccount()">保存</button>
+        </form>
+    </div>
+</div>
+
+<div id="shareModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('shareModal')">&times;</span>
+        <h2>新增共享</h2>
+        <form>
+            <input type="hidden" id="add-share-id" name="add-share-id">
+            <label for="add-share-unique-name">用户名</label><br>
+            <input type="text" id="add-share-unique-name" name="add-share-unique-name"><br>
+            <label for="add-share-password">密码</label>
+            <input type="password" id="add-share-password" name="add-share-password" required><br>
+            <label for="add-share-comment">备注</label>
+            <input type="text" id="add-share-comment" name="add-comment"><br>
+            <label for="add-share-expiration">过期时间</label><br>
+            <input type="date" id="add-share-expiration" name="add-share-expiration"><br><br>
+            <button class="tanchuang-button" type="button" onclick="addShare()">保存</button>
+        </form>
+    </div>
+</div>
+
+<div id="shareUpdateModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('shareUpdateModal')">&times;</span>
+        <h2>修改共享</h2>
+        <form>
+            <input type="hidden" id="update-share-id" name="update-share-id">
+            <input type="hidden" id="update-share-email" name="update-share-email">
+            <label for="update-share-unique-name">用户名</label><br>
+            <input type="text" id="update-share-unique-name" name="update-share-unique-name" readonly><br>
+            <label for="update-share-password">密码</label>
+            <input type="password" id="update-share-password" name="update-share-password" required><br>
+            <label for="update-share-comment">备注</label>
+            <input type="text" id="update-share-comment" name="update-comment"><br>
+            <label for="update-share-expiration">过期时间</label><br>
+            <input type="date" id="update-share-expiration" name="update-share-expiration"><br><br>
+            <button class="tanchuang-button" type="button" onclick="updateShare()">保存</button>
+        </form>
+    </div>
+</div>
+</body>
+
+<script type="text/javascript">
+    document.getElementById('toggleSwitch').addEventListener('change', function () {
+        var value = this.checked ? 1 : 0; // 如果开关被激活，则值为1，否则为0
+        document.getElementById('toggleValue').value = value;
+    });
+
+    document.getElementById('toggleSwitchUpdate').addEventListener('change', function () {
+        var value = this.checked ? 1 : 0; // 如果开关被激活，则值为1，否则为0
+        document.getElementById('toggleValueUpdate').value = value;
+    });
+
+    function addAccount() {
+        var email = document.getElementById('add-email').value;
+        var password = document.getElementById('add-password').value;
+        // var comment = document.getElementById('add-account-comment').value;
+        var refresh = document.getElementById('add-account-refresh-token').value;
+        var access = document.getElementById('add-account-access-token').value;
+        var shared = document.getElementById('toggleValue').value
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/account/add", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('accountModal')
+                if (xhr.status === 200) {
+                    alert("添加成功")
+                    fetchAccounts('')
+                    document.getElementById('add-email').value = '';
+                    document.getElementById('add-password').value = '';
+                    // document.getElementById('add-account-comment').value = '';
+                    document.getElementById('add-account-refresh-token').value = '';
+                    document.getElementById('add-account-access-token').value = '';
+                    document.getElementById('toggleValue').value = 0;
+                } else {
+                    alert("添加失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            email: email,
+            password: password,
+            // comment: comment,
+            accessToken: access,
+            refreshToken: refresh,
+            shared: shared
+        }));
+
+    }
+
+    function openShareModel(accountId) {
+        openModal('shareModal', accountId)
+        document.getElementById('add-share-id').value = accountId
+    }
+
+    function openShareUpdateModel(shareId,uniqueName,password,expiresAt,comment,email) {
+        openModal('shareUpdateModal')
+        document.getElementById('update-share-id').value = shareId
+        document.getElementById('update-share-unique-name').value = uniqueName
+        document.getElementById('update-share-password').value = password
+        document.getElementById('update-share-expiration').value = expiresAt
+        document.getElementById('update-share-comment').value = comment
+        document.getElementById('update-share-email').value = email
+    }
+
+    function addShare() {
+        var accountId = document.getElementById('add-share-id').value;
+        var username = document.getElementById('add-share-unique-name').value;
+        var password = document.getElementById('add-share-password').value;
+        var comment = document.getElementById('add-share-comment').value;
+        var expiration = document.getElementById('add-share-expiration').value;
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/share/add", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('shareModal')
+                if (xhr.status === 200) {
+                    alert("添加成功")
+                    fetchAccounts('')
+                    document.getElementById('add-share-id').value = '';
+                    document.getElementById('add-share-unique-name').value = '';
+                    document.getElementById('add-share-password').value = '';
+                    document.getElementById('add-share-comment').value = '';
+                    document.getElementById('add-share-expiration').value = '';
+                } else {
+                    alert("添加失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            accountId: accountId,
+            uniqueName: username,
+            password: password,
+            comment: comment,
+            expiresAt: expiration
+        }));
+    }
+
+    function deleteShare(id,email) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("DELETE", "/share/delete?id="+id, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('shareModal')
+                if (xhr.status === 200) {
+                    alert("删除成功")
+                    fetchShares(email)
+                } else {
+                    alert("删除失败");
+                }
+            }
+        }
+        xhr.send();
+    }
+
+    function updateAccount() {
+        var userId = document.getElementById('update-userId').value;
+        var email = document.getElementById('update-email').value;
+        var password = document.getElementById('update-password').value;
+        var refresh = document.getElementById('update-account-refresh-token').value;
+        var access = document.getElementById('update-account-access-token').value;
+        var shared = document.getElementById('toggleValueUpdate').value
+        var xhr = new XMLHttpRequest();
+        xhr.open("PATCH", "/account/update", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('accountModal')
+                if (xhr.status === 200) {
+                    closeModal('accountUpdateModal')
+                    alert("更新成功")
+                    fetchAccounts('')
+                    document.getElementById('update-userId').value = '';
+                    document.getElementById('update-email').value = '';
+                    document.getElementById('update-password').value = '';
+                    document.getElementById('update-account-comment').value = '';
+                    document.getElementById('update-account-refresh-token').value = '';
+                    document.getElementById('update-account-access-token').value = '';
+                    document.getElementById('toggleValueUpdate').value = 0;
+                    document.getElementById('toggleSwitchUpdate').checked = false;
+                } else {
+                    alert("更新失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            id: userId,
+            email: email,
+            password: password,
+            accessToken: access,
+            refreshToken: refresh,
+            shared: shared
+        }));
+
+    }
+
+    function updateShare() {
+        var userId = document.getElementById('update-share-id').value;
+        var password = document.getElementById('update-share-password').value;
+        var expiration = document.getElementById('update-share-expiration').value;
+        var comment = document.getElementById('update-share-comment').value;
+        var email = document.getElementById('update-share-email').value;
+        var xhr = new XMLHttpRequest();
+        xhr.open("PATCH", "/share/update", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('accountModal')
+                if (xhr.status === 200) {
+                    closeModal('shareUpdateModal')
+                    alert("更新成功")
+                    fetchShares(email)
+                    document.getElementById('update-share-id').value = '';
+                    document.getElementById('update-share-password').value = '';
+                    document.getElementById('update-share-expiration').value = '';
+                    document.getElementById('update-share-comment').value = '';
+                } else {
+                    alert("更新失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            id: userId,
+            password: password,
+            expiresAt: expiration,
+            comment: comment
+        }));
+
+    }
+
+
+    function refreshAccount(accountId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/account/refresh?accountId="+accountId, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    alert("刷新成功")
+                    fetchAccounts('')
+                } else {
+                    alert("刷新失败");
+                }
+            }
+        }
+        xhr.send()
+    }
+
+    function fetchAccounts(email) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/account/list?emailAddr=" + email, true);
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    const res = JSON.parse(xhr.responseText);
+                    const tableBody = document.getElementById('accountTableBody');
+                    tableBody.innerHTML = ''; // 清空现有的表格内容
+                    res.data.forEach(account => {
+                        const row = `
+                <tr>
+                    <td>${account.email}</td>
+                    <td><div class="ellipsis">${account.refreshToken}</div></td>
+                    <td><div class="ellipsis">${account.accessToken}</div></td>
+                    <td>${account.shared ? '✅' : '❌'}</td>
+                    <td style="width: 150px;">${account.updateTime}</td>
+                    <td style="width: 120px;">
+                        <button onclick="fetchShares('${account.email}')">Share List</button>
+                        <button onclick="openShareModel('${account.id}')">+</button>
+                    </td>
+                    <td>
+                        <button class="refresh-btn" onclick="refreshAccount('${account.id}')">Refresh</button>
+                        <button class="edit-btn" onclick="editAccount('${account.id}','${account.email}','${account.password}','${account.shared}','${account.refreshToken}','${account.accessToken}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteAccount('${account.id}')">Delete</button>
+                    </td>
+                </tr>
+            `;
+                        tableBody.innerHTML += row;
+                    });
+                } else {
+                    alert("请登录");
+                    window.location.href = 'panel.html';
+                }
+            }
+        }
+        xhr.send()
+    }
+
+    function fetchShares(email) {
+        document.getElementById('share-email-query').value = email;
+        document.getElementById('accountPanel').style.display = 'none';
+        document.getElementById('sharePanel').style.display = 'block';
+        document.getElementById('accountNav').classList.remove('active');
+        document.getElementById('shareNav').classList.add('active');
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/share/list?emailAddr=" + email, true);
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    const res = JSON.parse(xhr.responseText);
+                    const tableBody = document.getElementById('shareTableBody');
+                    tableBody.innerHTML = ''; // 清空现有的表格内容
+                    res.data.forEach(share => {
+                        const row = `
+                <tr>
+                    <td>${share.email}</td>
+                    <td>${share.uniqueName}</td>
+                    <td>${share.comment}</td>
+                    <td style="width: 120px;">${share.expiresAt}</td>
+<!--                    <td>${share.gpt4Limit}</td>-->
+                    <td>
+                        <button class="edit-btn" onclick="openShareUpdateModel('${share.id}','${share.uniqueName}','${share.password}','${share.expiresAt}','${share.comment}','${share.email}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteShare('${share.id}','${share.email}')">Delete</button>
+                    </td>
+                </tr>
+            `;
+                        tableBody.innerHTML += row;
+
+                    });
+                } else {
+                    alert("请登录");
+                    window.location.href = 'panel.html';
+                }
+            }
+        }
+        xhr.send()
+    }
+
+    function editAccount(id, email, password, shared, refresh, access) {
+        openModal('accountUpdateModal', id, email, password, shared, refresh, access)
+    }
+
+    function deleteAccount(accountId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("DELETE", "/account/delete?id=" + accountId, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('accountModal')
+                if (xhr.status === 200) {
+                    alert("删除成功")
+                    fetchAccounts('')
+                } else {
+                    alert("删除失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            id: accountId
+        }));
+    }
+
+
+    window.onload = function () {
+        const token = localStorage.getItem('token');
+        if (token) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/user/checkToken", true);
+            xhr.setRequestHeader('Authorization', "Bearer " + token);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        const res = JSON.parse(xhr.responseText);
+                        if (res.data) {
+                            localStorage.setItem("token", token)
+                            fetchAccounts('')
+                            return true
+                        } else {
+                            alert(res.message);
+                            window.location.href = 'panel.html';
+                        }
+                    } else {
+                        alert("请登录");
+                        window.location.href = 'panel.html';
+                    }
+                }
+            }
+            xhr.send()
+        } else {
+            // 如果没有授权信息，跳转到登录页面
+            alert('未监测到登录状态,请登录');
+            window.location.href = 'index.html';
+        }
+    }
+
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function openModal(modalId, id, email, password, shared, refresh, access) {
+        document.getElementById(modalId).style.display = 'flex';
+        const userId = document.getElementById('update-userId')
+        const mailM = document.getElementById('update-email')
+        const passM = document.getElementById('update-password')
+        const accessM = document.getElementById('update-account-access-token')
+        const refreshM = document.getElementById('update-account-refresh-token')
+        const sharedM = document.getElementById('toggleValueUpdate')
+        const switchCondition = document.getElementById('toggleSwitchUpdate')
+
+        userId.value = id;
+        mailM.value = email;
+        passM.value = passM;
+        accessM.value = access;
+        refreshM.value = refresh;
+        sharedM.value = shared;
+        userId.value = id;
+        switchCondition.checked = (shared === '1');
+    }
+
+    function emailQuery() {
+        const email = document.getElementById('email-query')
+        fetchAccounts(email.value)
+    }
+
+    function shareEmailQuery() {
+        const email = document.getElementById('share-email-query')
+        fetchShares(email.value)
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+    }
+
+    document.getElementById('accountNav').addEventListener('click', function () {
+        document.getElementById('accountPanel').style.display = 'block';
+        document.getElementById('sharePanel').style.display = 'none';
+        document.getElementById('accountNav').classList.add('active');
+        document.getElementById('shareNav').classList.remove('active');
+    });
+
+    document.getElementById('shareNav').addEventListener('click', function () {
+        document.getElementById('accountPanel').style.display = 'none';
+        document.getElementById('sharePanel').style.display = 'block';
+        document.getElementById('accountNav').classList.remove('active');
+        document.getElementById('shareNav').classList.add('active');
+
+        fetchShares('')
+    });
+
+
+</script>
+
+</html>
+
+

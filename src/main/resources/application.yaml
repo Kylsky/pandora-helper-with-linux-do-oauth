@@ -1,0 +1,38 @@
+server:
+  port: 8181
+
+password: Skyline302=
+
+linux-do:
+  oaifree:
+    auth-api: https://new.oaifree.com
+    token-api: https://new.oaifree.com/api/auth/oauth_token
+  oauth2:
+    client:
+      registration:
+        client-id: vMZlVu7FMSQOu6mbXJyVevBXhAbuPzhS
+        client-secret: Zfpc1cYPxkNhDAog80CTCOvRKgIGSCG4
+        redirect-uri: https://connect.yeelo.fun/oauth2/callback
+        #        client-id: ${CLIENT_ID}
+        #        client-secret: ${CLIENT_SECRET}
+        #        redirect-uri: ${REDIRECT_URI}
+        authorization-grant-type: authorization_code
+        scope: read,write
+      provider:
+        authorization-uri: https://connect.linux.do/oauth2/authorize
+        token-uri: https://connect.linux.do/oauth2/token
+        user-info-uri: https://connect.linux.do/api/user
+        user-name-attribute: id
+spring:
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+  datasource:
+    driver-class-name: org.sqlite.JDBC
+#    url: jdbc:sqlite:${PANDORA_DB_PATH}
+    url: jdbc:sqlite:/Users/kyle/IdeaProjects/linuxdo-auth/src/main/resources/db/data.db
+    username:
+    password:
+#  profiles:
+#    active: prod
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
