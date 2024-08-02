@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pandora - 登录</title>
+    <title>Fuclaude - 登录</title>
     <style>
 
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+            background: linear-gradient(135deg, #d9534f 0%, #185a9d 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -55,7 +55,7 @@
         button {
             width: 100%;
             padding: 10px;
-            background-color: #00a86b;
+            background-color: #2196F3;
             color: white;
             border: none;
             border-radius: 4px;
@@ -149,7 +149,14 @@
             height: auto; /* 自动调整高度 */
             z-index: 1000; /* 确保弹窗位于最顶层 */
         }
-
+        .toggle-icon {
+            margin-left: 10px;
+            cursor: pointer;
+            /*vertical-align: super;*/
+        }
+        .toggle-icon:hover {
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -158,7 +165,8 @@
     <button onclick="return adminLogin(event)">登录</button>
 </div>
 <div class="login-container">
-    <h1 id="loginTrigger">Panel</h1>
+    <h1 style="margin-left: 10px">Fuclaude<span class="toggle-icon" onclick="switchToPandora()" ><img src="pics/ph--user-switch.svg" title="切换至Fuclaude" alt="hi"></span></h1>
+
     <form onsubmit="return userlogin(event)">
         <input type="text" id="username" placeholder="用户名" required>
         <input type="password" id="password" placeholder="密码" required>
@@ -171,18 +179,21 @@
         </div>
         <button type="button" onclick="reset()">重置密码</button>
     </div>
-    <div class="footer" onclick="index()">
-        Switch to Chat
+<!--    <div class="footer" onclick="panel()">-->
+    <div class="footer">
+        Powered by Pandora
     </div>
 </div>
 <script>
+
+
 
     function reset() {
         window.location.href = 'reset.html'
     }
 
-    function index() {
-        window.location.href = 'index.html'
+    function panel() {
+        window.location.href = 'panel.html'
     }
 
     function userlogin() {
@@ -196,7 +207,7 @@
 
         // 新建post查询
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/user/login", true);
+        xhr.open("POST", "/fuclaude/login", true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         // 设置body
         xhr.send(JSON.stringify({
@@ -206,19 +217,10 @@
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
-                    const status = JSON.parse(xhr.responseText).status;
-                    if (!status) {
-                        alert(JSON.parse(xhr.responseText).message);
-                        spinner.style.display = 'none'; // 隐藏加载图标
-                        btnText.style.visibility = 'visible'; // 显示按钮文本
-                        return false;
-                    }
-                    const token = JSON.parse(xhr.responseText).data;
-                    localStorage.setItem("token", token)
                     spinner.style.display = 'none'; // 隐藏加载图标
                     btnText.textContent = '登录成功,跳转中...'; // 修改按钮文本为“跳转中”
                     btnText.style.visibility = 'visible'; // 显示按钮文本
-                    window.location.href = 'admin.html'
+                    window.location.href = 'https://fuclaude.yeelo.fun/login_oauth?token='+xhr.responseText;
                 } else {
                     spinner.style.display = 'none'; // 隐藏加载图标
                     btnText.style.visibility = 'visible'; // 显示按钮文本
@@ -234,7 +236,7 @@
     function initiateOAuth() {
         // Implement your OAuth logic here
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/oauth2/initiate?type=panel", true);  // true 代表异步
+        xhr.open("GET", "/oauth2/initiate?type=Claude", true);  // true 代表异步
 
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -256,6 +258,10 @@
             }
         };
         xhr.send();  // 发送请求
+    }
+
+    function switchToPandora() {
+        window.location.href = 'index.html';
     }
 </script>
 

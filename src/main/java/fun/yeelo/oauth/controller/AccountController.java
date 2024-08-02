@@ -1,12 +1,15 @@
 package fun.yeelo.oauth.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.Account;
+import fun.yeelo.oauth.domain.AccountVO;
 import fun.yeelo.oauth.domain.EmailDto;
 import fun.yeelo.oauth.domain.Share;
 import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.ShareService;
+import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +48,7 @@ public class AccountController {
     private PasswordEncoder passwordEncoder;
 
     @GetMapping("/list")
-    public HttpResult<List<Account>> list(HttpServletRequest request,@RequestParam(required = false) String emailAddr) {
+    public HttpResult<List<AccountVO>> list(HttpServletRequest request,@RequestParam(required = false) String emailAddr) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)){
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -59,7 +62,9 @@ public class AccountController {
         if (StringUtils.hasText(emailAddr)) {
             accountList = accountList.stream().filter(e->e.getEmail().contains(emailAddr)).collect(Collectors.toList());
         }
-        return HttpResult.success(accountList);
+        List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
+        accountVOS.forEach(e->e.setType(e.getAccountType().equals(1)?"ChatGPT":"Claude"));
+        return HttpResult.success(accountVOS);
     }
 
     @DeleteMapping("/delete")
@@ -85,7 +90,7 @@ public class AccountController {
 
 
     @PostMapping("/add")
-    public HttpResult<Boolean> add(HttpServletRequest request,@RequestBody Account dto) {
+    public HttpResult<Boolean> add(HttpServletRequest request,@RequestBody AccountVO dto) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)){
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -193,12 +198,16 @@ public class AccountController {
 
 
     @GetMapping("/options")
-    public HttpResult<List<EmailDto>> emailOptions(HttpServletRequest request) {
+    public HttpResult<List<EmailDto>> emailOptions(HttpServletRequest request, @RequestParam Integer type) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)){
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
-        List<EmailDto> emails = accountService.list().stream().map(e -> new EmailDto(e.getId().toString(), e.getEmail())).collect(Collectors.toList());
+        String s = jwtTokenUtil.extractUsername(token);
+        Share byUserName = shareService.getByUserName(s);
+        List<EmailDto> emails = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType,type))
+                                        .stream().filter(e->e.getUserId().equals(byUserName.getId()))
+                                        .map(e -> new EmailDto(e.getId().toString(), e.getEmail())).collect(Collectors.toList());
         return HttpResult.success(emails);
     }
 

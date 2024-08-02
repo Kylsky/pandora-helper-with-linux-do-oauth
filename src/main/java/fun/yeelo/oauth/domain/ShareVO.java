@@ -10,7 +10,14 @@ public class ShareVO extends Share{
 
     private String jmc;
 
-    private String email;
+    private String gptEmail;
+
+    private String claudeEmail;
 
     private String token;
+
+    // 共享类型，1gpt，2claude
+    private Integer type;
+
+    private Integer accountId;
 }

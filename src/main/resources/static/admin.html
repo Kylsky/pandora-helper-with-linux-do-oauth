@@ -124,8 +124,13 @@
             color: white;
         }
 
-        .distribute-btn {
+        .distribute-claude-btn {
             background-color: #6fafd2;
+            color: white;
+        }
+
+        .distribute-gpt-btn {
+            background-color: #43cea2;
             color: white;
         }
 
@@ -320,6 +325,22 @@
             background-color: #7b7b7b;
         }
 
+        #add-type {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #configSelect {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
 
     </style>
 </head>
@@ -346,7 +367,7 @@
                 <tr>
                     <th>邮箱</th>
                     <!--                    <th>密码</th>-->
-                    <th>Refresh Token</th>
+                    <th>账号类型</th>
                     <th>Access Token</th>
                     <th>共享状态</th>
                     <th>更新时间</th>
@@ -368,8 +389,9 @@
             <table>
                 <thead>
                 <tr>
-                    <th>邮箱</th>
                     <th>用户名</th>
+                    <th>ChatGPT账号</th>
+                    <th>Claude账号</th>
                     <th>备注</th>
                     <th>过期时间</th>
                     <th>操作</th>
@@ -393,6 +415,12 @@
 
             <label for="add-password">密码</label>
             <input type="password" id="add-password" name="add-password" required>
+
+            <label for="add-type">账号类型</label>
+            <select id="add-type" name="add-type" required>
+                <option value=1>ChatGPT</option>
+                <option value=2>Claude</option>
+            </select>
 
             <!--            <div class="checkbox-container">-->
             <label for="toggleSwitch">是否共享</label>
@@ -480,13 +508,13 @@
 <div id="configModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('configModal')">&times;</span>
-        <h2>换车</h2>
+        <h2>激活</h2>
         <form>
             <input type="hidden" id="distribute_share_id" name="distribute_share_id">
             <label for="configSelect">选择账号：</label>
             <select id="configSelect">
-<!--                <option value="option1">选项1</option>-->
-<!--                <option value="option2">选项2</option>-->
+                <!--                <option value="option1">选项1</option>-->
+                <!--                <option value="option2">选项2</option>-->
                 <!-- 根据需要添加更多选项 -->
             </select>
             <button class="tanchuang-button" type="button" onclick="submitDistribute()">保存</button>
@@ -530,6 +558,7 @@
     function addAccount() {
         var email = document.getElementById('add-email').value;
         var password = document.getElementById('add-password').value;
+        var type = document.getElementById('add-type').value;
         // var comment = document.getElementById('add-account-comment').value;
         var refresh = document.getElementById('add-account-refresh-token').value;
         var access = document.getElementById('add-account-access-token').value;
@@ -559,6 +588,7 @@
         xhr.send(JSON.stringify({
             email: email,
             password: password,
+            accountType: type,
             // comment: comment,
             accessToken: access,
             refreshToken: refresh,
@@ -572,7 +602,7 @@
         document.getElementById('add-share-id').value = accountId
     }
 
-    function openShareUpdateModel(shareId,uniqueName,password,expiresAt,comment,email) {
+    function openShareUpdateModel(shareId, uniqueName, password, expiresAt, comment, email) {
         openModal('shareUpdateModal')
         document.getElementById('update-share-id').value = shareId
         document.getElementById('update-share-unique-name').value = uniqueName
@@ -596,7 +626,8 @@
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 closeModal('shareModal')
-                if (xhr.status === 200) {
+                let res = JSON.parse(xhr.responseText)
+                if (res.status) {
                     alert("添加成功")
                     fetchAccounts('')
                     document.getElementById('add-share-id').value = '';
@@ -605,7 +636,7 @@
                     document.getElementById('add-share-comment').value = '';
                     document.getElementById('add-share-expiration').value = '';
                 } else {
-                    alert("添加失败");
+                    alert(res.message);
                     document.getElementById('add-share-id').value = '';
                     document.getElementById('add-share-unique-name').value = '';
                     document.getElementById('add-share-password').value = '';
@@ -623,16 +654,16 @@
         }));
     }
 
-    function deleteShare(id,email) {
+    function deleteShare(id, email) {
         var xhr = new XMLHttpRequest();
-        xhr.open("DELETE", "/share/delete?id="+id, true);
+        xhr.open("DELETE", "/share/delete?id=" + id, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         // 设置body
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 closeModal('shareModal')
-                if (xhr.status === 200) {
+                if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
                     alert("删除成功")
                     fetchShares(email)
                 } else {
@@ -703,7 +734,7 @@
                 if (xhr.status === 200) {
                     closeModal('shareUpdateModal')
                     alert("更新成功")
-                    fetchShares(email)
+                    fetchShares(email === 'undefined' ? '' : email)
                     document.getElementById('update-share-id').value = '';
                     document.getElementById('update-share-password').value = '';
                     document.getElementById('update-share-expiration').value = '';
@@ -724,7 +755,7 @@
 
     function activateShare(id) {
         var xhr = new XMLHttpRequest();
-        xhr.open("PATCH", "/share/activate?id="+id, true);
+        xhr.open("PATCH", "/share/activateGPT?id=" + id, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         // 设置body
@@ -742,33 +773,35 @@
 
 
     function submitDistribute() {
-        var selectedConfig = document.getElementById('configSelect').value;
-        var shareId = document.getElementById('distribute_share_id').value;
+        // 转换为数值类型configSelect
+        var selectedConfig = parseInt(document.getElementById('configSelect').value);
+        var shareId = parseInt(document.getElementById('distribute_share_id').value);
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/share/distribute", true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         // 设置token
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        xhr.onreadystatechange = function() {
+        xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 closeModal('configModal');
                 var result = JSON.parse(xhr.responseText);
                 if (result.status) {
-                    alert("换车成功");
+                    alert("激活成功");
                 } else {
-                    alert("换车失败");
+                    alert("激活失败");
                 }
+                document.getElementById('distribute_share_id').value = ''
+                fetchShares('')
             }
         }
-        xhr.send(JSON.stringify({ id: shareId, accountId: selectedConfig }));
+        xhr.send(JSON.stringify({id: shareId, accountId: selectedConfig}));
 
     }
 
 
-
     function refreshAccount(accountId) {
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/account/refresh?accountId="+accountId, true);
+        xhr.open("POST", "/account/refresh?accountId=" + accountId, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         // 设置body
@@ -799,7 +832,7 @@
                         const row = `
                 <tr>
                     <td>${account.email}</td>
-                    <td><div class="ellipsis">${account.refreshToken}</div></td>
+                    <td><div class="ellipsis">${account.type}</div></td>
                     <td><div class="ellipsis">${account.accessToken}</div></td>
                     <td>${account.shared ? '✅' : '❌'}</td>
                     <td style="width: 150px;">${account.updateTime}</td>
@@ -836,21 +869,22 @@
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
+                if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
                     const res = JSON.parse(xhr.responseText);
                     const tableBody = document.getElementById('shareTableBody');
                     tableBody.innerHTML = ''; // 清空现有的表格内容
                     res.data.forEach(share => {
                         const row = `
                 <tr>
-                    <td>${share.email}</td>
-                    <td>${share.uniqueName}</td>
-                    <td>${share.comment}</td>
+                    <td style="width: 100px">${share.uniqueName}</td>
+                    <td style="width: 180px">${share.gptEmail}</td>
+                    <td style="width: 180px">${share.claudeEmail}</td>
+                    <td style="width: 120px;">${share.comment}</td>
                     <td style="width: 120px;">${share.expiresAt}</td>
 <!--                    <td>${share.gpt4Limit}</td>-->
                     <td>
-                        <button class="open-share-btn" onclick="activateShare('${share.id}')">激活</button>
-                        <button class="distribute-btn" onclick="openEmailModal('${share.id}')">换车</button>
+                        <button class="distribute-gpt-btn" onclick="openEmailModal('${share.id}',1)">激活-ChatGPT</button>
+                        <button class="distribute-claude-btn" onclick="openEmailModal('${share.id}',2)">激活-Claude</button>
                         <button class="edit-btn" onclick="openShareUpdateModel('${share.id}','${share.uniqueName}','${share.password}','${share.expiresAt}','${share.comment}','${share.email}')">编辑</button>
                         <button class="delete-btn" onclick="deleteShare('${share.id}','${share.email}')">删除</button>
                     </td>
@@ -868,9 +902,9 @@
         xhr.send()
     }
 
-    function fetchConfigOptions() {
+    function fetchConfigOptions(type) {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/account/options", true);
+        xhr.open("GET", "/account/options?type="+type, true);
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -953,8 +987,8 @@
         document.getElementById(modalId).style.display = 'flex';
     }
 
-    function openEmailModal(id) {
-        fetchConfigOptions(); // 获取配置选项
+    function openEmailModal(id,type) {
+        fetchConfigOptions(type); // 获取配置选项
         document.getElementById('distribute_share_id').value = id;
         document.getElementById('configModal').style.display = 'flex';
     }
@@ -1009,8 +1043,6 @@
 
         fetchShares('')
     });
-
-
 
 
 </script>

@@ -48,10 +48,11 @@ public class OAuthController {
     private String userEndpoint;
 
     @GetMapping("/initiate")
-    public String initiateAuth(HttpServletRequest request,@RequestParam(required = false)Boolean panel) {
+    public String initiateAuth(HttpServletRequest request,
+                               @RequestParam(required = false) String type) {
         HttpSession session = request.getSession();
-        String state = new BigInteger(130, new SecureRandom()).toString(32);
-        session.setAttribute("oauth2State", state+(panel!=null && panel ? "-panel" : ""));
+        String state = new BigInteger(130, new SecureRandom()).toString(32) + "-" + type;
+        session.setAttribute("oauth2State", state);
         String redirectUrl = String.format("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s&state=%s",
                 authorizationEndpoint, clientId, redirectUri, "read,write", state);
         return redirectUrl;
@@ -96,8 +97,15 @@ public class OAuthController {
 
             if (userResBody != null) {
                 String jmc = new BigInteger(130, new SecureRandom()).toString(32);
-                session.setAttribute("jmc",jmc);
-                userResBody.put("jmc",jmc);
+                session.setAttribute("jmc", jmc);
+                userResBody.put("jmc", jmc);
+                if (state.contains("Claude")) {
+                    userResBody.put("type", "Claude");
+                } else if (state.contains("panel")){
+                    userResBody.put("type", "panel");
+                }else {
+                    userResBody.put("type", "ChatGPT");
+                }
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
                         SerializerFeature.WriteDateUseDateFormat);
                 log.info("user info:{}", jsonString);
@@ -109,6 +117,8 @@ public class OAuthController {
         } else {
             return new ResponseEntity<>("Failed to obtain access token", HttpStatus.UNAUTHORIZED);
         }
+
+
     }
 
 }

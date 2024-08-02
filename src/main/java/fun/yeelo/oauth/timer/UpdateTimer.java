@@ -1,6 +1,7 @@
 package fun.yeelo.oauth.timer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.Account;
 import fun.yeelo.oauth.domain.Share;
@@ -37,7 +38,6 @@ public class UpdateTimer {
 
     private static final String REFRESH_URL = "https://token.oaifree.com/api/auth/refresh";
 
-    private static final String SHARE_TOKEN_URL = "https://chat.oaifree.com/token/register";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -101,7 +101,7 @@ public class UpdateTimer {
                 personJsonObject.add("show_conversations", false);
                 personJsonObject.add("reset_limit", true);
                 personJsonObject.add("temporary_chat", false);
-                ResponseEntity<String> stringResponseEntity = restTemplate.exchange(SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
+                ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
                 Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
                 update.setShareToken(map.get("token_key").toString());
                 shareService.updateById(update);

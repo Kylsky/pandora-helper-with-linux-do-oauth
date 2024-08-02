@@ -52,7 +52,11 @@
                         var data = JSON.parse(xhr.responseText);
                         console.log('Token fetched and stored:', data);
                         // window.location.href = 'https://pandora.yeelo.top?';
-                        startChat(data.username,data.jmc)
+                        if (data.type === 'ChatGPT') {
+                            startGPTChat(data.username,data.jmc)
+                        }else if (data.type === 'Claude') {
+                            startClaudeChat(data.username,data.jmc)
+                        }
 
                     } catch (e) {
                         console.error('Error parsing response:', e);
@@ -67,7 +71,7 @@
         xhr.send();
     }
 
-    function startChat(username, jmc) {
+    function startGPTChat(username, jmc) {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", `/pandora/checkUser?username=${username}&jmc=${jmc}`, true);
 
@@ -80,7 +84,7 @@
                         if (data.isShared === false) {
                             alert("您的账号未激活，请联系管理员")
                             localStorage.setItem('token', data.token)
-                            window.location.href = 'https://connect.yeelo.fun';
+                            window.location.href = 'index.html';
                         }else {
                             console.log('Token fetched and stored:', data);
                             window.location.href = data.address;
@@ -88,12 +92,44 @@
                     } catch (e) {
                         console.error('Error parsing response:', e);
                         alert('Failed to redirect');
-                        window.location.href = 'https://connect.yeelo.fun'
+                        window.location.href = 'index.html'
                     }
                 } else {
                     console.error('Request failed with status:', xhr.status);
                     alert('您暂时无法访问该页面');
-                    window.location.href = 'https://connect.yeelo.fun'
+                    window.location.href = 'index.html'
+                }
+            }
+        };
+
+        xhr.send();
+    }
+
+    function startClaudeChat(username, jmc) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", `/claude/checkUser?username=${username}&jmc=${jmc}`, true);
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    try {
+                        var status = JSON.parse(xhr.responseText).status;
+                        // 获取data中的username
+                        if (!status) {
+                            alert("您的账号未激活，请联系管理员")
+                            window.location.href = 'claude.html';
+                        }else {
+
+                        }
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                        alert('Failed to redirect');
+                        window.location.href = 'claude.html'
+                    }
+                } else {
+                    console.error('Request failed with status:', xhr.status);
+                    alert('您暂时无法访问该页面');
+                    window.location.href = 'claude.html'
                 }
             }
         };

@@ -1,8 +1,6 @@
 server:
   port: 8181
 
-password: Skyline302=
-
 linux-do:
   oaifree:
     auth-api: https://new.oaifree.com
@@ -32,6 +30,8 @@ spring:
     url: jdbc:sqlite:/Users/kyle/IdeaProjects/linuxdo-auth/src/main/resources/db/data.db
     username:
     password:
+  main:
+    allow-circular-references: true
 #  profiles:
 #    active: prod
 mybatis-plus:

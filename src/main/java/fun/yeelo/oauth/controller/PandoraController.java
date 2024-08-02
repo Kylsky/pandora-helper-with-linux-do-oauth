@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.AccountService;
+import fun.yeelo.oauth.service.GptConfigService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.slf4j.Logger;
@@ -46,9 +47,6 @@ public class PandoraController {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
-    @Value("${password}")
-    private String adminPassword;
-
     private static final Logger log = LoggerFactory.getLogger(PandoraController.class);
     @Autowired
     private RestTemplate restTemplate;
@@ -63,6 +61,9 @@ public class PandoraController {
 
     @Autowired
     private ShareService shareService;
+
+    @Autowired
+    private GptConfigService gptConfigService;
 
     @Autowired
     private AccountService accountService;
@@ -86,36 +87,29 @@ public class PandoraController {
             share.setIsShared(false);
             share.setPassword(passwordEncoder.encode("123456"));
             share.setComment("unassigned");
-            share.setAccountId(1);
-            share.setExpiresIn(0);
-            share.setGpt4Limit(-1);
-            share.setGpt35Limit(-1);
-            share.setShowUserinfo(false);
-            share.setRefreshEveryday(true);
-            share.setTemporaryChat(false);
-            share.setShowConversations(false);
             shareService.save(share);
             final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             final String jwt = jwtTokenUtil.generateToken(userDetails);
             share.setToken(jwt);
             return new ResponseEntity<>(share, HttpStatus.OK);
         }
-
+        // 获取share的gpt配置
+        ShareGptConfig byShareId = gptConfigService.getByShareId(user.getId());
+        // 判断是否有share token
         ShareVO res = new ShareVO();
-        res.setIsShared(user.getShareToken()!=null);
+        res.setIsShared(byShareId!=null && byShareId.getShareToken() != null);
         if (!res.getIsShared()) {
             return new ResponseEntity<>(res, HttpStatus.OK);
         }
         BeanUtils.copyProperties(user, res);
-        // 通过post调用,body 是一个json
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ObjectNode personJsonObject = objectMapper.createObjectNode();
-        personJsonObject.put("share_token", res.getShareToken());
-        ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(tokenUrl, new HttpEntity<>(personJsonObject, headers), String.class);
-        // 转换成json
         try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            ObjectNode personJsonObject = objectMapper.createObjectNode();
+            personJsonObject.put("share_token", byShareId.getShareToken());
+            ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(tokenUrl, new HttpEntity<>(personJsonObject, headers), String.class);
             Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
             if (map.containsKey("login_url")) {
                 String loginUrl = map.get("login_url").toString();
@@ -153,7 +147,7 @@ public class PandoraController {
         if (user == null) {
             return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
         }
-        if (passwordEncoder.matches(user.getPassword(),password)){
+        if (!passwordEncoder.matches(password,user.getPassword())){
             return new ResponseEntity<>("密码错误，请重试", HttpStatus.BAD_REQUEST);
         }
         Share update = new ShareVO();
@@ -174,10 +168,11 @@ public class PandoraController {
         if (user == null) {
             return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
         }
-        if (user.getAccountId() == null || !StringUtils.hasText(user.getShareToken())) {
+        ShareGptConfig gptShare = gptConfigService.getByShareId(user.getId());
+        if (gptShare==null || !StringUtils.hasText(gptShare.getShareToken())) {
             return new ResponseEntity<>("用户未激活", HttpStatus.UNAUTHORIZED);
         }
-        if (passwordEncoder.matches(user.getPassword(),password)){
+        if (!passwordEncoder.matches(password,user.getPassword())){
             return new ResponseEntity<>("密码错误，请重试", HttpStatus.UNAUTHORIZED);
         }
 
@@ -205,18 +200,4 @@ public class PandoraController {
         return new ResponseEntity<>(res.getAddress(), HttpStatus.OK);
 
     }
-
-    @GetMapping("/checkAdmin")
-    public HttpEntity<String> checkAdmin(HttpServletRequest request,@RequestParam String jmc) {
-        if (!StringUtils.hasText(jmc)) {
-            return new ResponseEntity<>("验证失败", HttpStatus.UNAUTHORIZED);
-        }
-        Object author = request.getSession().getAttribute("author");
-
-        if (author == null || !author.toString().equals(jmc)) {
-            return new ResponseEntity<>("验证失败", HttpStatus.UNAUTHORIZED);
-        }
-        return new ResponseEntity<>("验证成功", HttpStatus.OK);
-    }
-
 }

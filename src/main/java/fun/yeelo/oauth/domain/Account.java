@@ -45,5 +45,8 @@ public class Account {
     @TableField("user_id")
     private Integer userId;
 
-    // Getters and setters
+    @TableField("account_type")
+    private Integer accountType;
+
+
 }

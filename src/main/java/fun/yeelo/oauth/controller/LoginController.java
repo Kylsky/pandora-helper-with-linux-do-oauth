@@ -53,7 +53,7 @@ public class LoginController {
         if (user.getAccountId() == null || !StringUtils.hasText(user.getShareToken())) {
             return HttpResult.error("用户未激活");
         }
-        if (passwordEncoder.matches(user.getPassword(),password)) {
+        if (!passwordEncoder.matches(password,user.getPassword())){
             return HttpResult.error("密码错误，请重试");
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getUsername());
