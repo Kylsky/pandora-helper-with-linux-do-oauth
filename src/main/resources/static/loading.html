@@ -107,7 +107,7 @@
 
     function startClaudeChat(username, jmc) {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", `/claude/checkUser?username=${username}&jmc=${jmc}`, true);
+        xhr.open("GET", `/fuclaude/checkUser?username=${username}&jmc=${jmc}`, true);
 
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -119,7 +119,7 @@
                             alert("您的账号未激活，请联系管理员")
                             window.location.href = 'claude.html';
                         }else {
-
+                            window.location.href = 'https://fuclaude.yeelo.fun/login_oauth?token='+JSON.parse(xhr.responseText).data;
                         }
                     } catch (e) {
                         console.error('Error parsing response:', e);

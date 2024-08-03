@@ -32,7 +32,7 @@ spring:
     password:
   main:
     allow-circular-references: true
-#  profiles:
-#    active: prod
+  profiles:
+    active: prod
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml

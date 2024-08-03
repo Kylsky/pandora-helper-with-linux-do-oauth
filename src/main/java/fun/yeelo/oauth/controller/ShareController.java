@@ -70,24 +70,32 @@ public class ShareController {
         List<ShareVO> shareVOS = ConvertUtil.convertList(shareList, ShareVO.class);
 
         // 获取gpt config
-        Map<Integer, ShareGptConfig> gptMap = gptConfigService.list().stream().collect(Collectors.toMap(ShareGptConfig::getShareId, Function.identity()));
+        Map<Integer, ShareGptConfig> gptMap = gptConfigService.list()
+                                                      .stream().filter(e -> accountIdMap.containsKey(e.getAccountId()))
+                                                      .collect(Collectors.toMap(ShareGptConfig::getShareId, Function.identity()));
 
         // 获取claude config
-        Map<Integer, ShareClaudeConfig> claudeMap = claudeConfigService.list().stream().collect(Collectors.toMap(ShareClaudeConfig::getShareId, Function.identity()));
+        Map<Integer, ShareClaudeConfig> claudeMap = claudeConfigService.list()
+                                                            .stream().filter(e -> accountIdMap.containsKey(e.getAccountId()))
+                                                            .collect(Collectors.toMap(ShareClaudeConfig::getShareId, Function.identity()));
 
         // 设置邮箱
+        shareVOS = shareVOS.stream().filter(e -> claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId())).collect(Collectors.toList());
         for (ShareVO share : shareVOS) {
             ShareGptConfig gptConfig = gptMap.get(share.getId());
-            if (gptConfig!=null){
+            ShareClaudeConfig claudeConfig = claudeMap.get(share.getId());
+            //if (gptConfig == null && claudeConfig == null) {
+            //    continue;
+            //}
+            if (gptConfig != null) {
                 share.setGptEmail(accountIdMap.get(gptConfig.getAccountId()).getEmail());
-            }else {
+            } else {
                 share.setGptEmail("-");
             }
 
-            ShareClaudeConfig claudeConfig = claudeMap.get(share.getId());
-            if (claudeConfig!=null){
+            if (claudeConfig != null) {
                 share.setClaudeEmail(accountIdMap.get(claudeConfig.getAccountId()).getEmail());
-            }else {
+            } else {
                 share.setClaudeEmail("-");
             }
 
@@ -114,8 +122,8 @@ public class ShareController {
         Account account = accountService.findById(accountId);
         if (share != null && account.getUserId().equals(user.getId())) {
             shareService.removeById(id);
-            gptConfigService.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId,id));
-            claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,id));
+            gptConfigService.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
+            claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, id));
         } else {
             return HttpResult.error("您无权删除该账号");
         }
@@ -174,7 +182,7 @@ public class ShareController {
         Account account = accountService.getById(dto.getAccountId());
         switch (dto.getType()) {
             case 1:
-                gptConfigService.addShare(account,dto.getUniqueName(), shareId);
+                gptConfigService.addShare(account, dto.getUniqueName(), shareId);
                 break;
             case 2:
                 return claudeConfigService.addShare(account, shareId);
