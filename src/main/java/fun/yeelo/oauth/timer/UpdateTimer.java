@@ -65,7 +65,7 @@ public class UpdateTimer {
                     accountService.saveOrUpdate(updateDTO);
                 }
             } catch (Exception e) {
-                log.error("刷新access_token异常", e);
+                log.error("刷新access_token异常,异常账号:{}",account.getEmail(), e);
             }
         });
         log.info("刷新access_token结束");

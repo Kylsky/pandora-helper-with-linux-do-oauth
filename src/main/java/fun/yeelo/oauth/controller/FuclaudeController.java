@@ -75,16 +75,15 @@ public class FuclaudeController {
             share.setPassword(passwordEncoder.encode("123456"));
             share.setComment("unassigned");
             shareService.save(share);
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            final String jwt = jwtTokenUtil.generateToken(userDetails);
-            share.setToken(jwt);
             return HttpResult.error("用户未激活,请联系管理员");
         }
         ShareClaudeConfig claudeShare = claudeConfigService.getByShareId(user.getId());
-        if (claudeShare == null || claudeShare.getOauthToken() == null) {
-            return HttpResult.error("用户未激活,请联系管理员");
+        Account account = accountService.getById(claudeShare.getAccountId());
+        String token = claudeConfigService.generateAutoToken(account,user,user.getId());
+        if (claudeShare == null) {
+            return HttpResult.error("权限未激活,请联系管理员");
         }
-        return HttpResult.success(claudeShare.getOauthToken());
+        return HttpResult.success(token);
     }
 
     @PostMapping("/login")
@@ -99,13 +98,15 @@ public class FuclaudeController {
             return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
         }
         ShareClaudeConfig claudeShare = claudeConfigService.getByShareId(user.getId());
-        if (claudeShare==null || !StringUtils.hasText(claudeShare.getOauthToken())) {
+        Account account = accountService.getById(claudeShare.getAccountId());
+        String token = claudeConfigService.generateAutoToken(account,user,user.getId());
+        if (claudeShare==null || token==null) {
             return new ResponseEntity<>("用户未激活", HttpStatus.UNAUTHORIZED);
         }
         if (!passwordEncoder.matches(password,user.getPassword())){
             return new ResponseEntity<>("密码错误，请重试", HttpStatus.UNAUTHORIZED);
         }
-        return new ResponseEntity<>(claudeShare.getOauthToken(), HttpStatus.OK);
+        return new ResponseEntity<>(token, HttpStatus.OK);
 
     }
 }

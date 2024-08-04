@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <link rel="icon" href="pics/humbleicons--coffee.svg" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>授权中</title>
@@ -56,6 +57,8 @@
                             startGPTChat(data.username,data.jmc)
                         }else if (data.type === 'Claude') {
                             startClaudeChat(data.username,data.jmc)
+                        }else if (data.type === 'panel') {
+                            startPanel(data.username,data.jmc)
                         }
 
                     } catch (e) {
@@ -130,6 +133,40 @@
                     console.error('Request failed with status:', xhr.status);
                     alert('您暂时无法访问该页面');
                     window.location.href = 'claude.html'
+                }
+            }
+        };
+
+        xhr.send();
+    }
+
+    function startPanel(username, jmc) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", `/share/checkUser?username=${username}&jmc=${jmc}`, true);
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    try {
+                        var status = JSON.parse(xhr.responseText).status;
+                        var msg = JSON.parse(xhr.responseText).message;
+                        // 获取data中的username
+                        if (!status) {
+                            alert(msg)
+                            window.location.href = 'panel.html';
+                        }else {
+                            localStorage.setItem('token',JSON.parse(xhr.responseText).data)
+                            window.location.href = 'admin.html';
+                        }
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                        alert('Failed to redirect');
+                        window.location.href = 'claude.html'
+                    }
+                } else {
+                    console.error('Request failed with status:', xhr.status);
+                    alert('您暂时无法访问该页面');
+                    window.location.href = 'panel.html'
                 }
             }
         };

@@ -88,9 +88,6 @@ public class PandoraController {
             share.setPassword(passwordEncoder.encode("123456"));
             share.setComment("unassigned");
             shareService.save(share);
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            final String jwt = jwtTokenUtil.generateToken(userDetails);
-            share.setToken(jwt);
             return new ResponseEntity<>(share, HttpStatus.OK);
         }
         // 获取share的gpt配置
@@ -180,7 +177,7 @@ public class PandoraController {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         ObjectNode personJsonObject = objectMapper.createObjectNode();
-        personJsonObject.put("share_token", user.getShareToken());
+        personJsonObject.put("share_token", gptShare.getShareToken());
         ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(tokenUrl, new HttpEntity<>(personJsonObject, headers), String.class);
         ShareVO res = new ShareVO();
         BeanUtils.copyProperties(user, res);

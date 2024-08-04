@@ -58,6 +58,16 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         // 删除原有的
         this.baseMapper.delete(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,shareId));
         Share byId = shareService.getById(shareId);
+
+        ShareClaudeConfig shareClaudeConfig = new ShareClaudeConfig();
+        shareClaudeConfig.setShareId(shareId);
+        shareClaudeConfig.setAccountId(account.getId());
+        save(shareClaudeConfig);
+        //generateAutoToken(account, byId,shareId);
+        return HttpResult.success();
+    }
+
+    public String generateAutoToken(Account account, Share byId, int shareId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("User-Agent", "curl/7.64.1");  // 模拟 curl 的 User-Agent
@@ -66,7 +76,7 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
 
         personJsonObject.put("session_key", account.getAccessToken());
         personJsonObject.put("unique_name", byId.getUniqueName());
-        personJsonObject.put("expires_in", 3600 * 24 * 30);
+        //personJsonObject.put("expires_in", 3600 * 24 * 30);
 
         HttpEntity<ObjectNode> requestEntity = new HttpEntity<>(personJsonObject, headers);
         try {
@@ -74,15 +84,10 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
             Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
             String oauthToken = map.get("oauth_token").toString();
 
-            ShareClaudeConfig shareClaudeConfig = new ShareClaudeConfig();
-            shareClaudeConfig.setShareId(shareId);
-            shareClaudeConfig.setOauthToken(oauthToken);
-            shareClaudeConfig.setAccountId(account.getId());
-            save(shareClaudeConfig);
-            return HttpResult.success();
+            return oauthToken;
         }catch (Exception ex) {
             log.error("获取oauth_token异常");
-            return HttpResult.error("获取oauth_token异常");
+            return null;
         }
     }
 }

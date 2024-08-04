@@ -3,7 +3,9 @@ package fun.yeelo.oauth.controller;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.LoginDTO;
 import fun.yeelo.oauth.domain.Share;
+import fun.yeelo.oauth.domain.ShareGptConfig;
 import fun.yeelo.oauth.domain.ShareVO;
+import fun.yeelo.oauth.service.GptConfigService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,8 @@ public class LoginController {
 
     @Autowired
     private ShareService shareService;
+    @Autowired
+    private GptConfigService gptConfigService;
 
     @PostMapping("/login")
     public HttpResult<String> panelLogin(@RequestBody LoginDTO loginDTO, HttpServletRequest request) {
@@ -50,11 +54,15 @@ public class LoginController {
         if (user == null) {
             return HttpResult.error("用户不存在，请重试");
         }
-        if (user.getAccountId() == null || !StringUtils.hasText(user.getShareToken())) {
-            return HttpResult.error("用户未激活");
-        }
+        //ShareGptConfig gptConfig = gptConfigService.getByShareId(user.getId());
+        //if (gptConfig == null || !StringUtils.hasText(gptConfig.getShareToken())) {
+        //    return HttpResult.error("用户未激活");
+        //}
         if (!passwordEncoder.matches(password,user.getPassword())){
-            return HttpResult.error("密码错误，请重试");
+            return HttpResult.error("密码错误,请重试");
+        }
+        if (!user.getId().equals(user.getParentId())) {
+            return HttpResult.error("当前用户不支持登录面板,请联系管理员");
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getUsername());
 

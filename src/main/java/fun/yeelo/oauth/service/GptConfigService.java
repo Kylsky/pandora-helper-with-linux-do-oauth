@@ -85,6 +85,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
 
         // 获取新的share token
         try {
+            log.info("开始新增share");
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
@@ -101,6 +102,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
             ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
             Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
             shareToken = map.get("token_key").toString();
+            log.info("新增share完成,share_token:{}",shareToken);
         } catch (IOException e) {
             log.error("新增 chatgpt share 异常:", e);
             return HttpResult.error("新增 chatgpt share 异常");
@@ -120,7 +122,8 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
         gptConfig.setShowConversations(true);
         gptConfig.setRefreshEveryday(true);
         gptConfig.setTemporaryChat(false);
-        this.save(gptConfig);
+        int insert = this.baseMapper.insert(gptConfig);
+        log.info("添加gpt配置结果:{}",insert);
         return HttpResult.success();
     }
 

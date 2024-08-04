@@ -2,6 +2,7 @@ package fun.yeelo.oauth.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
@@ -12,8 +13,12 @@ import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
@@ -26,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -48,6 +54,10 @@ public class ShareController {
     private GptConfigService gptConfigService;
     @Autowired
     private ClaudeConfigService claudeConfigService;
+    @Autowired
+    private UserDetailsService userDetailsService;
+    @Value("${linux-do.oaifree.token-api}")
+    private String tokenUrl;
 
     @GetMapping("/list")
     public HttpResult<List<ShareVO>> list(HttpServletRequest request, @RequestParam(required = false) String emailAddr) {
@@ -80,7 +90,7 @@ public class ShareController {
                                                             .collect(Collectors.toMap(ShareClaudeConfig::getShareId, Function.identity()));
 
         // 设置邮箱
-        shareVOS = shareVOS.stream().filter(e -> claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId())).collect(Collectors.toList());
+        shareVOS = shareVOS.stream().filter(e -> !StringUtils.hasText(emailAddr) || claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId())).collect(Collectors.toList());
         for (ShareVO share : shareVOS) {
             ShareGptConfig gptConfig = gptMap.get(share.getId());
             ShareClaudeConfig claudeConfig = claudeMap.get(share.getId());
@@ -118,9 +128,7 @@ public class ShareController {
             return HttpResult.error("用户不存在，请联系管理员");
         }
         Share share = shareService.findById(id);
-        Integer accountId = share.getAccountId();
-        Account account = accountService.findById(accountId);
-        if (share != null && account.getUserId().equals(user.getId())) {
+        if (share != null && share.getParentId().equals(user.getId())) {
             shareService.removeById(id);
             gptConfigService.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
             claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, id));
@@ -176,19 +184,21 @@ public class ShareController {
         }
         dto.setPassword(passwordEncoder.encode(dto.getPassword()));
         dto.setParentId(user.getId());
-        int shareId = shareService.getBaseMapper().insert(dto);
+        shareService.getBaseMapper().insert(dto);
+        int shareId = dto.getId();
 
 
         Account account = accountService.getById(dto.getAccountId());
-        switch (dto.getType()) {
+        switch (account.getAccountType()) {
             case 1:
-                gptConfigService.addShare(account, dto.getUniqueName(), shareId);
-                break;
+                return gptConfigService.addShare(account, dto.getUniqueName(), shareId);
             case 2:
                 return claudeConfigService.addShare(account, shareId);
+            default:
+                return HttpResult.success(false);
+
         }
 
-        return HttpResult.success(true);
     }
 
     @PatchMapping("/activate")
@@ -261,4 +271,28 @@ public class ShareController {
         //return HttpResult.success(true);
     }
 
+    @GetMapping("checkUser")
+    public HttpResult<String> checkLinuxDoUser(@RequestParam String username, @RequestParam String jmc, HttpServletRequest request) {
+        String jmcFromSession = request.getSession().getAttribute("jmc") == null ? "" : request.getSession().getAttribute("jmc").toString();
+        if (!StringUtils.hasText(jmc) || !jmc.equals(jmcFromSession)) {
+            return HttpResult.error("请遵守登录规范！");
+        }
+        Share user = shareService.getByUserName(username);
+        if (Objects.isNull(user)) {
+            // 新建默认share
+            ShareVO share = new ShareVO();
+            share.setUniqueName(username);
+            share.setIsShared(false);
+            share.setPassword(passwordEncoder.encode("123456"));
+            share.setComment("unassigned");
+            shareService.save(share);
+            return HttpResult.error("当前用户不支持登录面板,请联系管理员");
+        }
+        if (!user.getId().equals(user.getParentId())) {
+            return HttpResult.error("当前用户不支持登录面板,请联系管理员");
+        }
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        final String jwt = jwtTokenUtil.generateToken(userDetails);
+        return HttpResult.success(jwt);
+    }
 }

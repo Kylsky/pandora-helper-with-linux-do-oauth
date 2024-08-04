@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" href="pics/humbleicons--coffee.svg" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pandora Helper</title>
@@ -665,7 +666,7 @@
                 closeModal('shareModal')
                 if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
                     alert("删除成功")
-                    fetchShares(email)
+                    fetchShares('')
                 } else {
                     alert("删除失败");
                 }
@@ -829,6 +830,9 @@
                     const tableBody = document.getElementById('accountTableBody');
                     tableBody.innerHTML = ''; // 清空现有的表格内容
                     res.data.forEach(account => {
+                        const refreshButton = account.type !== 'Claude'
+                            ? `<button class="refresh-btn" onclick="refreshAccount('${account.id}')">Refresh</button>`
+                            : '';
                         const row = `
                 <tr>
                     <td>${account.email}</td>
@@ -841,7 +845,8 @@
                         <button onclick="openShareModel('${account.id}')">+</button>
                     </td>
                     <td>
-                        <button class="refresh-btn" onclick="refreshAccount('${account.id}')">Refresh</button>
+<!--                        <button class="refresh-btn" onclick="refreshAccount('${account.id}')">Refresh</button>-->
+                        ${refreshButton}
                         <button class="edit-btn" onclick="editAccount('${account.id}','${account.email}','${account.password}','${account.shared}','${account.refreshToken}','${account.accessToken}')">Edit</button>
                         <button class="delete-btn" onclick="deleteAccount('${account.id}')">Delete</button>
                     </td>
@@ -979,7 +984,7 @@
         } else {
             // 如果没有授权信息，跳转到登录页面
             alert('未监测到登录状态,请登录');
-            window.location.href = 'index.html';
+            window.location.href = 'panel.html';
         }
     }
 
