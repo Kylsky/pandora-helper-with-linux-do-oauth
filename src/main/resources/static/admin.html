@@ -841,7 +841,7 @@
                     <td>${account.shared ? '✅' : '❌'}</td>
                     <td style="width: 150px;">${account.updateTime}</td>
                     <td style="width: 120px;">
-                        <button onclick="fetchShares('${account.email}')">Share List</button>
+                        <button onclick="fetchShares('${account.email}', '${account.accountType}')">Share List</button>
                         <button onclick="openShareModel('${account.id}')">+</button>
                     </td>
                     <td>
@@ -878,6 +878,50 @@
                     const res = JSON.parse(xhr.responseText);
                     const tableBody = document.getElementById('shareTableBody');
                     tableBody.innerHTML = ''; // 清空现有的表格内容
+                    res.data.forEach(share => {
+                        const row = `
+                <tr>
+                    <td style="width: 100px">${share.uniqueName}</td>
+                    <td style="width: 180px">${share.gptEmail}</td>
+                    <td style="width: 180px">${share.claudeEmail}</td>
+                    <td style="width: 120px;">${share.comment}</td>
+                    <td style="width: 120px;">${share.expiresAt}</td>
+<!--                    <td>${share.gpt4Limit}</td>-->
+                    <td>
+                        <button class="distribute-gpt-btn" onclick="openEmailModal('${share.id}',1)">激活-ChatGPT</button>
+                        <button class="distribute-claude-btn" onclick="openEmailModal('${share.id}',2)">激活-Claude</button>
+                        <button class="edit-btn" onclick="openShareUpdateModel('${share.id}','${share.uniqueName}','${share.password}','${share.expiresAt}','${share.comment}','${share.email}')">编辑</button>
+                        <button class="delete-btn" onclick="deleteShare('${share.id}','${share.email}')">删除</button>
+                    </td>
+                </tr>
+            `;
+                        tableBody.innerHTML += row;
+
+                    });
+                } else {
+                    alert("请登录");
+                    window.location.href = 'panel.html';
+                }
+            }
+        }
+        xhr.send()
+    }
+
+    function fetchShares(email, type) {
+        document.getElementById('share-email-query').value = email;
+        document.getElementById('accountPanel').style.display = 'none';
+        document.getElementById('sharePanel').style.display = 'block';
+        document.getElementById('accountNav').classList.remove('active');
+        document.getElementById('shareNav').classList.add('active');
+        var xhr = new XMLHttpRequest();
+        const tableBody = document.getElementById('shareTableBody');
+        tableBody.innerHTML = ''; // 清空现有的表格内容
+        xhr.open("GET", "/share/list?accountType="+type +"&emailAddr=" + email, true);
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
+                    const res = JSON.parse(xhr.responseText);
                     res.data.forEach(share => {
                         const row = `
                 <tr>

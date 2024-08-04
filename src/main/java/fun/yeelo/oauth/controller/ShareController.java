@@ -60,9 +60,12 @@ public class ShareController {
     private String tokenUrl;
 
     @GetMapping("/list")
-    public HttpResult<List<ShareVO>> list(HttpServletRequest request, @RequestParam(required = false) String emailAddr) {
+    public HttpResult<List<ShareVO>> list(HttpServletRequest request,
+                                          @RequestParam(required = false) String emailAddr,
+                                          @RequestParam(required = false) Integer accountType) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
+
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -72,7 +75,10 @@ public class ShareController {
         }
         // 根据邮箱和用户id获取账号
         List<Account> accounts = accountService.findAll().stream()
-                                         .filter(e -> e.getUserId().equals(user.getId()) && (!StringUtils.hasText(emailAddr) || e.getEmail().contains(emailAddr))).collect(Collectors.toList());
+                                         .filter(e -> e.getUserId().equals(user.getId())
+                                                              && (!StringUtils.hasText(emailAddr) || e.getEmail().contains(emailAddr))
+                                                              && (accountType==null || e.getAccountType().equals(accountType))).collect(Collectors.toList()
+                                    );
         Map<Integer, Account> accountIdMap = accounts.stream().collect(Collectors.toMap(Account::getId, Function.identity()));
         // 筛选accountId在账号map内的
         List<Share> shareList = shareService.findAll();
