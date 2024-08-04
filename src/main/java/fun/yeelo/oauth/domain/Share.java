@@ -27,37 +27,9 @@ public class Share {
     @TableField("comment")
     private String comment;
 
-    @TableField("expires_in")
-    private Integer expiresIn;
-
     @TableField("expires_at")
     private String expiresAt;
 
-    @TableField("site_limit")
-    private String siteLimit;
-
-    @TableField("gpt4_limit")
-    private Integer gpt4Limit;
-
-    @TableField("gpt35_limit")
-    private Integer gpt35Limit;
-
-    @TableField("show_userinfo")
-    private Boolean showUserinfo;
-
-    @TableField("show_conversations")
-    private Boolean showConversations;
-
-    @TableField("refresh_everyday")
-    private Boolean refreshEveryday;
-
-    @TableField("temporary_chat")
-    private Boolean temporaryChat;
-
     @TableField("parent_id")
     private Integer parentId;
-
-
-
-    // Getters and setters
 }
