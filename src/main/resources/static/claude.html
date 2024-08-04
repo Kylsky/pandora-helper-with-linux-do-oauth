@@ -221,7 +221,7 @@
                     spinner.style.display = 'none'; // 隐藏加载图标
                     btnText.textContent = '登录成功,跳转中...'; // 修改按钮文本为“跳转中”
                     btnText.style.visibility = 'visible'; // 显示按钮文本
-                    window.location.href = 'https://fuclaude.yeelo.fun/login_oauth?token='+xhr.responseText;
+                    window.location.href = xhr.responseText;
                 } else {
                     spinner.style.display = 'none'; // 隐藏加载图标
                     btnText.style.visibility = 'visible'; // 显示按钮文本

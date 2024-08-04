@@ -14,6 +14,7 @@ import fun.yeelo.oauth.domain.Share;
 import fun.yeelo.oauth.domain.ShareClaudeConfig;
 import fun.yeelo.oauth.domain.ShareGptConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -34,7 +35,8 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
     @Autowired
     private ShareService shareService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
+    @Value("${linux-do.fuclaude}")
+    private String fuclaudeUrl;
 
 
     public List<ShareClaudeConfig> findAll() {
@@ -56,7 +58,7 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
 
     public HttpResult<Boolean> addShare(Account account, int shareId) {
         // 删除原有的
-        this.baseMapper.delete(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,shareId));
+        this.baseMapper.delete(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, shareId));
         Share byId = shareService.getById(shareId);
 
         ShareClaudeConfig shareClaudeConfig = new ShareClaudeConfig();
@@ -67,7 +69,7 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         return HttpResult.success();
     }
 
-    public String generateAutoToken(Account account, Share byId, int shareId) {
+    public String generateAutoToken(Account account, Share byId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("User-Agent", "curl/7.64.1");  // 模拟 curl 的 User-Agent
@@ -76,17 +78,17 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
 
         personJsonObject.put("session_key", account.getAccessToken());
         personJsonObject.put("unique_name", byId.getUniqueName());
-        //personJsonObject.put("expires_in", 3600 * 24 * 30);
+        personJsonObject.put("expires_in", 600);
 
         HttpEntity<ObjectNode> requestEntity = new HttpEntity<>(personJsonObject, headers);
         try {
-            ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity("https://fuclaude.yeelo.fun/manage-api/auth/oauth_token", requestEntity, String.class);
+            ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(fuclaudeUrl + "/manage-api/auth/oauth_token", requestEntity, String.class);
             Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
             String oauthToken = map.get("oauth_token").toString();
 
-            return oauthToken;
-        }catch (Exception ex) {
-            log.error("获取oauth_token异常");
+            return fuclaudeUrl + "/login_oauth?token=" + oauthToken;
+        } catch (Exception ex) {
+            log.error("获取oauth_token异常", ex);
             return null;
         }
     }

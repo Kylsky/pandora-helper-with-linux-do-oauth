@@ -135,6 +135,11 @@
             color: white;
         }
 
+        .update-parent-btn {
+            background-color: #f0ad99;
+            color: white;
+        }
+
         .edit-btn {
             background-color: #f0ad4e;
             color: white;
@@ -201,6 +206,14 @@
 
         .ellipsis {
             max-width: 120px; /* 设置最大宽度，根据实际需求调整 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block; /* 确保应用block布局 */
+        }
+
+        .share-ellipsis {
+            max-width: 150px; /* 设置最大宽度，根据实际需求调整 */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -342,7 +355,9 @@
             box-sizing: border-box;
         }
 
-
+        .clickable {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -613,6 +628,26 @@
         document.getElementById('update-share-email').value = email
     }
 
+    function updateParent(shareId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/share/updateParent?shareId="+shareId, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                let res = JSON.parse(xhr.responseText)
+                if (res.status) {
+                    alert("上山成功")
+                } else {
+                    alert(res.message);
+                }
+                fetchShares('');
+            }
+        }
+        xhr.send();
+    }
+
     function addShare() {
         var accountId = document.getElementById('add-share-id').value;
         var username = document.getElementById('add-share-unique-name').value;
@@ -841,7 +876,7 @@
                     <td>${account.shared ? '✅' : '❌'}</td>
                     <td style="width: 150px;">${account.updateTime}</td>
                     <td style="width: 120px;">
-                        <button onclick="fetchShares('${account.email}', '${account.accountType}')">Share List</button>
+                        <button onclick="fetchShareList('${account.email}', '${account.accountType}')">Share List</button>
                         <button onclick="openShareModel('${account.id}')">+</button>
                     </td>
                     <td>
@@ -870,24 +905,39 @@
         document.getElementById('accountNav').classList.remove('active');
         document.getElementById('shareNav').classList.add('active');
         var xhr = new XMLHttpRequest();
+        const tableBody = document.getElementById('shareTableBody');
+        tableBody.innerHTML = ''; // 清空现有的表格内容
         xhr.open("GET", "/share/list?emailAddr=" + email, true);
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
                     const res = JSON.parse(xhr.responseText);
-                    const tableBody = document.getElementById('shareTableBody');
-                    tableBody.innerHTML = ''; // 清空现有的表格内容
+
                     res.data.forEach(share => {
+                        const up = (share.id !== share.parentId)
+                            ? `<button class="update-parent-btn" onclick="updateParent('${share.id}')">自立山头</button>`
+                            : '';
+                        const name = (share.id !== share.parentId)
+                            ? `<td>${share.uniqueName}</td>`
+                            : `<td>${share.uniqueName}(我)</td>`;
+                        const gptEmail = (share.gptEmail === '-')
+                            ? `<td><div class="share-ellipsis">${share.gptEmail}</div></td>`
+                            : `<td><div class="share-ellipsis"><span class="clickable" onclick="getGptShare('${share.gptConfigId}')">${share.gptEmail}</span></div></td>`;
+                        const claudeEmail = (share.claudeEmail === '-')
+                            ? `<td><div class="share-ellipsis">${share.claudeEmail}</div></td>`
+                            : `<td><div class="share-ellipsis"><span class="clickable" onclick="getClaudeShare('${share.claudeConfigId}')">${share.claudeEmail}</span></div></td>`;
+
                         const row = `
                 <tr>
-                    <td style="width: 100px">${share.uniqueName}</td>
-                    <td style="width: 180px">${share.gptEmail}</td>
-                    <td style="width: 180px">${share.claudeEmail}</td>
+                    ${name}
+                    ${gptEmail}
+                    ${claudeEmail}
                     <td style="width: 120px;">${share.comment}</td>
                     <td style="width: 120px;">${share.expiresAt}</td>
 <!--                    <td>${share.gpt4Limit}</td>-->
                     <td>
+                        ${up}
                         <button class="distribute-gpt-btn" onclick="openEmailModal('${share.id}',1)">激活-ChatGPT</button>
                         <button class="distribute-claude-btn" onclick="openEmailModal('${share.id}',2)">激活-Claude</button>
                         <button class="edit-btn" onclick="openShareUpdateModel('${share.id}','${share.uniqueName}','${share.password}','${share.expiresAt}','${share.comment}','${share.email}')">编辑</button>
@@ -907,7 +957,7 @@
         xhr.send()
     }
 
-    function fetchShares(email, type) {
+    function fetchShareList(email, type) {
         document.getElementById('share-email-query').value = email;
         document.getElementById('accountPanel').style.display = 'none';
         document.getElementById('sharePanel').style.display = 'block';
@@ -926,8 +976,8 @@
                         const row = `
                 <tr>
                     <td style="width: 100px">${share.uniqueName}</td>
-                    <td style="width: 180px">${share.gptEmail}</td>
-                    <td style="width: 180px">${share.claudeEmail}</td>
+                    <td style="width: 180px"><div class="share-ellipsis">${share.gptEmail}</div></td>
+                    <td style="width: 180px"><div class="share-ellipsis">${share.claudeEmail}</div></td>
                     <td style="width: 120px;">${share.comment}</td>
                     <td style="width: 120px;">${share.expiresAt}</td>
 <!--                    <td>${share.gpt4Limit}</td>-->
@@ -997,6 +1047,44 @@
         xhr.send(JSON.stringify({
             id: accountId
         }));
+    }
+
+    function getGptShare(gptConfigId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/share/getGptShare?gptConfigId=" + gptConfigId, true);
+        // xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                let res = JSON.parse(xhr.responseText)
+                if (res.status) {
+                    window.open(res.data);
+                } else {
+                    alert(res.message);
+                }
+            }
+        }
+        xhr.send();
+    }
+
+    function getClaudeShare(gptConfigId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/share/getClaudeShare?claudeConfigId=" + gptConfigId, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                let res = JSON.parse(xhr.responseText)
+                if (res.status) {
+                    window.open(res.data);
+                } else {
+                    alert(res.message);
+                }
+            }
+        }
+        xhr.send();
     }
 
 

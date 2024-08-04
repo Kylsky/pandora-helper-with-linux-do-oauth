@@ -12,7 +12,11 @@ public class ShareVO extends Share{
 
     private String gptEmail;
 
+    private Integer gptConfigId;
+
     private String claudeEmail;
+
+    private Integer claudeConfigId;
 
     private String token;
 

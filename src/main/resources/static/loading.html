@@ -52,7 +52,6 @@
                     try {
                         var data = JSON.parse(xhr.responseText);
                         console.log('Token fetched and stored:', data);
-                        // window.location.href = 'https://pandora.yeelo.top?';
                         if (data.type === 'ChatGPT') {
                             startGPTChat(data.username,data.jmc)
                         }else if (data.type === 'Claude') {
@@ -122,7 +121,7 @@
                             alert("您的账号未激活，请联系管理员")
                             window.location.href = 'claude.html';
                         }else {
-                            window.location.href = 'https://fuclaude.yeelo.fun/login_oauth?token='+JSON.parse(xhr.responseText).data;
+                            window.location.href = JSON.parse(xhr.responseText).data;
                         }
                     } catch (e) {
                         console.error('Error parsing response:', e);

@@ -2,6 +2,7 @@ server:
   port: 8181
 
 linux-do:
+  fuclaude: ${FUCLAUDE_PROXY}
   oaifree:
     auth-api: ${OAIFREE_PROXY}
     token-api: https://new.oaifree.com/api/auth/oauth_token

@@ -58,6 +58,9 @@ public class FuclaudeController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Value("${linux-do.fuclaude}")
+    private String fuclaudeUrl;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/checkUser")
@@ -79,7 +82,7 @@ public class FuclaudeController {
         }
         ShareClaudeConfig claudeShare = claudeConfigService.getByShareId(user.getId());
         Account account = accountService.getById(claudeShare.getAccountId());
-        String token = claudeConfigService.generateAutoToken(account,user,user.getId());
+        String token = claudeConfigService.generateAutoToken(account,user);
         if (claudeShare == null) {
             return HttpResult.error("权限未激活,请联系管理员");
         }
@@ -99,7 +102,7 @@ public class FuclaudeController {
         }
         ShareClaudeConfig claudeShare = claudeConfigService.getByShareId(user.getId());
         Account account = accountService.getById(claudeShare.getAccountId());
-        String token = claudeConfigService.generateAutoToken(account,user,user.getId());
+        String token = claudeConfigService.generateAutoToken(account,user);
         if (claudeShare==null || token==null) {
             return new ResponseEntity<>("用户未激活", HttpStatus.UNAUTHORIZED);
         }

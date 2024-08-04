@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ShareController {
     private final ObjectMapper objectMapper = new ObjectMapper();
+    @Value("${linux-do.fuclaude}")
+    private String fuclaudeUrl;
     @Autowired
     private RestTemplate restTemplate;
     @Autowired
@@ -58,6 +60,9 @@ public class ShareController {
     private UserDetailsService userDetailsService;
     @Value("${linux-do.oaifree.token-api}")
     private String tokenUrl;
+    private final static String DEFAULT_AUTH_URL = "https://new.oaifree.com";
+    @Value("${linux-do.oaifree.auth-api}")
+    private String authUrl;
 
     @GetMapping("/list")
     public HttpResult<List<ShareVO>> list(HttpServletRequest request,
@@ -105,12 +110,14 @@ public class ShareController {
             //}
             if (gptConfig != null) {
                 share.setGptEmail(accountIdMap.get(gptConfig.getAccountId()).getEmail());
+                share.setGptConfigId(gptConfig.getId());
             } else {
                 share.setGptEmail("-");
             }
 
             if (claudeConfig != null) {
                 share.setClaudeEmail(accountIdMap.get(claudeConfig.getAccountId()).getEmail());
+                share.setClaudeConfigId(claudeConfig.getId());
             } else {
                 share.setClaudeEmail("-");
             }
@@ -308,5 +315,69 @@ public class ShareController {
         final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         final String jwt = jwtTokenUtil.generateToken(userDetails);
         return HttpResult.success(jwt);
+    }
+
+    @GetMapping("/updateParent")
+    public HttpResult<Boolean> updateParent(@RequestParam Integer shareId, HttpServletRequest request) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user==null){
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Share byId = shareService.getById(shareId);
+        if (byId!=null && byId.getParentId().equals(user.getId())){
+            byId.setParentId(user.getParentId());
+            Share update = new Share();
+            update.setId(shareId);
+            update.setParentId(shareId);
+            shareService.updateById(update);
+        }else {
+            return HttpResult.error("您无权进行该操作");
+        }
+
+        return HttpResult.success(true);
+    }
+
+    @GetMapping("/getGptShare")
+    public HttpResult<String> getGptShare(@RequestParam Integer gptConfigId) {
+        ShareGptConfig gptShare = gptConfigService.getById(gptConfigId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ObjectNode personJsonObject = objectMapper.createObjectNode();
+        personJsonObject.put("share_token", gptShare.getShareToken());
+        ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(tokenUrl, new HttpEntity<>(personJsonObject, headers), String.class);
+        try {
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            if (map.containsKey("login_url")) {
+                String loginUrl = map.get("login_url").toString();
+                loginUrl = loginUrl.replace(DEFAULT_AUTH_URL, authUrl);
+                log.info("获取login url成功:{}", loginUrl);
+                return HttpResult.success(loginUrl);
+                // 打印user信息，用json
+            }
+        } catch (IOException e) {
+            log.error("Check user error:", e);
+            return HttpResult.error("获取登录信息异常");
+        }
+        return HttpResult.error("获取登录信息失败");
+    }
+
+    @GetMapping("/getClaudeShare")
+    public HttpResult<String> getClaudeShare(@RequestParam Integer claudeConfigId) {
+        ShareClaudeConfig claudeShare = claudeConfigService.getById(claudeConfigId);
+        Account account = accountService.getById(claudeShare.getAccountId());
+        Share share = shareService.getById(claudeShare.getShareId());
+        String token = claudeConfigService.generateAutoToken(account, share);
+
+        if (token==null){
+            return HttpResult.error("获取登录信息失败");
+        }else {
+            return HttpResult.success(token);
+        }
     }
 }
