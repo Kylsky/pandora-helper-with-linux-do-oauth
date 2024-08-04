@@ -1,12 +1,13 @@
 package fun.yeelo.oauth.timer;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
-import fun.yeelo.oauth.domain.Account;
-import fun.yeelo.oauth.domain.Share;
-import fun.yeelo.oauth.domain.ShareVO;
+import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.AccountService;
+import fun.yeelo.oauth.service.ClaudeConfigService;
+import fun.yeelo.oauth.service.GptConfigService;
 import fun.yeelo.oauth.service.ShareService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -36,16 +40,39 @@ public class UpdateTimer {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private GptConfigService gptConfigService;
+
+    @Autowired
+    private ClaudeConfigService claudeConfigService;
+
     private static final String REFRESH_URL = "https://token.oaifree.com/api/auth/refresh";
 
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Scheduled(cron = "0 0 1 * * ?")
+    public void updateExpire() {
+        List<Share> shares = shareService.list().stream().filter(e -> e.getExpiresAt() != null).collect(Collectors.toList());
+        shares.forEach(share -> {
+            try {
+                LocalDate expireData = LocalDate.parse(share.getExpiresAt(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                // 大于等于过期时间的，删除share config
+                if (expireData.isEqual(LocalDate.now()) || !expireData.isAfter(LocalDate.now())) {
+                    gptConfigService.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, share.getId()));
+                    claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, share.getId()));
+                }
+            }catch (Exception ex) {
+                log.error("expire detect error,unique_name:{}", share.getUniqueName());
+            }
+        });
+    }
+
     @Scheduled(cron = "0 0 2 * * ?")
     public void updateRefreshToken() {
         log.info("开始刷新access_token");
         List<Account> accounts = accountService.list().stream()
-                                         .filter(e -> StringUtils.hasText(e.getRefreshToken()))
+                                         .filter(e -> StringUtils.hasText(e.getRefreshToken())&& e.getAccountType().equals(1))
                                          .collect(Collectors.toList());
         accounts.forEach(account -> {
             try {
@@ -83,15 +110,20 @@ public class UpdateTimer {
                                                      .stream()
                                                      .collect(Collectors.toMap(Account::getId, Function.identity()));
 
-        shares.forEach(share -> {
-            try {
+        Map<Integer, ShareGptConfig> gptConfigMap = gptConfigService.list().stream().collect(Collectors.toMap(ShareGptConfig::getShareId, Function.identity()));
 
+        for (Share share : shares) {
+            ShareGptConfig gptConfig = gptConfigMap.get(share.getId());
+            if (gptConfig == null) {
+                continue;
+            }
+            try {
                 Share update = new Share();
                 update.setId(share.getId());
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
                 MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
-                personJsonObject.add("access_token", accountIdMap.get(share.getAccountId()).getAccessToken());
+                personJsonObject.add("access_token", accountIdMap.get(gptConfig.getAccountId()).getAccessToken());
                 personJsonObject.add("unique_name", share.getUniqueName());
                 personJsonObject.add("expires_in", 0);
                 personJsonObject.add("gpt35_limit", -1);
@@ -106,9 +138,9 @@ public class UpdateTimer {
                 update.setShareToken(map.get("token_key").toString());
                 shareService.updateById(update);
             } catch (IOException e) {
-                log.error("Check user error:", e);
+                log.error("update share token error,unique_name:{}",share.getUniqueName(), e);
             }
-        });
+        }
         log.info("刷新share_token结束");
     }
 }

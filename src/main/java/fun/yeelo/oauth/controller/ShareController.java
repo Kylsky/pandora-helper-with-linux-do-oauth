@@ -128,8 +128,13 @@ public class ShareController {
             return HttpResult.error("用户不存在，请联系管理员");
         }
         Share share = shareService.findById(id);
+        Account gptAccount = null;
         if (share != null && share.getParentId().equals(user.getId())) {
             shareService.removeById(id);
+            ShareGptConfig one = gptConfigService.getOne(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
+            if (one!=null) {
+                gptAccount = accountService.getById(one.getAccountId());
+            }
             gptConfigService.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
             claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, id));
         } else {
@@ -137,30 +142,33 @@ public class ShareController {
         }
 
         // 删除oaifree的share token
-        try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
-            personJsonObject.add("access_token", account.getAccessToken());
-            personJsonObject.add("unique_name", share.getUniqueName());
-            personJsonObject.add("expires_in", -1);
-            personJsonObject.add("gpt35_limit", -1);
-            personJsonObject.add("gpt4_limit", -1);
-            personJsonObject.add("site_limit", "");
-            personJsonObject.add("show_userinfo", false);
-            personJsonObject.add("show_conversations", false);
-            personJsonObject.add("reset_limit", true);
-            personJsonObject.add("temporary_chat", false);
-            ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
-            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-            if (map.containsKey("detail") && map.get("detail").equals("revoke token key successfully")) {
-                log.info("delete success");
-                return HttpResult.success(true);
+        if (gptAccount!=null) {
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+                MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
+                personJsonObject.add("access_token", gptAccount.getAccessToken());
+                personJsonObject.add("unique_name", share.getUniqueName());
+                personJsonObject.add("expires_in", -1);
+                personJsonObject.add("gpt35_limit", -1);
+                personJsonObject.add("gpt4_limit", -1);
+                personJsonObject.add("site_limit", "");
+                personJsonObject.add("show_userinfo", false);
+                personJsonObject.add("show_conversations", false);
+                personJsonObject.add("reset_limit", true);
+                personJsonObject.add("temporary_chat", false);
+                ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
+                Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+                if (map.containsKey("detail") && map.get("detail").equals("revoke token key successfully")) {
+                    log.info("delete success");
+                    return HttpResult.success(true);
+                }
+            } catch (Exception e) {
+                log.error("Check user error:", e);
+                return HttpResult.error("删除用户异常");
             }
-        } catch (Exception e) {
-            log.error("Check user error:", e);
-            return HttpResult.error("删除用户异常");
         }
+
         return HttpResult.success();
     }
 
