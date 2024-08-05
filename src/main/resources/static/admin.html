@@ -775,8 +775,8 @@
 
 <script type="text/javascript">
     document.getElementById('toggleSwitch').addEventListener('change', function () {
-        var value = this.checked ? 1 : 0; // 如果开关被激活，则值为1，否则为0
-        document.getElementById('toggleValue').value = value;
+         // 如果开关被激活，则值为1，否则为0
+        document.getElementById('toggleValue').value = this.checked ? 1 : 0;
     });
 
     document.getElementById('toggleSwitchUpdate').addEventListener('change', function () {
@@ -808,6 +808,7 @@
                     // document.getElementById('add-account-comment').value = '';
                     document.getElementById('add-account-refresh-token').value = '';
                     document.getElementById('add-account-access-token').value = '';
+                    document.getElementById('toggleSwitch').checked = false;
                     document.getElementById('toggleValue').value = 0;
                 } else {
                     alert("添加失败");
