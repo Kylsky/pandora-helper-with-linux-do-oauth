@@ -6,6 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pandora Helper</title>
     <style>
+        button {
+            background-color: #43cea2;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
         body, html {
             font-family: Arial, sans-serif;
@@ -359,6 +376,183 @@
         .clickable {
             cursor: pointer;
         }
+
+        tbody {
+            font-size: 0.95em;
+        }
+
+        tbody tr {
+            transition: all 0.2s ease-in-out;
+            border-radius: 4px;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6;
+            transition: all 0.2s ease-in-out;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody td:first-child {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        /*tbody td:not(:first-child) {*/
+        /*    color: #6c757d;*/
+        /*}*/
+
+        tbody td:last-child {
+            text-align: left;
+        }
+
+        /* 为长文本添加省略号 */
+        tbody td.truncate {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 为状态类的列添加特殊样式 */
+        tbody td.status {
+            font-weight: 600;
+        }
+
+        tbody td.status-active {
+            color: #28a745;
+        }
+
+        tbody td.status-inactive {
+            color: #dc3545;
+        }
+
+        /* 为操作按钮添加样式 */
+        tbody td .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        tbody td .action-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* 表格整体样式 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 1rem;
+            font-size: 0.9em;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 表头样式 */
+        thead {
+            background-color: #f5f5f5;
+        }
+
+        thead tr {
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        thead th {
+            padding: 12px 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        /* 表格行样式 */
+        tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 表格单元格样式 */
+        td, th {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        /* 首列样式 */
+        td:first-child, th:first-child {
+            padding-left: 20px;
+        }
+
+        /* 末列样式 */
+        td:last-child, th:last-child {
+            padding-right: 20px;
+        }
+
+        /* 状态样式 */
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* 操作按钮样式 */
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            background-color: #2196f3;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .action-btn:hover {
+            background-color: #1976d2;
+        }
+
+
     </style>
 </head>
 <body>
@@ -386,7 +580,7 @@
                     <!--                    <th>密码</th>-->
                     <th>账号类型</th>
                     <th>Access Token</th>
-                    <th>共享状态</th>
+                    <th>共享</th>
                     <th>更新时间</th>
                     <th>共享</th>
                     <th>操作</th>
@@ -409,7 +603,7 @@
                     <th>用户名</th>
                     <th>ChatGPT账号</th>
                     <th>Claude账号</th>
-                    <th>备注</th>
+                    <th width="120px override">备注</th>
                     <th>过期时间</th>
                     <th>操作</th>
                 </tr>
@@ -870,9 +1064,9 @@
                     <td>${account.email}</td>
                     <td><div class="ellipsis">${account.type}</div></td>
                     <td><div class="ellipsis">${account.accessToken}</div></td>
-                    <td>${account.shared ? '✅' : '❌'}</td>
+                    <td>${account.shared ? '<img src="pics/iconamoon--cloud-yes-fill.svg"/>' : '<img src="pics/dashicons--no.svg"/>'}</td>
                     <td style="width: 150px;">${account.updateTime}</td>
-                    <td style="width: 120px;">
+                    <td style="width: 150px;">
                         <button onclick="fetchShareList('${account.email}', '${account.accountType}')">Share List</button>
                         <button onclick="openShareModel('${account.id}')">+</button>
                     </td>
@@ -930,7 +1124,7 @@
                     ${name}
                     ${gptEmail}
                     ${claudeEmail}
-                    <td style="width: 120px;">${share.comment}</td>
+                    <td style="width: 90px;">${share.comment}</td>
                     <td style="width: 120px;">${share.expiresAt}</td>
 <!--                    <td>${share.gpt4Limit}</td>-->
                     <td>

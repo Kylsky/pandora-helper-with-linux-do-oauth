@@ -53,7 +53,7 @@ public class UpdateTimer {
 
     @Scheduled(cron = "0 0 1 * * ?")
     public void updateExpire() {
-        List<Share> shares = shareService.list().stream().filter(e -> e.getExpiresAt() != null).collect(Collectors.toList());
+        List<Share> shares = shareService.list().stream().filter(e -> StringUtils.hasText(e.getExpiresAt())).collect(Collectors.toList());
         shares.forEach(share -> {
             try {
                 LocalDate expireData = LocalDate.parse(share.getExpiresAt(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -63,7 +63,7 @@ public class UpdateTimer {
                     claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, share.getId()));
                 }
             }catch (Exception ex) {
-                log.error("expire detect error,unique_name:{}", share.getUniqueName());
+                log.error("expire detect error,unique_name:{}", share.getUniqueName(), ex);
             }
         });
     }

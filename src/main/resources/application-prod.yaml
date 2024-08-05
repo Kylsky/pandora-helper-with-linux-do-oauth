@@ -27,3 +27,5 @@ spring:
     password:
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
+
+admin-name: ${ADMIN_NAME}

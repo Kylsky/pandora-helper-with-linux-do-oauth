@@ -1,14 +1,15 @@
 package fun.yeelo.oauth.controller;
 
 import fun.yeelo.oauth.config.HttpResult;
-import fun.yeelo.oauth.domain.LoginDTO;
-import fun.yeelo.oauth.domain.Share;
-import fun.yeelo.oauth.domain.ShareGptConfig;
-import fun.yeelo.oauth.domain.ShareVO;
+import fun.yeelo.oauth.domain.*;
+import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.GptConfigService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,16 +20,20 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
 public class LoginController {
+    private static final Logger log = LoggerFactory.getLogger(LoginController.class);
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
@@ -41,7 +46,24 @@ public class LoginController {
     @Autowired
     private ShareService shareService;
     @Autowired
-    private GptConfigService gptConfigService;
+    private AccountService accountService;
+    @Value("${admin-name:admin}")
+    private String adminName;
+
+    @PostConstruct
+    public void initiate() {
+        List<Share> list = shareService.list();
+        if (CollectionUtils.isEmpty(list)){
+            Share user = new Share();
+            user.setId(1);
+            user.setUniqueName(adminName);
+            user.setParentId(1);
+            user.setPassword(passwordEncoder.encode("123456"));
+            user.setComment("admin");
+            shareService.save(user);
+            log.info("初始化成功");
+        }
+    }
 
     @PostMapping("/login")
     public HttpResult<String> panelLogin(@RequestBody LoginDTO loginDTO, HttpServletRequest request) {

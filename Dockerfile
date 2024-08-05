@@ -10,6 +10,6 @@ RUN mkdir -p /app/db
 ENV SPRING_DATASOURCE_URL jdbc:sqlite:/app/db/data.db
 
 # 设置运行 jar 文件的命令
-CMD ["java", "-jar", "/app/my-app.jar", "--spring.datasource.url=${SPRING_DATASOURCE_URL}"]
+CMD ["java", "-Xmx2048m","-Xms2048m", "-jar", "/app/my-app.jar", "--spring.datasource.url=${SPRING_DATASOURCE_URL}"]
 
 RUN apt-get update && apt-get install -y sqlite3
