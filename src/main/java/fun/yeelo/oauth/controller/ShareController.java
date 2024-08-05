@@ -203,16 +203,18 @@ public class ShareController {
         if (!CollectionUtils.isEmpty(shareList)) {
             return HttpResult.error("用户名已存在");
         }
+
+        String expiresAt = dto.getExpiresAt();
+
         dto.setPassword(passwordEncoder.encode(dto.getPassword()));
         dto.setParentId(user.getId());
         shareService.getBaseMapper().insert(dto);
         int shareId = dto.getId();
 
-
         Account account = accountService.getById(dto.getAccountId());
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, dto.getUniqueName(), shareId);
+                return gptConfigService.addShare(account, dto.getUniqueName(), shareId, expiresAt);
             case 2:
                 return claudeConfigService.addShare(account, shareId);
             default:
@@ -235,7 +237,7 @@ public class ShareController {
         }
         Share share = shareService.getById(id);
 
-        return gptConfigService.addShare(accountService.getById(accountId), share.getUniqueName(), share.getId());
+        return gptConfigService.addShare(accountService.getById(accountId), share.getUniqueName(), share.getId(), user.getExpiresAt());
 
     }
 
@@ -282,7 +284,7 @@ public class ShareController {
 
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId());
+                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), byId.getExpiresAt());
             case 2:
                 return claudeConfigService.addShare(account, byId.getId());
             default:

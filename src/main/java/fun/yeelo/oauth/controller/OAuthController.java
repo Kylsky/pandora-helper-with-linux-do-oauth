@@ -74,6 +74,7 @@ public class OAuthController {
         String auth = clientId + ":" + clientSecret;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
         headers.add("Authorization", "Basic " + encodedAuth);
+        headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
 
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("grant_type", "authorization_code");
@@ -89,6 +90,8 @@ public class OAuthController {
 
         if (responseBody != null && responseBody.containsKey("access_token")) {
             HttpHeaders userHeaders = new HttpHeaders();
+            userHeaders.add("User-Agent", "curl/7.64.1");
+            userHeaders.add("Host", "connect.linux.do");
             userHeaders.setBearerAuth(responseBody.get("access_token").toString());
             HttpEntity<String> entity = new HttpEntity<>(userHeaders);
             ResponseEntity<Map> userResponse = restTemplate.exchange(userEndpoint, HttpMethod.GET, entity, Map.class);

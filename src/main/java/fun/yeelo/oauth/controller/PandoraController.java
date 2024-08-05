@@ -137,7 +137,7 @@ public class PandoraController {
         if (!newPassword.equals(confirmPassword)) {
             return new ResponseEntity<>("两次密码不一致", HttpStatus.BAD_REQUEST);
         }
-        if (password.length() < 8) {
+        if (newPassword.length() < 8) {
             return new ResponseEntity<>("密码长度必须超过大于等于8位，请重新输入。", HttpStatus.BAD_REQUEST);
         }
         Share user = shareService.getByUserName(username);

@@ -20,9 +20,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -76,9 +79,19 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
 
         ObjectNode personJsonObject = objectMapper.createObjectNode();
 
+        long duration = 0L;
+        String expiresAt = byId.getExpiresAt();
+        if (StringUtils.hasText(expiresAt)) {
+            expiresAt += " 00:00:00";
+            LocalDateTime expireDay = LocalDateTime.parse(expiresAt);
+            duration = Duration.between(LocalDateTime.now(),expireDay).getSeconds();
+        }
+
         personJsonObject.put("session_key", account.getAccessToken());
         personJsonObject.put("unique_name", byId.getUniqueName());
-        personJsonObject.put("expires_in", 600);
+        if (duration <= 0L) {
+            personJsonObject.put("expires_in", 3600 * 24 * 7);
+        }
 
         HttpEntity<ObjectNode> requestEntity = new HttpEntity<>(personJsonObject, headers);
         try {

@@ -16,9 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +54,13 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
         return configs.get(0);
     }
 
-    public HttpResult<Boolean> addShare(Account account, String uniqueName, Integer shareId) {
+    public HttpResult<Boolean> addShare(Account account, String uniqueName, Integer shareId, String expire) {
+        long duration = -1L;
+        if (StringUtils.hasText(expire)) {
+            expire += " 00:00:00";
+            LocalDateTime expireDay = LocalDateTime.parse(expire);
+            duration = Duration.between(LocalDateTime.now(),expireDay).getSeconds();
+        }
         String shareToken;
         // 删除旧的share token
         try {
@@ -64,7 +73,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
                 MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
                 personJsonObject.add("access_token", formerAccount.getAccessToken());
                 personJsonObject.add("unique_name", uniqueName);
-                personJsonObject.add("expires_in", -1);
+                personJsonObject.add("expires_in", duration);
                 personJsonObject.add("gpt35_limit", -1);
                 personJsonObject.add("gpt4_limit", -1);
                 personJsonObject.add("site_limit", "");
