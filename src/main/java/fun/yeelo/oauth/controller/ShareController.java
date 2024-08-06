@@ -278,7 +278,14 @@ public class ShareController {
         }
         Account account = accountService.getById(share.getAccountId());
         Share byId = shareService.getById(share.getId());
-        if (account == null) {
+        if (share.getAccountId()!=null && share.getAccountId().equals(-1)) {
+            gptConfigService.deleteShare(share.getId());
+            return HttpResult.success();
+        }else if (share.getAccountId()!=null && share.getAccountId().equals(-2)) {
+            claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,share.getId()));
+            return HttpResult.success();
+        }
+        else if (account == null) {
             return HttpResult.error("账号不存在");
         }
 

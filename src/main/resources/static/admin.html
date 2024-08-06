@@ -1002,24 +1002,6 @@
 
     }
 
-    function activateShare(id) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("PATCH", "/share/activateGPT?id=" + id, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        // 设置body
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    alert("激活成功")
-                } else {
-                    alert("激活失败");
-                }
-            }
-        }
-        xhr.send();
-    }
-
 
     function submitDistribute() {
         // 转换为数值类型configSelect
@@ -1269,6 +1251,12 @@
                 var options = JSON.parse(xhr.responseText).data;
                 var select = document.getElementById('configSelect');
                 select.innerHTML = ''; // 清空现有选项
+
+                let optEmpty = document.createElement('option');
+                optEmpty.value = type === 1 ? "-1" : "-2"
+                optEmpty.label = '-';
+                optEmpty.innerHTML =
+                select.appendChild(optEmpty);
 
                 options.forEach(function (option) {
                     var opt = document.createElement('option');

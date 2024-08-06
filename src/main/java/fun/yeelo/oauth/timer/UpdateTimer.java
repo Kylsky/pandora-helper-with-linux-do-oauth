@@ -53,7 +53,7 @@ public class UpdateTimer {
 
     @Scheduled(cron = "0 0 1 * * ?")
     public void updateExpire() {
-        List<Share> shares = shareService.list().stream().filter(e -> StringUtils.hasText(e.getExpiresAt())).collect(Collectors.toList());
+        List<Share> shares = shareService.list().stream().filter(e -> StringUtils.hasText(e.getExpiresAt()) && !e.getExpiresAt().equals("-")).collect(Collectors.toList());
         shares.forEach(share -> {
             try {
                 LocalDate expireData = LocalDate.parse(share.getExpiresAt(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));

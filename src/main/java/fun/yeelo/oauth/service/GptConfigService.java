@@ -8,7 +8,10 @@ import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.GptConfigMapper;
 import fun.yeelo.oauth.domain.Account;
+import fun.yeelo.oauth.domain.Share;
+import fun.yeelo.oauth.domain.ShareClaudeConfig;
 import fun.yeelo.oauth.domain.ShareGptConfig;
+import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -32,6 +35,10 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
     private GptConfigMapper gptConfigMapper;
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+    @Autowired
+    private ShareService shareService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -55,11 +62,11 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
     }
 
     public HttpResult<Boolean> addShare(Account account, String uniqueName, Integer shareId, String expire) {
-        long duration = -1L;
-        if (StringUtils.hasText(expire)) {
+        long duration = 0L;
+        if (StringUtils.hasText(expire) && !expire.equals("-")) {
             expire += " 00:00:00";
             LocalDateTime expireDay = LocalDateTime.parse(expire);
-            duration = Duration.between(LocalDateTime.now(),expireDay).getSeconds();
+            duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
         }
         String shareToken;
         // 删除旧的share token
@@ -73,7 +80,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
                 MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
                 personJsonObject.add("access_token", formerAccount.getAccessToken());
                 personJsonObject.add("unique_name", uniqueName);
-                personJsonObject.add("expires_in", duration);
+                personJsonObject.add("expires_in", -1);
                 personJsonObject.add("gpt35_limit", -1);
                 personJsonObject.add("gpt4_limit", -1);
                 personJsonObject.add("site_limit", "");
@@ -100,7 +107,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
             MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
             personJsonObject.add("access_token", account.getAccessToken());
             personJsonObject.add("unique_name", uniqueName);
-            personJsonObject.add("expires_in", 0);
+            personJsonObject.add("expires_in", duration);
             personJsonObject.add("gpt35_limit", -1);
             personJsonObject.add("gpt4_limit", -1);
             personJsonObject.add("site_limit", "");
@@ -111,7 +118,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
             ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
             Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
             shareToken = map.get("token_key").toString();
-            log.info("新增share完成,share_token:{}",shareToken);
+            log.info("新增share完成,share_token:{}", shareToken);
         } catch (IOException e) {
             log.error("新增 chatgpt share 异常:", e);
             return HttpResult.error("新增 chatgpt share 异常");
@@ -132,9 +139,48 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
         gptConfig.setRefreshEveryday(true);
         gptConfig.setTemporaryChat(false);
         int insert = this.baseMapper.insert(gptConfig);
-        log.info("添加gpt配置结果:{}",insert);
+        log.info("添加gpt配置结果:{}", insert);
         return HttpResult.success();
     }
 
+    public HttpResult<Boolean> deleteShare(Integer shareId) {
+        Share share = shareService.findById(shareId);
+        Account gptAccount = null;
+        ShareGptConfig one = this.getOne(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));
+        if (one != null) {
+            gptAccount = accountService.getById(one.getAccountId());
+        }
+        this.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));
+
+        // 删除oaifree的share token
+        if (gptAccount != null) {
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+                MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
+                personJsonObject.add("access_token", gptAccount.getAccessToken());
+                personJsonObject.add("unique_name", share.getUniqueName());
+                personJsonObject.add("expires_in", -1);
+                personJsonObject.add("gpt35_limit", -1);
+                personJsonObject.add("gpt4_limit", -1);
+                personJsonObject.add("site_limit", "");
+                personJsonObject.add("show_userinfo", false);
+                personJsonObject.add("show_conversations", false);
+                personJsonObject.add("reset_limit", true);
+                personJsonObject.add("temporary_chat", false);
+                ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
+                Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+                if (map.containsKey("detail") && map.get("detail").equals("revoke token key successfully")) {
+                    log.info("delete success");
+                    return HttpResult.success(true);
+                }
+            } catch (Exception e) {
+                log.error("Check user error:", e);
+                return HttpResult.error("删除用户异常");
+            }
+        }
+
+        return HttpResult.success();
+    }
 
 }
