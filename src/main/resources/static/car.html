@@ -510,8 +510,9 @@
                 <tr>
                     <th>账号</th>
                     <th>账号类型</th>
+                    <th>自动上车</th>
                     <th>车主</th>
-                    <th>已上车人数</th>
+                    <th>已上车人数/总人数</th>
                     <th>操作</th>
                 </tr>
                 </thead>
@@ -586,13 +587,16 @@
                         //     ? `<button class="update-parent-btn" onclick="updateParent('${share.id}')">自立山头</button>`
                         //     : '';
                         const email = `<td>${car.email}</td>`
-                        const type = `<td>${car.type}</td>`
-                        const username = `<td>${car.username}</td>`
-                        const count = `<td>${car.count}</td>`
+                        const type = `<td style="width: 150px">${car.type}</td>`
+                        let autoUp = car.auto === 1 ? 'Yes!' : 'No'
+                        const auto = `<td style="width: 150px; font">${autoUp}</td>`
+                        const username = `<td style="width: 150px">${car.username}</td>`
+                        const count = `<td>${car.countDesc}</td>`
                         const row = `
                 <tr>
                     ${email}
                     ${type}
+                    ${auto}
                     ${username}
                     ${count}
                     <td>

@@ -55,7 +55,6 @@ public class CarController {
         }
         List<Account> accountList = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getShared, true)).stream().filter(e -> !e.getUserId().equals(user.getId())).collect(Collectors.toList());
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
-        //AtomicInteger num = new AtomicInteger(1);
         accountVOS.forEach(e -> {
             //e.setEmail("车辆"+(num.getAndIncrement()));
             e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
@@ -71,6 +70,7 @@ public class CarController {
                     count = claudeMap.getOrDefault(e.getId(), new ArrayList<>()).size();
                     break;
             }
+            e.setCountDesc(count+" / "+(e.getUserLimit().equals(-1)? "无限制":e.getUserLimit()));
             e.setCount(count);
         });
         accountVOS = accountVOS.stream()
@@ -116,24 +116,32 @@ public class CarController {
             return HttpResult.error("用户不存在，请联系管理员");
         }
         dto.setShareId(user.getId());
-        Integer accountType = accountService.getById(dto.getAccountId()).getAccountType();
+        Account account = accountService.getById(dto.getAccountId());
+        Integer accountType = account.getAccountType();
+        Integer curAccountUser = 0;
         switch (accountType) {
             case 1:
+                curAccountUser = gptConfigService.count(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getAccountId, account.getId()));
                 List<ShareGptConfig> list = gptConfigService.list(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, dto.getShareId()).eq(ShareGptConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(list)) {
-                    return HttpResult.error("您已在车上，请勿重复申请");
+                    return HttpResult.error("您已在该车上，请勿重复申请");
                 }
             case 2:
+                curAccountUser = claudeConfigService.count(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, account.getId()));
                 List<ShareClaudeConfig> cladueList = claudeConfigService.list(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, dto.getShareId()).eq(ShareClaudeConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(cladueList)) {
-                    return HttpResult.error("您已在车上，请勿重复申请");
+                    return HttpResult.error("您已该在车上，请勿重复申请");
                 }
                 break;
         }
 
+        if (!account.getUserLimit().equals(-1) &&curAccountUser >= account.getUserLimit()) {
+            return HttpResult.error("该车即将超载，试试其他车吧");
+        }
+
         List<CarApply> applies = carService.list(new LambdaQueryWrapper<CarApply>().eq(CarApply::getShareId, dto.getShareId()).eq(CarApply::getAccountId, dto.getShareId()));
         if (!CollectionUtils.isEmpty(applies)) {
-            return HttpResult.error("您已申请加入该车，请勿重复申请");
+            return HttpResult.error("您已申请上车，请勿重复申请");
         }
         List<CarApply> myApplies = carService.list(new LambdaQueryWrapper<CarApply>().eq(CarApply::getShareId, dto.getShareId()));
         if (!CollectionUtils.isEmpty(myApplies) && myApplies.size() > 5) {
@@ -142,6 +150,16 @@ public class CarController {
         if (applies.size() > 10) {
             return HttpResult.error("该车申请人数过多，请考虑申请其他车辆");
         }
+
+        if (account.getAuto().equals(1)) {
+            CarApplyVO carApplyVO = new CarApplyVO();
+            carApplyVO.setAllowApply(1);
+            carApplyVO.setShareId(user.getId());
+            carApplyVO.setAccountId(account.getId());
+            carService.audit(request,carApplyVO);
+            return HttpResult.success();
+        }
+
         CarApply apply = new CarApply();
         apply.setAccountId(dto.getAccountId());
         apply.setShareId(dto.getShareId());
@@ -151,25 +169,7 @@ public class CarController {
 
     @PostMapping("/audit")
     public HttpResult<Boolean> refresh(HttpServletRequest request, @RequestBody CarApplyVO dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
-        if (!dto.getAllowApply().equals(1)) {
-            carService.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId,dto.getAccountId()).eq(CarApply::getShareId,dto.getShareId()));
-            return HttpResult.success();
-        }
-
-        ShareVO shareVO = new ShareVO();
-        shareVO.setId(dto.getShareId());
-        shareVO.setAccountId(dto.getAccountId());
-        carService.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId,dto.getAccountId()).eq(CarApply::getShareId,dto.getShareId()));
-        return shareService.distribute(shareVO);
+        return carService.audit(request,dto);
     }
 
 

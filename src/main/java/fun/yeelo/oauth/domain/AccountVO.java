@@ -18,4 +18,6 @@ public class AccountVO extends Account{
 
     private Integer count;
 
+    private String countDesc;
+
 }

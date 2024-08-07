@@ -632,7 +632,9 @@
                 <!--                <option value="option2">选项2</option>-->
             </select>
             <button class="tanchuang-button" type="button" onclick="submitAudit(true)">通过</button>
-            <button class="tanchuang-button" type="button" style="background-color: #d9534f" onclick="submitAudit(false)">拒绝</button>
+            <button class="tanchuang-button" type="button" style="background-color: #d9534f"
+                    onclick="submitAudit(false)">拒绝
+            </button>
         </form>
     </div>
 </div>
@@ -653,18 +655,27 @@
                 <option value=1>ChatGPT</option>
                 <option value=2>Claude</option>
             </select>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-top: 10px; margin-bottom: 10px">
 
-            <!--            <div class="checkbox-container">-->
-            <label for="toggleSwitch">是否共享</label>
-            <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
-                <input type="checkbox" id="toggleSwitch">
-                <span class="slider round"></span>
-            </label>
+                <!--            <div class="checkbox-container">-->
+                <label for="toggleSwitch">共享</label>
+                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
+                    <input type="checkbox" id="toggleSwitch">
+                    <span class="slider round"></span>
+                </label>
 
-            <!--                <input type="checkbox" id="toggleSwitch">-->
-            <!--            </div>-->
+                <label for="autoToggleSwitch">自动加入</label>
+                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
+                    <input type="checkbox" id="autoToggleSwitch">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
             <input type="hidden" id="toggleValue" name="toggleValue" value="0">
+            <input type="hidden" id="autoToggleValue" name="autoToggleValue" value="0">
 
+            <label for="add-limit">分享人数上限</label>
+            <input type="text" id="add-limit" name="add-limit">
 
             <label for="add-account-refresh-token">Refresh Token</label>
             <input type="text" id="add-account-refresh-token" name="add-account-refresh-token">
@@ -692,17 +703,25 @@
             <label for="update-name">账号名称(用于展示)</label>
             <input type='text' id="update-name" name="update-name">
 
-            <!--            <div class="checkbox-container">-->
-            <label for="toggleSwitch">是否共享</label>
-            <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
-                <input type="checkbox" id="toggleSwitchUpdate">
-                <span class="slider round"></span>
-            </label>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-top: 10px; margin-bottom: 10px">
 
-            <!--                <input type="checkbox" id="toggleSwitch">-->
-            <!--            </div>-->
-            <input type="hidden" id="toggleValueUpdate" name="toggleValue" value="0">
+                <label for="toggleSwitchUpdate">共享</label>
+                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
+                    <input type="checkbox" id="toggleSwitchUpdate">
+                    <span class="slider round"></span>
+                </label>
 
+                <label for="autoToggleSwitchUpdate">自动加入</label>
+                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
+                    <input type="checkbox" id="autoToggleSwitchUpdate">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <input type="hidden" id="toggleValueUpdate" name="toggleValueUpdate" value="0">
+            <input type="hidden" id="autoToggleValueUpdate" name="autoToggleValueUpdate" value="0">
+
+            <label for="add-limit">分享人数上限</label>
+            <input type="text" id="update-limit" name="update-limit">
 
             <label for="update-account-refresh-token">Refresh Token</label>
             <input type="text" id="update-account-refresh-token" name="update-account-refresh-token">
@@ -739,7 +758,7 @@
     function submitAudit(isAllow) {
         // 转换为数值类型configSelect
         var shareId = parseInt(document.getElementById('auditSelect').value);
-        if (isNaN(shareId) || shareId === undefined){
+        if (isNaN(shareId) || shareId === undefined) {
             closeModal('auditModal');
             alert("无审核项");
             return true;
@@ -805,20 +824,32 @@
         document.getElementById('toggleValue').value = this.checked ? 1 : 0;
     });
 
+    document.getElementById('autoToggleSwitch').addEventListener('change', function () {
+        // 如果开关被激活，则值为1，否则为0
+        console.log('autoToggleValue change')
+        document.getElementById('autoToggleValue').value = this.checked ? 1 : 0;
+    });
+
     document.getElementById('toggleSwitchUpdate').addEventListener('change', function () {
-        var value = this.checked ? 1 : 0; // 如果开关被激活，则值为1，否则为0
-        document.getElementById('toggleValueUpdate').value = value;
+        console.log('toggleValueUpdate change')
+        document.getElementById('toggleValueUpdate').value = this.checked ? 1 : 0;
+    });
+
+    document.getElementById('autoToggleSwitchUpdate').addEventListener('change', function () {
+        console.log('autoToggleValueUpdate change')
+        document.getElementById('autoToggleValueUpdate').value = this.checked ? 1 : 0;
     });
 
     function addAccount() {
-        var email = document.getElementById('add-email').value;
-        var name = document.getElementById('add-name').value;
-        var type = document.getElementById('add-type').value;
-        // var comment = document.getElementById('add-account-comment').value;
-        var refresh = document.getElementById('add-account-refresh-token').value;
-        var access = document.getElementById('add-account-access-token').value;
-        var shared = document.getElementById('toggleValue').value
-        var xhr = new XMLHttpRequest();
+        let email = document.getElementById('add-email').value;
+        let name = document.getElementById('add-name').value;
+        let type = document.getElementById('add-type').value;
+        let limit = document.getElementById('add-limit').value;
+        let refresh = document.getElementById('add-account-refresh-token').value;
+        let access = document.getElementById('add-account-access-token').value;
+        let shared = document.getElementById('toggleValue').value
+        let auto = document.getElementById('autoToggleValue').value
+        let xhr = new XMLHttpRequest();
         xhr.open("POST", "/account/add", true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
@@ -830,12 +861,14 @@
                     alert("添加成功")
                     fetchAccounts('')
                     document.getElementById('add-email').value = '';
-                    document.getElementById('add-name').value = '';
-                    // document.getElementById('add-account-comment').value = '';
+                    document.getElementById('add-name').value = ''
+                    document.getElementById('add-limit').value = '';
                     document.getElementById('add-account-refresh-token').value = '';
                     document.getElementById('add-account-access-token').value = '';
                     document.getElementById('toggleSwitch').checked = false;
+                    document.getElementById('autoToggleSwitch').checked = false;
                     document.getElementById('toggleValue').value = 0;
+                    document.getElementById('autoToggleValue').value = 0;
                 } else {
                     alert("添加失败");
                 }
@@ -845,10 +878,11 @@
             email: email,
             name: name,
             accountType: type,
-            // comment: comment,
+            userLimit: limit === '' ? null : limit,
             accessToken: access,
             refreshToken: refresh,
-            shared: shared
+            shared: shared,
+            auto: auto
         }));
 
     }
@@ -905,9 +939,11 @@
         var userId = document.getElementById('update-userId').value;
         var email = document.getElementById('update-email').value;
         var name = document.getElementById('update-name').value;
+        var limit = document.getElementById('update-limit').value;
         var refresh = document.getElementById('update-account-refresh-token').value;
         var access = document.getElementById('update-account-access-token').value;
         var shared = document.getElementById('toggleValueUpdate').value
+        var auto = document.getElementById('autoToggleValueUpdate').value
         var xhr = new XMLHttpRequest();
         xhr.open("PATCH", "/account/update", true);
         xhr.setRequestHeader('Content-Type', 'application/json');
@@ -923,10 +959,13 @@
                     document.getElementById('update-userId').value = '';
                     document.getElementById('update-email').value = '';
                     document.getElementById('update-name').value = '';
+                    document.getElementById('update-limit').value = '';
                     document.getElementById('update-account-refresh-token').value = '';
                     document.getElementById('update-account-access-token').value = '';
                     document.getElementById('toggleValueUpdate').value = 0;
+                    document.getElementById('autoToggleValueUpdate').value = 0;
                     document.getElementById('toggleSwitchUpdate').checked = false;
+                    document.getElementById('autoToggleSwitchUpdate').checked = false;
                 } else {
                     alert("更新失败");
                 }
@@ -937,8 +976,10 @@
             email: email,
             name: name,
             accessToken: access,
+            userLimit: limit === '' ? 4 : limit,
             refreshToken: refresh,
-            shared: shared
+            shared: shared,
+            auto: auto
         }));
 
     }
@@ -984,7 +1025,7 @@
                         const refreshButton = account.type !== 'Claude'
                             ? `<button class="refresh-btn" onclick="refreshAccount('${account.id}')">Refresh</button>`
                             : '';
-                        const btColor = account.count >0 ? '#FFDD55' : 'white';
+                        const btColor = account.count > 0 ? '#FFDD55' : 'white';
                         const shareButton = account.shared
                             ? `<img style="cursor: pointer; background-color: ${btColor};" onclick="openAuditModal(${account.id})" src="pics/iconamoon--cloud-yes-fill.svg"/>`
                             : `<img style="cursor: pointer; background-color: ${btColor};" onclick="openAuditModal(${account.id})" src="pics/dashicons--no.svg"/>`;
@@ -1002,7 +1043,10 @@
                     </td>
                     <td>
                         ${refreshButton}
-                        <button class="edit-btn" onclick="editAccount('${account.id}','${account.email}','${account.name}','${account.shared}','${account.refreshToken}','${account.accessToken}')">Edit</button>
+                        <button class="edit-btn" onclick="editAccount('${account.id}','${account.email}',
+                        '${account.name}','${account.shared}',
+                        '${account.refreshToken}','${account.accessToken}',
+                        '${account.auto}','${account.userLimit}')">Edit</button>
                         <button class="delete-btn" onclick="deleteAccount('${account.id}')">Delete</button>
                     </td>
                 </tr>
@@ -1047,8 +1091,8 @@
     }
 
 
-    function editAccount(id, email, password, shared, refresh, access) {
-        openModal('accountUpdateModal', id, email, password, shared, refresh, access)
+    function editAccount(id, email, password, shared, refresh, access,auto,userLimit) {
+        openModal('accountUpdateModal', id, email, password, shared, refresh, access,auto,userLimit)
     }
 
     function deleteAccount(accountId) {
@@ -1106,11 +1150,7 @@
         document.getElementById(modalId).style.display = 'flex';
     }
 
-    function auditCar(accountId) {
-        console.log(accountId)
-    }
-
-    function openModal(modalId, id, email, password, shared, refresh, access) {
+    function openModal(modalId, id, email, password, shared, refresh, access,auto,userLimit) {
         document.getElementById(modalId).style.display = 'flex';
         const userId = document.getElementById('update-userId')
         const mailM = document.getElementById('update-email')
@@ -1119,6 +1159,8 @@
         const refreshM = document.getElementById('update-account-refresh-token')
         const sharedM = document.getElementById('toggleValueUpdate')
         const switchCondition = document.getElementById('toggleSwitchUpdate')
+        const autoSwitchCondition = document.getElementById('autoToggleSwitchUpdate')
+        const limit = document.getElementById('update-limit')
 
         userId.value = id;
         mailM.value = email;
@@ -1128,6 +1170,8 @@
         sharedM.value = shared;
         userId.value = id;
         switchCondition.checked = (shared === '1');
+        autoSwitchCondition.checked = (auto === '1');
+        limit.value = userLimit;
     }
 
     function emailQuery() {
@@ -1139,15 +1183,15 @@
         document.getElementById(modalId).style.display = "none";
     }
 
-    document.getElementById('accountNav').addEventListener('click',async function () {
+    document.getElementById('accountNav').addEventListener('click', async function () {
         fetchAccounts('')
     });
 
-    document.getElementById('shareNav').addEventListener('click',async function () {
+    document.getElementById('shareNav').addEventListener('click', async function () {
         window.location.href = 'share.html';
     });
 
-    document.getElementById('carNav').addEventListener('click',async function () {
+    document.getElementById('carNav').addEventListener('click', async function () {
         window.location.href = 'car.html';
     });
 

@@ -48,5 +48,11 @@ public class Account {
     @TableField("account_type")
     private Integer accountType;
 
+    @TableField("auto")
+    private Integer auto;
+
+    @TableField("user_limit")
+    private Integer userLimit;
+
 
 }
