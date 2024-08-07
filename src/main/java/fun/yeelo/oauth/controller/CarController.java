@@ -126,6 +126,7 @@ public class CarController {
                 if (!CollectionUtils.isEmpty(list)) {
                     return HttpResult.error("您已在该车上，请勿重复申请");
                 }
+                break;
             case 2:
                 curAccountUser = claudeConfigService.count(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, account.getId()));
                 List<ShareClaudeConfig> cladueList = claudeConfigService.list(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, dto.getShareId()).eq(ShareClaudeConfig::getAccountId, dto.getAccountId()));
