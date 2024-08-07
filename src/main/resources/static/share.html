@@ -573,7 +573,7 @@
         <ul>
             <li><a href="#" id="accountNav">账号管理</a></li>
             <li><a href="#" id="shareNav" class="active">分享管理</a></li>
-            <li><a href="#" id="carNav">车友会</a></li>
+            <li><a href="#" id="carNav">停车场</a></li>
         </ul>
     </div>
     <div class="main-content">
@@ -690,7 +690,7 @@
         xhr.send();
     }
 
-    function deleteShare(id, email) {
+    function deleteShare(id) {
         var xhr = new XMLHttpRequest();
         xhr.open("DELETE", "/share/delete?id=" + id, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
@@ -698,7 +698,7 @@
         // 设置body
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
-                closeModal('shareModal')
+                // closeModal('shareModal')
                 if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
                     alert("删除成功")
                     fetchShares('','')
@@ -774,7 +774,7 @@
     let curSharePage = 1;
     let total = 0;
 
-    function fetchShares(email, type) {
+    async function fetchShares(email, type) {
         const tableBody = document.getElementById('shareTableBody');
 
         const startIndex = (curSharePage - 1) * 8;
@@ -807,7 +807,7 @@
                             ? `<td style="width: 130px"><div class="share-ellipsis">${share.claudeCarName}</div></td>`
                             : `<td style="width: 130px"><div class="share-ellipsis"><span class="clickable" onclick="getClaudeShare('${share.claudeConfigId}')">${share.claudeCarName}</span></div></td>`;
                         const deleteEnable = share.curAdminId === 1 ?
-                            '<button class="delete-btn" onclick="deleteShare(\'${share.id}\',\'${share.email}\')">删除</button>' : ''
+                            `<button class="delete-btn" onclick="deleteShare(${share.id})">删除</button>` : ``
                         const row = `
                 <tr>
                     ${name}
@@ -828,9 +828,6 @@
                     });
 
                     updatePagination();
-                } else {
-                    alert("请登录");
-                    window.location.href = 'panel.html';
                 }
             }
         }
@@ -904,7 +901,7 @@
     }
 
 
-    window.onload = function () {
+    window.onload = async function () {
         var email = getQueryStringValue("email");
         var type = getQueryStringValue("type");
         const token = localStorage.getItem('token');
@@ -924,9 +921,6 @@
                             alert(res.message);
                             window.location.href = 'panel.html';
                         }
-                    } else {
-                        alert("请登录");
-                        window.location.href = 'panel.html';
                     }
                 }
             }
@@ -960,11 +954,13 @@
         fetchShares('','')
     });
 
-    document.getElementById('accountNav').addEventListener('click', function () {
+    document.getElementById('accountNav').addEventListener('click',async function (event) {
+        event.preventDefault()
         window.location.href = 'account.html';
     });
 
-    document.getElementById('carNav').addEventListener('click', function () {
+    document.getElementById('carNav').addEventListener('click',async function (event) {
+        event.preventDefault()
         window.location.href = 'car.html';
     });
 

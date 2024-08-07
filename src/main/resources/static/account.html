@@ -581,7 +581,7 @@
         <ul>
             <li><a href="#" id="accountNav" class="active">账号管理</a></li>
             <li><a href="#" id="shareNav">分享管理</a></li>
-            <li><a href="#" id="carNav">车友会</a></li>
+            <li><a href="#" id="carNav">停车场</a></li>
         </ul>
     </div>
     <div class="main-content">
@@ -962,7 +962,8 @@
         xhr.send()
     }
 
-    function fetchAccounts(email) {
+    async function fetchAccounts(email) {
+
         const tableBody = document.getElementById('accountTableBody');
 
         const startIndex = (curAccountPage - 1) * 8;
@@ -1009,9 +1010,6 @@
                         tableBody.innerHTML += row;
                         updateAccountPagination();
                     });
-                } else {
-                    alert("请登录");
-                    window.location.href = 'panel.html';
                 }
             }
         }
@@ -1075,7 +1073,7 @@
         }));
     }
 
-    window.onload = function () {
+    window.onload = async function () {
         const token = localStorage.getItem('token');
         if (token) {
             var xhr = new XMLHttpRequest();
@@ -1093,9 +1091,6 @@
                             alert(res.message);
                             window.location.href = 'panel.html';
                         }
-                    } else {
-                        alert("请登录");
-                        window.location.href = 'panel.html';
                     }
                 }
             }
@@ -1144,15 +1139,15 @@
         document.getElementById(modalId).style.display = "none";
     }
 
-    document.getElementById('accountNav').addEventListener('click', function () {
+    document.getElementById('accountNav').addEventListener('click',async function () {
         fetchAccounts('')
     });
 
-    document.getElementById('shareNav').addEventListener('click', function () {
+    document.getElementById('shareNav').addEventListener('click',async function () {
         window.location.href = 'share.html';
     });
 
-    document.getElementById('carNav').addEventListener('click', function () {
+    document.getElementById('carNav').addEventListener('click',async function () {
         window.location.href = 'car.html';
     });
 

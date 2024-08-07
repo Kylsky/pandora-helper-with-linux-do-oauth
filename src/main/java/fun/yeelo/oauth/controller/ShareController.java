@@ -103,7 +103,7 @@ public class ShareController {
                                                             .collect(Collectors.toMap(ShareClaudeConfig::getShareId, Function.identity()));
 
         // 设置邮箱
-        shareVOS = shareVOS.stream().filter(e -> e.getId().equals(user.getId()) || (claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId()))).collect(Collectors.toList());
+        shareVOS = shareVOS.stream().filter(e -> user.getId().equals(1) || e.getId().equals(user.getId()) || (claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId()))).collect(Collectors.toList());
         for (ShareVO share : shareVOS) {
             ShareGptConfig gptConfig = gptMap.get(share.getId());
             ShareClaudeConfig claudeConfig = claudeMap.get(share.getId());
@@ -301,8 +301,7 @@ public class ShareController {
         Account account = accountService.getById(share.getAccountId());
         Share byId = shareService.getById(share.getId());
         if (share.getAccountId()!=null && share.getAccountId().equals(-1)) {
-            gptConfigService.deleteShare(share.getId());
-            return HttpResult.success();
+            return gptConfigService.deleteShare(share.getId());
         }else if (share.getAccountId()!=null && share.getAccountId().equals(-2)) {
             claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,share.getId()));
             return HttpResult.success();

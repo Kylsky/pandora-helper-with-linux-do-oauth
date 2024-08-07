@@ -65,11 +65,11 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
 
     public HttpResult<Boolean> addShare(Account account, String uniqueName, Integer shareId, String expire) {
         long duration = 0L;
-        if (StringUtils.hasText(expire) && !expire.equals("-")) {
-            expire += " 00:00:00";
-            LocalDateTime expireDay = LocalDateTime.parse(expire, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
-        }
+        //if (StringUtils.hasText(expire) && !expire.equals("-")) {
+        //    expire += " 00:00:00";
+        //    LocalDateTime expireDay = LocalDateTime.parse(expire, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        //    duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
+        //}
         String shareToken;
         // 删除旧的share token
         try {

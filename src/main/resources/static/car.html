@@ -495,12 +495,12 @@
         <ul>
             <li><a href="#" id="accountNav">账号管理</a></li>
             <li><a href="#" id="shareNav">分享管理</a></li>
-            <li><a href="#" id="carNav" class="active">车友会</a></li>
+            <li><a href="#" id="carNav" class="active">停车场</a></li>
         </ul>
     </div>
     <div class="main-content">
         <div id="sharePanel" class="panel">
-            <h2>车友会</h2>
+            <h2>停车场</h2>
             <div class="search-bar">
                 <input id="car-owner-query" type="email-query" placeholder="输入车主名称查询">
                 <button onclick="shareEmailQuery()">查询</button>
@@ -562,7 +562,7 @@
     let curSharePage = 1;
     let total = 0;
 
-    function fetchCars(owner) {
+    async function fetchCars(owner) {
         const tableBody = document.getElementById('shareTableBody');
 
         const startIndex = (curSharePage - 1) * 8;
@@ -605,16 +605,13 @@
                     });
 
                     updatePagination();
-                } else {
-                    alert("请登录");
-                    window.location.href = 'panel.html';
                 }
             }
         }
         xhr.send()
     }
 
-    window.onload = function () {
+    window.onload = async function () {
         const token = localStorage.getItem('token');
         if (token) {
             var xhr = new XMLHttpRequest();
@@ -632,9 +629,6 @@
                             alert(res.message);
                             window.location.href = 'panel.html';
                         }
-                    } else {
-                        alert("请登录");
-                        window.location.href = 'panel.html';
                     }
                 }
             }
@@ -669,11 +663,11 @@
         fetchCars('')
     });
 
-    document.getElementById('accountNav').addEventListener('click', function () {
+    document.getElementById('accountNav').addEventListener('click',async function () {
         window.location.href = 'account.html'
     });
 
-    document.getElementById('shareNav').addEventListener('click', function () {
+    document.getElementById('shareNav').addEventListener('click',async function () {
         window.location.href = 'share.html'
     });
 
