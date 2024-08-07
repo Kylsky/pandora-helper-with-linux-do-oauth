@@ -4,18 +4,17 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import org.springframework.format.annotation.DateTimeFormat;
 
-import java.time.LocalDateTime;
-
+@TableName("car_apply")
 @Data
-public class AccountVO extends Account{
-    private String type;
+public class CarApply {
+    @TableId(type= IdType.AUTO)
+    private Integer id;
 
-    private String username;
+    @TableField("share_id")
+    private Integer shareId;
 
-    private Integer count;
-
+    @TableField("account_id")
+    private Integer accountId;
 }

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="pics/humbleicons--coffee.svg" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pandora Helper</title>
+    <style>
+        .modal {
+            display: none;
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border: 1px solid #888;
+            width: auto; /* 适应内容宽度 */
+            max-width: 500px; /* 最大宽度 */
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .modal-content {
+                max-width: 90%; /* 在小屏幕上占更大比例的宽度 */
+            }
+        }
+
+        button {
+            background-color: #43cea2;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: #f0ad9e;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        body, html {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 220px;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            position: fixed; /* 固定导航栏 */
+            height: 100%; /* 确保导航栏占满左侧高度 */
+        }
+
+        .sidebar h2 {
+            color: #0e8f6f;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin-bottom: 15px;
+        }
+
+        .sidebar a {
+            color: #333;
+            text-decoration: none;
+            font-size: 18px;
+            display: block;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #0e8f6f;
+            color: #fff;
+        }
+
+        .main-content {
+            margin-left: 240px; /* 确保内容部分从导航栏右侧开始 */
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .panel {
+            background-color: #ffffff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-bar {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .search-bar button {
+            padding: 10px 20px;
+            background-color: #0e8f6f;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .action-buttons button {
+            margin-right: 5px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .refresh-btn {
+            background-color: #0e8f6f;
+            color: white;
+        }
+
+        .open-share-btn {
+            background-color: #0e8f6f;
+            color: white;
+        }
+
+        .apply_car {
+            background-color: #f0ad4e;
+            color: white;
+        }
+
+        .car_master {
+            background-color: #6fafd2;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .create-new {
+            float: right;
+            padding: 10px 20px;
+            background-color: #0e8f6f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        /*.modal {*/
+        /*    display: none;*/
+        /*    position: fixed;*/
+        /*    z-index: 1;*/
+        /*    left: 0;*/
+        /*    top: 0;*/
+        /*    width: 100%;*/
+        /*    height: 100%;*/
+        /*    overflow: auto;*/
+        /*    background-color: rgba(0, 0, 0, 0.4);*/
+        /*}*/
+
+        .modal-content {
+            background-color: #fefefe;
+            padding: 20px;
+            border: 1px solid #888;
+            width: auto; /* 适应内容宽度 */
+            max-width: 500px; /* 最大宽度 */
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .modal-content {
+                max-width: 90%; /* 在小屏幕上占更大比例的宽度 */
+            }
+        }
+
+
+        form {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+
+        .checkbox-container label {
+            margin-top: 0;
+            margin-left: 0.5rem;
+        }
+
+
+        /* 隐藏默认的复选框 */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+
+
+        /* 检查复选框是否被选中，更改滑块颜色 */
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        /* 检查复选框是否被选中，移动滑块位置 */
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* 可选：增加鼠标悬停效果 */
+        .slider:hover {
+            background-color: #7b7b7b;
+        }
+
+
+        tbody {
+            font-size: 0.95em;
+        }
+
+        tbody tr {
+            transition: all 0.2s ease-in-out;
+            border-radius: 4px;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tbody tr:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #dee2e6;
+            transition: all 0.2s ease-in-out;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody td:first-child {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        /*tbody td:not(:first-child) {*/
+        /*    color: #6c757d;*/
+        /*}*/
+
+        tbody td:last-child {
+            text-align: left;
+        }
+
+        /* 为长文本添加省略号 */
+        tbody td.truncate {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 为状态类的列添加特殊样式 */
+        tbody td.status {
+            font-weight: 600;
+        }
+
+        tbody td.status-active {
+            color: #28a745;
+        }
+
+        tbody td.status-inactive {
+            color: #dc3545;
+        }
+
+        /* 为操作按钮添加样式 */
+        tbody td .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        tbody td .action-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* 表格整体样式 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 1rem;
+            font-size: 0.9em;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 表头样式 */
+        thead {
+            background-color: #f5f5f5;
+        }
+
+        thead tr {
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        thead th {
+            padding: 12px 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        /* 表格行样式 */
+        tr {
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f0f0;
+            transition: background-color 0.3s ease;
+        }
+
+        /* 表格单元格样式 */
+        td, th {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        /* 首列样式 */
+        td:first-child, th:first-child {
+            padding-left: 20px;
+        }
+
+        /* 末列样式 */
+        td:last-child, th:last-child {
+            padding-right: 20px;
+        }
+
+        /* 状态样式 */
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* 操作按钮样式 */
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            background-color: #2196f3;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .action-btn:hover {
+            background-color: #1976d2;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        .tanchuang-button {
+            display: block;
+            width: 100%;
+            /*padding: 0.75rem;*/
+            background-color: #0e8f6f;
+            color: white;
+            border: none;
+            border-radius: 2px;
+            /*cursor: pointer;*/
+            margin-top: 1rem;
+            /*font-size: 1rem;*/
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sidebar">
+        <h2>Pandora Helper</h2>
+        <ul>
+            <li><a href="#" id="accountNav">账号管理</a></li>
+            <li><a href="#" id="shareNav">分享管理</a></li>
+            <li><a href="#" id="carNav" class="active">车友会</a></li>
+        </ul>
+    </div>
+    <div class="main-content">
+        <div id="sharePanel" class="panel">
+            <h2>车友会</h2>
+            <div class="search-bar">
+                <input id="car-owner-query" type="email-query" placeholder="输入车主名称查询">
+                <button onclick="shareEmailQuery()">查询</button>
+            </div>
+            <table id="share_table">
+                <thead>
+                <tr>
+                    <th>账号</th>
+                    <th>账号类型</th>
+                    <th>车主</th>
+                    <th>已上车人数</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="shareTableBody">
+
+                </tbody>
+            </table>
+            <div class="pagination">
+                <button id="sharePrevBtn">上一页</button>
+                <span id="sharePageInfo"></span>
+                <button id="shareNextBtn">下一页</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+
+<script type="text/javascript">
+
+    function communicate(master) {
+        window.open("https://linux.do/u/"+master+"/summary");
+    }
+
+    function carApply(accountId,shareId) {
+        // 转换为数值类型configSelect
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/car/apply", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        // 设置token
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                let result = JSON.parse(xhr.responseText);
+                if (result.status) {
+                    alert("申请成功");
+                } else {
+                    alert(result.message);
+                }
+                fetchCars('')
+            }
+        }
+        xhr.send(JSON.stringify({shareId: parseInt(shareId), accountId: parseInt(accountId)}));
+    }
+
+
+    let curSharePage = 1;
+    let total = 0;
+
+    function fetchCars(owner) {
+        const tableBody = document.getElementById('shareTableBody');
+
+        const startIndex = (curSharePage - 1) * 8;
+        const endIndex = startIndex + 8;
+
+        document.getElementById('car-owner-query').value = owner;
+        document.getElementById('carNav').classList.add('active');
+        var xhr = new XMLHttpRequest();
+        tableBody.innerHTML = ''; // 清空现有的表格内容
+        xhr.open("GET", "/car/list?owner=" + owner, true);
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
+                    const res = JSON.parse(xhr.responseText);
+                    total = res.data.length
+                    const pageData = res.data.slice(startIndex, endIndex);
+
+                    pageData.forEach(car => {
+                        // const up = (share.id !== share.parentId)
+                        //     ? `<button class="update-parent-btn" onclick="updateParent('${share.id}')">自立山头</button>`
+                        //     : '';
+                        const email = `<td>${car.email}</td>`
+                        const type = `<td>${car.type}</td>`
+                        const username = `<td>${car.username}</td>`
+                        const count = `<td>${car.count}</td>`
+                        const row = `
+                <tr>
+                    ${email}
+                    ${type}
+                    ${username}
+                    ${count}
+                    <td>
+                        <button class="car_master" onclick="communicate('${car.username}')">联系车主</button>
+                        <button class="apply_car" onclick="carApply('${car.id}','${car.shareId}')">我要上车</button>
+                    </td>
+                </tr>
+            `;
+                        tableBody.innerHTML += row;
+                    });
+
+                    updatePagination();
+                } else {
+                    alert("请登录");
+                    window.location.href = 'panel.html';
+                }
+            }
+        }
+        xhr.send()
+    }
+
+    window.onload = function () {
+        const token = localStorage.getItem('token');
+        if (token) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/user/checkToken", true);
+            xhr.setRequestHeader('Authorization', "Bearer " + token);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    if (xhr.status === 200) {
+                        const res = JSON.parse(xhr.responseText);
+                        if (res.data) {
+                            localStorage.setItem("token", token)
+                            fetchCars('')
+                            return true
+                        } else {
+                            alert(res.message);
+                            window.location.href = 'panel.html';
+                        }
+                    } else {
+                        alert("请登录");
+                        window.location.href = 'panel.html';
+                    }
+                }
+            }
+            xhr.send()
+        } else {
+            // 如果没有授权信息，跳转到登录页面
+            alert('未监测到登录状态,请登录');
+            window.location.href = 'panel.html';
+        }
+    }
+
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function openEmailModal(id, type) {
+        fetchConfigOptions(type); // 获取配置选项
+        document.getElementById('distribute_share_id').value = id;
+        document.getElementById('configModal').style.display = 'flex';
+    }
+
+    function shareEmailQuery() {
+        const owner = document.getElementById('car-owner-query')
+        fetchCars(owner.value)
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = "none";
+    }
+    //
+    document.getElementById('carNav').addEventListener('click', function () {
+        fetchCars('')
+    });
+
+    document.getElementById('accountNav').addEventListener('click', function () {
+        window.location.href = 'account.html'
+    });
+
+    document.getElementById('shareNav').addEventListener('click', function () {
+        window.location.href = 'share.html'
+    });
+
+    function updatePagination() {
+        const pageInfo = document.getElementById('sharePageInfo');
+        const totalPages = Math.ceil(total / 8);
+        pageInfo.textContent = `第 ${curSharePage} 页，共 ${totalPages} 页`;
+
+        document.getElementById('sharePrevBtn').disabled = curSharePage === 1;
+        document.getElementById('shareNextBtn').disabled = curSharePage === totalPages;
+    }
+
+    document.getElementById('sharePrevBtn').addEventListener('click', () => {
+        let owner = document.getElementById('car-owner-query').value
+        if (curSharePage > 1) {
+            curSharePage--;
+            fetchCars(owner === undefined ? '' : owner);
+        }
+    });
+
+    document.getElementById('shareNextBtn').addEventListener('click', () => {
+        let email = document.getElementById('car-owner-query').value
+        const totalPages = Math.ceil(total / 8);
+        if (curSharePage < totalPages) {
+            curSharePage++;
+            fetchCars(email === undefined ? '' : email);
+        }
+    });
+
+    function getQueryStringValue(key) {
+        return decodeURIComponent(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURIComponent(key).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
+    }
+
+</script>
+
+</html>
+
+

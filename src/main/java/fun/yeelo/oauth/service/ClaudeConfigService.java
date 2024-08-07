@@ -81,7 +81,7 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
 
         long duration = 0L;
         String expiresAt = byId.getExpiresAt();
-        if (StringUtils.hasText(expiresAt)) {
+        if (StringUtils.hasText(expiresAt) && !expiresAt.equals("-")) {
             expiresAt += " 00:00:00";
             LocalDateTime expireDay = LocalDateTime.parse(expiresAt);
             duration = Duration.between(LocalDateTime.now(),expireDay).getSeconds();

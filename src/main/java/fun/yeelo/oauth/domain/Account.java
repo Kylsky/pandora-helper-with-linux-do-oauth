@@ -19,8 +19,8 @@ public class Account {
     @TableField("email")
     private String email;
 
-    @TableField("password")
-    private String password;
+    @TableField("name")
+    private String name;
 
     @TableField("session_token")
     private String sessionToken;

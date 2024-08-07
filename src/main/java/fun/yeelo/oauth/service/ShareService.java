@@ -9,10 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.ShareMapper;
-import fun.yeelo.oauth.domain.Account;
-import fun.yeelo.oauth.domain.Share;
-import fun.yeelo.oauth.domain.ShareClaudeConfig;
-import fun.yeelo.oauth.domain.ShareGptConfig;
+import fun.yeelo.oauth.domain.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
@@ -98,5 +95,27 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success();
     }
 
+    public HttpResult<Boolean> distribute(ShareVO share) {
+        Account account = accountService.getById(share.getAccountId());
+        Share byId = this.getById(share.getId());
+        if (share.getAccountId()!=null && share.getAccountId().equals(-1)) {
+            gptConfigService.deleteShare(share.getId());
+            return HttpResult.success();
+        }else if (share.getAccountId()!=null && share.getAccountId().equals(-2)) {
+            claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,share.getId()));
+            return HttpResult.success();
+        }
+        else if (account == null) {
+            return HttpResult.error("账号不存在");
+        }
 
+        switch (account.getAccountType()) {
+            case 1:
+                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), byId.getExpiresAt());
+            case 2:
+                return claudeConfigService.addShare(account, byId.getId());
+            default:
+                return HttpResult.error("激活出现异常");
+        }
+    }
 }

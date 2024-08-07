@@ -14,6 +14,7 @@ import fun.yeelo.oauth.domain.ShareGptConfig;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cglib.core.Local;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -25,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +67,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
         long duration = 0L;
         if (StringUtils.hasText(expire) && !expire.equals("-")) {
             expire += " 00:00:00";
-            LocalDateTime expireDay = LocalDateTime.parse(expire);
+            LocalDateTime expireDay = LocalDateTime.parse(expire, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
         }
         String shareToken;

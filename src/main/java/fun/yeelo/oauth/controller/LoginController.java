@@ -83,9 +83,6 @@ public class LoginController {
         if (!passwordEncoder.matches(password,user.getPassword())){
             return HttpResult.error("密码错误,请重试");
         }
-        if (!user.getId().equals(user.getParentId())) {
-            return HttpResult.error("当前用户不支持登录面板,请联系管理员");
-        }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getUsername());
 
         final String jwt = jwtTokenUtil.generateToken(userDetails);

@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -80,50 +81,71 @@ public class ShareController {
         }
         // 根据邮箱和用户id获取账号
         List<Account> accounts = accountService.findAll().stream()
-                                         .filter(e -> e.getUserId().equals(user.getId())
+                                         .filter(e -> user.getId().equals(1) || e.getUserId().equals(user.getId())
                                                               && (!StringUtils.hasText(emailAddr) || e.getEmail().contains(emailAddr))
                                                               && (accountType==null || e.getAccountType().equals(accountType))).collect(Collectors.toList()
                                     );
         Map<Integer, Account> accountIdMap = accounts.stream().collect(Collectors.toMap(Account::getId, Function.identity()));
         // 筛选accountId在账号map内的
         List<Share> shareList = shareService.findAll();
-        shareList = shareList.stream().filter(e -> e.getParentId().equals(user.getId())).collect(Collectors.toList());
         List<ShareVO> shareVOS = ConvertUtil.convertList(shareList, ShareVO.class);
 
         // 获取gpt config
         Map<Integer, ShareGptConfig> gptMap = gptConfigService.list()
-                                                      .stream().filter(e -> accountIdMap.containsKey(e.getAccountId()))
+                                                      .stream().filter(e -> e.getShareId().equals(user.getId()) || accountIdMap.containsKey(e.getAccountId()))
                                                       .collect(Collectors.toMap(ShareGptConfig::getShareId, Function.identity()));
+        Map<Integer, List<ShareGptConfig>> gptAccountMap = gptConfigService.list().stream().collect(Collectors.groupingBy(ShareGptConfig::getAccountId));
+        Map<Integer, List<ShareClaudeConfig>> claudeAccountMap = claudeConfigService.list().stream().collect(Collectors.groupingBy(ShareClaudeConfig::getAccountId));
 
         // 获取claude config
         Map<Integer, ShareClaudeConfig> claudeMap = claudeConfigService.list()
-                                                            .stream().filter(e -> accountIdMap.containsKey(e.getAccountId()))
+                                                            .stream().filter(e -> e.getShareId().equals(user.getId()) || accountIdMap.containsKey(e.getAccountId()))
                                                             .collect(Collectors.toMap(ShareClaudeConfig::getShareId, Function.identity()));
 
         // 设置邮箱
-        shareVOS = shareVOS.stream().filter(e -> !StringUtils.hasText(emailAddr) || claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId())).collect(Collectors.toList());
+        shareVOS = shareVOS.stream().filter(e -> e.getId().equals(user.getId()) || (claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId()))).collect(Collectors.toList());
         for (ShareVO share : shareVOS) {
             ShareGptConfig gptConfig = gptMap.get(share.getId());
             ShareClaudeConfig claudeConfig = claudeMap.get(share.getId());
             //if (gptConfig == null && claudeConfig == null) {
             //    continue;
             //}
+            if (share.getId().equals(user.getId())) {
+                share.setUniqueName(share.getUniqueName()+"(我)");
+            }
+            share.setCurAdminId(user.getId());
             if (gptConfig != null) {
-                share.setGptEmail(accountIdMap.get(gptConfig.getAccountId()).getEmail());
+                int size = gptAccountMap.getOrDefault(gptConfig.getAccountId(),new ArrayList<>()).size();
+                share.setGptEmail(accountService.getById(gptConfig.getAccountId()).getEmail());
+                share.setGptCarName(accountService.getById(gptConfig.getAccountId()).getName()+" ("+size+"人)");;
                 share.setGptConfigId(gptConfig.getId());
             } else {
                 share.setGptEmail("-");
+                share.setGptCarName("-");
             }
 
             if (claudeConfig != null) {
-                share.setClaudeEmail(accountIdMap.get(claudeConfig.getAccountId()).getEmail());
+                int size = claudeAccountMap.getOrDefault(claudeConfig.getAccountId(),new ArrayList<>()).size();
+                share.setClaudeEmail(accountService.getById(claudeConfig.getAccountId()).getEmail());
+                share.setClaudeCarName(accountService.getById(claudeConfig.getAccountId()).getName()+" ("+size+"人)");
                 share.setClaudeConfigId(claudeConfig.getId());
             } else {
                 share.setClaudeEmail("-");
+                share.setClaudeCarName("-");
+
             }
 
             if (!StringUtils.hasText(share.getExpiresAt())) {
                 share.setExpiresAt("-");
+            }
+            share.setPassword(null);
+        }
+        if (StringUtils.hasText(emailAddr)) {
+            if (accountType!=null && accountType.equals(1)) {
+                shareVOS = shareVOS.stream().filter(e-> e.getGptEmail().contains(emailAddr)).collect(Collectors.toList());
+            }
+            else if (accountType!=null && accountType.equals(2)) {
+                shareVOS = shareVOS.stream().filter(e-> e.getClaudeEmail().contains(emailAddr)).collect(Collectors.toList());
             }
         }
         return HttpResult.success(shareVOS);
@@ -142,7 +164,7 @@ public class ShareController {
         }
         Share share = shareService.findById(id);
         Account gptAccount = null;
-        if (share != null && share.getParentId().equals(user.getId())) {
+        if (share != null && user.getId().equals(1)) {
             shareService.removeById(id);
             ShareGptConfig one = gptConfigService.getOne(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
             if (one!=null) {
@@ -255,7 +277,7 @@ public class ShareController {
         Share byId = shareService.getById(dto.getId());
         if (byId.getPassword().equals(dto.getPassword())) {
             dto.setPassword(null);
-        } else {
+        } else if (StringUtils.hasText(dto.getPassword())){
             dto.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
         dto.setExpiresAt(StringUtils.hasText(dto.getExpiresAt()) ? dto.getExpiresAt() : "-");
@@ -301,7 +323,7 @@ public class ShareController {
         //return HttpResult.success(true);
     }
 
-    @GetMapping("checkUser")
+    @GetMapping("/checkUser")
     public HttpResult<String> checkLinuxDoUser(@RequestParam String username, @RequestParam String jmc, HttpServletRequest request) {
         String jmcFromSession = request.getSession().getAttribute("jmc") == null ? "" : request.getSession().getAttribute("jmc").toString();
         if (!StringUtils.hasText(jmc) || !jmc.equals(jmcFromSession)) {
@@ -316,10 +338,7 @@ public class ShareController {
             share.setPassword(passwordEncoder.encode("123456"));
             share.setComment("unassigned");
             shareService.save(share);
-            return HttpResult.error("当前用户不支持登录面板,请联系管理员");
-        }
-        if (!user.getId().equals(user.getParentId())) {
-            return HttpResult.error("当前用户不支持登录面板,请联系管理员");
+            //return HttpResult.error("当前用户不支持登录面板,请联系管理员");
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         final String jwt = jwtTokenUtil.generateToken(userDetails);

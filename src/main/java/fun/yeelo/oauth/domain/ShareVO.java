@@ -24,4 +24,11 @@ public class ShareVO extends Share{
     private Integer type;
 
     private Integer accountId;
+
+    private Integer curAdminId;
+
+    private String gptCarName;
+
+    private String claudeCarName;
+
 }

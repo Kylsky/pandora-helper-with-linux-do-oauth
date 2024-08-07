@@ -3,11 +3,9 @@ package fun.yeelo.oauth.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.HttpResult;
-import fun.yeelo.oauth.domain.Account;
-import fun.yeelo.oauth.domain.AccountVO;
-import fun.yeelo.oauth.domain.EmailDto;
-import fun.yeelo.oauth.domain.Share;
+import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.AccountService;
+import fun.yeelo.oauth.service.CarService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
@@ -15,16 +13,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,6 +44,8 @@ public class AccountController {
     private AccountService accountService;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private CarService carService;
 
     @GetMapping("/list")
     public HttpResult<List<AccountVO>> list(HttpServletRequest request,@RequestParam(required = false) String emailAddr) {
@@ -63,7 +63,13 @@ public class AccountController {
             accountList = accountList.stream().filter(e->e.getEmail().contains(emailAddr)).collect(Collectors.toList());
         }
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
-        accountVOS.forEach(e->e.setType(e.getAccountType().equals(1)?"ChatGPT":"Claude"));
+        Map<Integer, List<CarApply>> accountIdMap = carService.list().stream().collect(Collectors.groupingBy(CarApply::getAccountId));
+        accountVOS.forEach(e->{
+            //e.setEmail("车辆"+(num.getAndIncrement()));
+            e.setType(e.getAccountType().equals(1)?"ChatGPT":"Claude");
+            e.setCount(accountIdMap.getOrDefault(e.getId(),new ArrayList<>()).size());
+        });
+        accountVOS = accountVOS.stream().sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
         return HttpResult.success(accountVOS);
     }
 
@@ -119,11 +125,8 @@ public class AccountController {
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
-        Account account = accountService.getById(dto.getId());
-        if (account.getPassword().equals(dto.getPassword())) {
-            dto.setPassword(null);
-        }else {
-            dto.setPassword(passwordEncoder.encode(dto.getPassword()));
+        if (!StringUtils.hasText(dto.getName())) {
+            dto.setName(dto.getEmail());
         }
         dto.setUpdateTime(LocalDateTime.now());
         dto.setUserId(user.getId());
@@ -198,16 +201,19 @@ public class AccountController {
 
 
     @GetMapping("/options")
-    public HttpResult<List<EmailDto>> emailOptions(HttpServletRequest request, @RequestParam Integer type) {
+    public HttpResult<List<LabelDTO>> emailOptions(HttpServletRequest request, @RequestParam Integer type) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)){
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String s = jwtTokenUtil.extractUsername(token);
         Share byUserName = shareService.getByUserName(s);
-        List<EmailDto> emails = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType,type))
-                                        .stream().filter(e->e.getUserId().equals(byUserName.getId()))
-                                        .map(e -> new EmailDto(e.getId().toString(), e.getEmail())).collect(Collectors.toList());
+        List<LabelDTO> emails = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType,type))
+                                        .stream()
+                                        .filter(e->e.getUserId().equals(byUserName.getId()))
+                                        .map(e -> new LabelDTO(e.getId().toString(), e.getName()))
+                                        .sorted(Comparator.comparing(LabelDTO::getLabel))
+                                        .collect(Collectors.toList());
         return HttpResult.success(emails);
     }
 
