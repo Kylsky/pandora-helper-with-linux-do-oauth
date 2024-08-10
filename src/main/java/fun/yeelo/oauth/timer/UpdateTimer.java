@@ -102,9 +102,7 @@ public class UpdateTimer {
     @Scheduled(cron = "0 0 3 */2 * ?")
     public void updateShareToken() {
         log.info("开始刷新share_token");
-        List<Share> shares = shareService.list().stream()
-                                     .filter(e -> StringUtils.hasText(e.getShareToken()))
-                                     .collect(Collectors.toList());
+        List<Share> shares = shareService.list();
 
         Map<Integer, Account> accountIdMap = accountService.list()
                                                      .stream()
@@ -135,8 +133,8 @@ public class UpdateTimer {
                 personJsonObject.add("temporary_chat", false);
                 ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
                 Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-                update.setShareToken(map.get("token_key").toString());
-                shareService.updateById(update);
+                gptConfig.setShareToken(map.get("token_key").toString());
+                gptConfigService.updateById(gptConfig);
             } catch (IOException e) {
                 log.error("update share token error,unique_name:{}",share.getUniqueName(), e);
             }

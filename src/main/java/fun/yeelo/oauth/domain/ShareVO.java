@@ -9,6 +9,7 @@ public class ShareVO extends Share{
     private String address;
 
     private String jmc;
+    private String jwt;
 
     private String gptEmail;
 

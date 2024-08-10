@@ -679,7 +679,7 @@
     <div class="main-content">
         <div class="user-menu">
             <div class="user-avatar">
-                <img src="/pics/linuxdo.webp" alt="User Avatar">
+                <img id="avatar" src="/pics/linuxdo.webp" alt="User Avatar">
             </div>
             <div class="dropdown">
                 <a href="#" onclick="logout()">退出登录</a>
@@ -1010,6 +1010,9 @@
 
 
     window.onload = async function () {
+        if (localStorage.getItem('img')) {
+            document.getElementById('avatar').src = localStorage.getItem('img')
+        }
         var email = getQueryStringValue("email");
         var type = getQueryStringValue("type");
         const token = localStorage.getItem('token');
@@ -1132,6 +1135,7 @@
     function logout() {
         localStorage.removeItem('token')
         window.location.href = 'index.html'
+        localStorage.removeItem('img')
     }
 
 </script>

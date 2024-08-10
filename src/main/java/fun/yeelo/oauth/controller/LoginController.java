@@ -66,7 +66,7 @@ public class LoginController {
     }
 
     @PostMapping("/login")
-    public HttpResult<String> panelLogin(@RequestBody LoginDTO loginDTO, HttpServletRequest request) {
+    public HttpResult<ShareVO> panelLogin(@RequestBody LoginDTO loginDTO, HttpServletRequest request) {
         String username = loginDTO.getUsername();
         String password = loginDTO.getPassword();
         if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
@@ -84,10 +84,13 @@ public class LoginController {
             return HttpResult.error("密码错误,请重试");
         }
         final UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getUsername());
+        ShareVO shareVO = new ShareVO();
+        shareVO.setAvatarUrl(user.getAvatarUrl());
+        shareVO.setUsername(user.getUniqueName());
+        shareVO.setJwt(jwtTokenUtil.generateToken(userDetails));
+        shareVO.setTrustLevel(user.getTrustLevel());
 
-        final String jwt = jwtTokenUtil.generateToken(userDetails);
-
-        return HttpResult.success(jwt);
+        return HttpResult.success(shareVO);
     }
 
     @GetMapping("/checkToken")

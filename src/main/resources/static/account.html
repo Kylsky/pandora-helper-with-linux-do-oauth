@@ -636,7 +636,7 @@
     <div class="main-content">
         <div class="user-menu">
             <div class="user-avatar">
-                <img src="/pics/linuxdo.webp" alt="User Avatar">
+                <img id="avatar" src="/pics/linuxdo.webp" alt="User Avatar">
             </div>
             <div class="dropdown">
                 <a href="#" onclick="logout()">退出登录</a>
@@ -1175,6 +1175,9 @@
     }
 
     window.onload = async function () {
+        if (localStorage.getItem('img')) {
+            document.getElementById('avatar').src = localStorage.getItem('img')
+        }
         const token = localStorage.getItem('token');
         if (token) {
             var xhr = new XMLHttpRequest();
@@ -1313,6 +1316,7 @@
     function logout() {
         window.location.href = 'index.html'
         localStorage.removeItem('token')
+        localStorage.removeItem('img')
     }
 
 </script>

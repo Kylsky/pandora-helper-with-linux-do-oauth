@@ -59,7 +59,7 @@ public class CarController {
             e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
             String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
                                        ? ""
-                                       : " (Lv."+userMap.get(e.getUserId()).getTrustLevel()+")";
+                                       : " ( Lv."+userMap.get(e.getUserId() ).getTrustLevel()+" )";
             e.setUsername(userMap.get(e.getUserId()).getUniqueName() + levelDesc);
             e.setEmail(e.getName());
 

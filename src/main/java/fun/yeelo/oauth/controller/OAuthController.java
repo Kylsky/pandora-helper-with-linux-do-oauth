@@ -113,11 +113,11 @@ public class OAuthController {
                 session.setAttribute("jmc", jmc);
                 userResBody.put("jmc", jmc);
                 if (state.contains("Claude")) {
-                    userResBody.put("type", "Claude");
+                    userResBody.put("shareType", "Claude");
                 } else if (state.contains("panel")){
-                    userResBody.put("type", "panel");
+                    userResBody.put("shareType", "panel");
                 }else {
-                    userResBody.put("type", "ChatGPT");
+                    userResBody.put("shareType", "ChatGPT");
                 }
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
                         SerializerFeature.WriteDateUseDateFormat);

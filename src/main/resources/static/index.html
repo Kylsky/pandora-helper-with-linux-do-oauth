@@ -224,8 +224,13 @@
                         btnText.style.visibility = 'visible'; // 显示按钮文本
                         return false;
                     }
-                    const token = JSON.parse(xhr.responseText).data;
+                    const user = JSON.parse(xhr.responseText).data;
+                    const token = user.jwt;
+                    const avatar = user.avatarUrl;
                     localStorage.setItem("token", token)
+                    if (avatar){
+                        localStorage.setItem("img", avatar)
+                    }
                     spinner.style.display = 'none'; // 隐藏加载图标
                     btnText.textContent = '登录成功,跳转中...'; // 修改按钮文本为“跳转中”
                     btnText.style.visibility = 'visible'; // 显示按钮文本
