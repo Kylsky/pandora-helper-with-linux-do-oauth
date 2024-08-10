@@ -76,7 +76,7 @@ public class FuclaudeController {
             share.setUniqueName(username);
             share.setIsShared(false);
             share.setPassword(passwordEncoder.encode("123456"));
-            share.setComment("unassigned");
+            share.setComment("");
             shareService.save(share);
             return HttpResult.error("用户未激活,请联系管理员");
         }
@@ -101,10 +101,13 @@ public class FuclaudeController {
             return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
         }
         ShareClaudeConfig claudeShare = claudeConfigService.getByShareId(user.getId());
+        if (claudeShare==null) {
+            return new ResponseEntity<>("当前用户未激活Claude", HttpStatus.UNAUTHORIZED);
+        }
         Account account = accountService.getById(claudeShare.getAccountId());
         String token = claudeConfigService.generateAutoToken(account,user);
-        if (claudeShare==null || token==null) {
-            return new ResponseEntity<>("用户未激活", HttpStatus.UNAUTHORIZED);
+        if (token==null) {
+            return new ResponseEntity<>("生成OAUTH_TOKEN异常，请联系管理员", HttpStatus.UNAUTHORIZED);
         }
         if (!passwordEncoder.matches(password,user.getPassword())){
             return new ResponseEntity<>("密码错误，请重试", HttpStatus.UNAUTHORIZED);

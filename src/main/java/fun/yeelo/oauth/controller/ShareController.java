@@ -335,7 +335,7 @@ public class ShareController {
             share.setUniqueName(username);
             share.setIsShared(false);
             share.setPassword(passwordEncoder.encode("123456"));
-            share.setComment("unassigned");
+            share.setComment("");
             shareService.save(share);
             //return HttpResult.error("当前用户不支持登录面板,请联系管理员");
         }

@@ -43,14 +43,14 @@
 <script>
 
     function fetchToken(code, state) {
-        var xhr = new XMLHttpRequest();
+        let xhr = new XMLHttpRequest();
         xhr.open("GET", `/oauth2/callback?code=${code}&state=${state}`, true);
 
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
                     try {
-                        var data = JSON.parse(xhr.responseText);
+                        let data = JSON.parse(xhr.responseText);
                         console.log('Token fetched and stored:', data);
                         if (data.type === 'ChatGPT') {
                             startGPTChat(data.username,data.jmc)
@@ -86,7 +86,7 @@
                         if (data.isShared === false) {
                             alert("您的账号未激活，请联系管理员")
                             localStorage.setItem('token', data.token)
-                            window.location.href = 'index.html';
+                            window.location.href = 'pandora.html';
                         }else {
                             console.log('Token fetched and stored:', data);
                             window.location.href = data.address;
@@ -94,12 +94,12 @@
                     } catch (e) {
                         console.error('Error parsing response:', e);
                         alert('Failed to redirect');
-                        window.location.href = 'index.html'
+                        window.location.href = 'pandora.html'
                     }
                 } else {
                     console.error('Request failed with status:', xhr.status);
                     alert('您暂时无法访问该页面');
-                    window.location.href = 'index.html'
+                    window.location.href = 'pandora.html'
                 }
             }
         };
@@ -140,7 +140,7 @@
     }
 
     function startPanel(username, jmc) {
-        var xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
         xhr.open("GET", `/share/checkUser?username=${username}&jmc=${jmc}`, true);
 
         xhr.onreadystatechange = function() {
@@ -152,7 +152,7 @@
                         // 获取data中的username
                         if (!status) {
                             alert(msg)
-                            window.location.href = 'panel.html';
+                            window.location.href = 'index.html';
                         }else {
                             localStorage.setItem('token',JSON.parse(xhr.responseText).data)
                             window.location.href = 'account.html';
@@ -165,7 +165,7 @@
                 } else {
                     console.error('Request failed with status:', xhr.status);
                     alert('您暂时无法访问该页面');
-                    window.location.href = 'panel.html'
+                    window.location.href = 'index.html'
                 }
             }
         };
@@ -180,7 +180,6 @@
 
     window.onload = function () {
         // 获取url参数
-
         var code = getQueryStringValue("code");
         var state = getQueryStringValue("state");
         if (code && state) {

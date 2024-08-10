@@ -3,10 +3,15 @@ package fun.yeelo.oauth.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.databind.util.JSONPObject;
+import fun.yeelo.oauth.domain.Share;
+import fun.yeelo.oauth.domain.ShareVO;
+import fun.yeelo.oauth.service.ShareService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -46,6 +51,11 @@ public class OAuthController {
 
     @Value("${linux-do.oauth2.client.provider.user-info-uri}")
     private String userEndpoint;
+
+    @Autowired
+    private ShareService shareService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/initiate")
     public String initiateAuth(HttpServletRequest request,
@@ -112,6 +122,30 @@ public class OAuthController {
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
                         SerializerFeature.WriteDateUseDateFormat);
                 log.info("user info:{}", jsonString);
+                ShareVO share = JSON.parseObject(jsonString, ShareVO.class);
+                Share user = shareService.getByUserName(share.getUsername());
+                if (Objects.isNull(user)) {
+                    log.info("添加新用户,{}", share.getUsername());
+                    ShareVO userToAdd = new ShareVO();
+                    userToAdd.setUniqueName(share.getUsername());
+                    userToAdd.setAvatarUrl(share.getAvatarUrl());
+                    userToAdd.setIsShared(false);
+                    userToAdd.setTrustLevel(share.getTrustLevel());
+                    userToAdd.setPassword(passwordEncoder.encode("123456"));
+                    userToAdd.setComment("");
+                    shareService.save(share);
+                }else {
+                    Integer trustLevel = share.getTrustLevel();
+                    String avatarUrl = share.getAvatarUrl();
+                    if (!trustLevel.equals(user.getTrustLevel()) || !avatarUrl.equals(user.getAvatarUrl())) {
+                        log.info("更新新用户{}，等级:{},头像:{}", share.getUsername(),share.getTrustLevel(),share.getAvatarUrl());
+                        Share toUpdate = new Share();
+                        toUpdate.setId(user.getId());
+                        toUpdate.setAvatarUrl(avatarUrl);
+                        toUpdate.setTrustLevel(trustLevel);
+                        shareService.updateById(toUpdate);
+                    }
+                }
 
                 return new ResponseEntity<>(jsonString, HttpStatus.OK);
             } else {

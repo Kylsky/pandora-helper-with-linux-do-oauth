@@ -485,6 +485,56 @@
             /*font-size: 1rem;*/
         }
 
+
+        .user-menu {
+            position: absolute;
+            bottom: 0px;
+            top: 773px;
+            left: 10px;
+
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3498db;
+            cursor: pointer;
+            overflow: hidden;
+        }
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 50px;
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .dropdown a {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .user-avatar:hover + .dropdown,
+        .dropdown:hover {
+            display: block;
+        }
+
+        .dropdown a:hover {
+            background-color: #f4f4f4;
+        }
+
     </style>
 </head>
 <body>
@@ -498,7 +548,16 @@
             <li><a href="#" id="carNav" class="active">停车场</a></li>
         </ul>
     </div>
+
     <div class="main-content">
+        <div class="user-menu">
+            <div class="user-avatar">
+                <img src="/pics/linuxdo.webp" alt="User Avatar">
+            </div>
+            <div class="dropdown">
+                <a href="#" onclick="logout()">退出登录</a>
+            </div>
+        </div>
         <div id="sharePanel" class="panel">
             <h2>停车场</h2>
             <div class="search-bar">
@@ -631,7 +690,7 @@
                             return true
                         } else {
                             alert(res.message);
-                            window.location.href = 'panel.html';
+                            window.location.href = 'index.html';
                         }
                     }
                 }
@@ -640,7 +699,7 @@
         } else {
             // 如果没有授权信息，跳转到登录页面
             alert('未监测到登录状态,请登录');
-            window.location.href = 'panel.html';
+            window.location.href = 'index.html';
         }
     }
 
@@ -705,6 +764,37 @@
         return decodeURIComponent(window.location.search.replace(new RegExp("^(?:.*[&\\?]" + encodeURIComponent(key).replace(/[\.\+\*]/g, "\\$&") + "(?:\\=([^&]*))?)?.*$", "i"), "$1"));
     }
 
+
+    let timeout;
+    const userMenu = document.querySelector('.user-menu');
+    const dropdown = document.querySelector('.dropdown');
+
+    userMenu.addEventListener('mouseenter', () => {
+        clearTimeout(timeout);
+        dropdown.style.display = 'block';
+    });
+
+    userMenu.addEventListener('mouseleave', () => {
+        timeout = setTimeout(() => {
+            dropdown.style.display = 'none';
+        }, 300); // 300ms 延迟
+    });
+
+    dropdown.addEventListener('mouseenter', () => {
+        clearTimeout(timeout);
+    });
+
+    dropdown.addEventListener('mouseleave', () => {
+        timeout = setTimeout(() => {
+            dropdown.style.display = 'none';
+        }, 300); // 300ms 延迟
+    });
+
+
+    function logout() {
+        window.location.href = 'index.html'
+        localStorage.removeItem('token')
+    }
 </script>
 
 </html>

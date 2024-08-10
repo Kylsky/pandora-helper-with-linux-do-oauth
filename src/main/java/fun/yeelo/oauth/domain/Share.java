@@ -21,9 +21,6 @@ public class Share {
     @TableField("password")
     private String password;
 
-    @TableField("share_token")
-    private String shareToken;
-
     @TableField("comment")
     private String comment;
 
@@ -32,4 +29,10 @@ public class Share {
 
     @TableField("parent_id")
     private Integer parentId;
+
+    @TableField("avatar_url")
+    private String avatarUrl;
+
+    @TableField("trust_level")
+    private Integer trustLevel;
 }

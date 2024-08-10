@@ -86,7 +86,7 @@ public class PandoraController {
             share.setUniqueName(username);
             share.setIsShared(false);
             share.setPassword(passwordEncoder.encode("123456"));
-            share.setComment("unassigned");
+            share.setComment("");
             shareService.save(share);
             return new ResponseEntity<>(share, HttpStatus.OK);
         }
@@ -167,7 +167,7 @@ public class PandoraController {
         }
         ShareGptConfig gptShare = gptConfigService.getByShareId(user.getId());
         if (gptShare==null || !StringUtils.hasText(gptShare.getShareToken())) {
-            return new ResponseEntity<>("用户未激活", HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>("当前用户未激活ChatGPT", HttpStatus.UNAUTHORIZED);
         }
         if (!passwordEncoder.matches(password,user.getPassword())){
             return new ResponseEntity<>("密码错误，请重试", HttpStatus.UNAUTHORIZED);

@@ -137,7 +137,11 @@ public class CarController {
         }
 
         if (!account.getUserLimit().equals(-1) &&curAccountUser >= account.getUserLimit()) {
-            return HttpResult.error("该车即将超载，试试其他车吧");
+            return HttpResult.error("再上车就要超载了，试试其他车吧");
+        }
+
+        if (!account.getShared().equals(1)) {
+            return HttpResult.error("该车已经开走了，请停止你的申请");
         }
 
         List<CarApply> applies = carService.list(new LambdaQueryWrapper<CarApply>().eq(CarApply::getShareId, dto.getShareId()).eq(CarApply::getAccountId, dto.getShareId()));

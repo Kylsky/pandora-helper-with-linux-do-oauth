@@ -44,7 +44,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable()
-                .formLogin().loginPage("/panel.html")
+                .formLogin().loginPage("/index.html")
                 .and()
                 .authorizeRequests()
                 .antMatchers("/").permitAll()
@@ -58,9 +58,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/index.html").permitAll()
                 .antMatchers("/claude.html").permitAll()
                 .antMatchers("/loading.html").permitAll()
-                .antMatchers("/panel.html").permitAll()
                 .antMatchers("/admin.html").permitAll()
                 .antMatchers("/account.html").permitAll()
+                .antMatchers("/pandora.html").permitAll()
                 .antMatchers("/share.html").permitAll()
                 .antMatchers("/car.html").permitAll()
                 .antMatchers("/reset.html").permitAll()
