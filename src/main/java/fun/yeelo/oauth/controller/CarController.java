@@ -56,10 +56,13 @@ public class CarController {
         List<Account> accountList = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getShared, true)).stream().filter(e -> !e.getUserId().equals(user.getId())).collect(Collectors.toList());
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
         accountVOS.forEach(e -> {
-            //e.setEmail("车辆"+(num.getAndIncrement()));
             e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
-            e.setUsername(userMap.get(e.getUserId()).getUniqueName());
+            String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
+                                       ? ""
+                                       : " (Lv."+userMap.get(e.getUserId()).getTrustLevel()+")";
+            e.setUsername(userMap.get(e.getUserId()).getUniqueName() + levelDesc);
             e.setEmail(e.getName());
+
             Integer count;
 
             switch (e.getAccountType()) {
