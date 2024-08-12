@@ -85,7 +85,9 @@
         .panel {
             background-color: #ffffff;
             border-radius: 5px;
-            padding: 20px;
+            padding: 15px;
+            margin-left: 20px;
+            height: 750px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
@@ -267,7 +269,7 @@
             color: #666;
         }
 
-        input[type="email"],
+        input[type="username"],
         input[type="password"],
         input[type="text"] {
             width: 100%;
@@ -688,7 +690,7 @@
         <div id="sharePanel" class="panel">
             <h2>分享管理</h2>
             <div class="search-bar">
-                <input id="share-email-query" type="email-query" placeholder="Email">
+                <input id="share-email-query" type="email-query" placeholder="输入邮箱或用户名">
                 <button onclick="shareEmailQuery()">查询</button>
             </div>
             <table id="share_table">
@@ -893,17 +895,16 @@
         document.getElementById('shareNav').classList.add('active');
         var xhr = new XMLHttpRequest();
         tableBody.innerHTML = ''; // 清空现有的表格内容
-        xhr.open("GET", "/share/list?emailAddr=" + email+"&accountType="+type, true);
+        xhr.open("GET", "/share/list?emailAddr=" + email+"&accountType="+type+"&start="+startIndex, true);
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200 && JSON.parse(xhr.responseText).status) {
                     const res = JSON.parse(xhr.responseText);
-                    total = res.data.length
-                    const pageData = res.data.slice(startIndex, endIndex);
+                    total = res.data.total
+                    // const pageData = res.data.slice(startIndex, endIndex);
 
-
-                    pageData.forEach(share => {
+                    res.data.data.forEach(share => {
                         // const up = (share.id !== share.parentId)
                         //     ? `<button class="update-parent-btn" onclick="updateParent('${share.id}')">自立山头</button>`
                         //     : '';
@@ -1009,43 +1010,58 @@
     }
 
     async function loadImg() {
-        if (localStorage.getItem('img')) {
-            document.getElementById('avatar').src = localStorage.getItem('img')
+        const imgSrc = localStorage.getItem('img');
+        if (imgSrc) {
+            document.getElementById('avatar').src = imgSrc;
         }
     }
 
+    async function checkTokenAndLoadData() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('未监测到登录状态，请登录');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        try {
+            const response = await fetch("/user/checkToken", {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('网络请求失败');
+            }
+
+            const res = await response.json();
+            if (res.data) {
+                localStorage.setItem("token", token); // 重新存储token，如果需要
+                const email = getQueryStringValue("email") || '';
+                const type = getQueryStringValue("type") || '';
+                await fetchShares(email, type);
+            } else {
+                alert(res.message);
+                window.location.href = 'index.html';
+            }
+        } catch (error) {
+            console.error('请求错误:', error);
+            alert('请求失败，请检查网络连接');
+        }
+    }
+
+    function getQueryStringValue(key) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(key);
+    }
 
     window.onload = async function () {
-        loadImg()
-        var email = getQueryStringValue("email");
-        var type = getQueryStringValue("type");
-        const token = localStorage.getItem('token');
-        if (token) {
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", "/user/checkToken", true);
-            xhr.setRequestHeader('Authorization', "Bearer " + token);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE) {
-                    if (xhr.status === 200) {
-                        const res = JSON.parse(xhr.responseText);
-                        if (res.data) {
-                            localStorage.setItem("token", token)
-                            fetchShares(email === undefined ? '' : email, type === undefined ? '' : type)
-                            return true
-                        } else {
-                            alert(res.message);
-                            window.location.href = 'index.html';
-                        }
-                    }
-                }
-            }
-            xhr.send()
-        } else {
-            // 如果没有授权信息，跳转到登录页面
-            alert('未监测到登录状态,请登录');
-            window.location.href = 'index.html';
-        }
+        await loadImg();
+        await checkTokenAndLoadData();
     }
+
 
     function openModal(modalId) {
         document.getElementById(modalId).style.display = 'flex';
@@ -1058,9 +1074,10 @@
     }
 
     function shareEmailQuery() {
-        const email = document.getElementById('share-email-query')
-        fetchShares(email.value,'')
+        const email = document.getElementById('share-email-query').value
+        fetchShares(email,'')
     }
+
 
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = "none";

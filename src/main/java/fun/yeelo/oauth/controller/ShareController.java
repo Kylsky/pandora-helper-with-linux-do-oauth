@@ -66,9 +66,10 @@ public class ShareController {
     private String authUrl;
 
     @GetMapping("/list")
-    public HttpResult<List<ShareVO>> list(HttpServletRequest request,
+    public HttpResult<PageVO<ShareVO>> list(HttpServletRequest request,
                                           @RequestParam(required = false) String emailAddr,
-                                          @RequestParam(required = false) Integer accountType) {
+                                          @RequestParam(required = false) Integer accountType,
+                                          @RequestParam(required = false) Integer start) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
 
@@ -141,14 +142,20 @@ public class ShareController {
             share.setPassword(null);
         }
         if (StringUtils.hasText(emailAddr)) {
-            if (accountType!=null && accountType.equals(1)) {
-                shareVOS = shareVOS.stream().filter(e-> e.getGptEmail().contains(emailAddr)).collect(Collectors.toList());
+            if (accountType==null){
+                shareVOS = shareVOS.stream().filter(e-> emailAddr.contains(e.getGptEmail())|| emailAddr.contains(e.getClaudeEmail())||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
-            else if (accountType!=null && accountType.equals(2)) {
-                shareVOS = shareVOS.stream().filter(e-> e.getClaudeEmail().contains(emailAddr)).collect(Collectors.toList());
+            else if (accountType.equals(1)) {
+                shareVOS = shareVOS.stream().filter(e-> e.getGptEmail().contains(emailAddr)||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
+            }
+            else if (accountType.equals(2)) {
+                shareVOS = shareVOS.stream().filter(e-> e.getClaudeEmail().contains(emailAddr)||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
         }
-        return HttpResult.success(shareVOS);
+        PageVO<ShareVO> pageVO = new PageVO<>();
+        pageVO.setData(start==null?shareVOS:shareVOS.subList(start,Math.min(shareVOS.size(),start+8)));
+        pageVO.setTotal(shareVOS.size());
+        return HttpResult.success(pageVO);
     }
 
     @DeleteMapping("/delete")
