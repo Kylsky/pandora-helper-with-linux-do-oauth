@@ -1008,11 +1008,15 @@
         xhr.send();
     }
 
-
-    window.onload = async function () {
+    async function loadImg() {
         if (localStorage.getItem('img')) {
             document.getElementById('avatar').src = localStorage.getItem('img')
         }
+    }
+
+
+    window.onload = async function () {
+        loadImg()
         var email = getQueryStringValue("email");
         var type = getQueryStringValue("type");
         const token = localStorage.getItem('token');

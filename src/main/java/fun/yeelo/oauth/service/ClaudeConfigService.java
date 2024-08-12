@@ -26,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         String expiresAt = byId.getExpiresAt();
         if (StringUtils.hasText(expiresAt) && !expiresAt.equals("-")) {
             expiresAt += " 00:00:00";
-            LocalDateTime expireDay = LocalDateTime.parse(expiresAt);
+            LocalDateTime expireDay = LocalDateTime.parse(expiresAt, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             duration = Duration.between(LocalDateTime.now(),expireDay).getSeconds();
         }
 

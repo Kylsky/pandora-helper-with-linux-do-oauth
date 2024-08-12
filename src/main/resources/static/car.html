@@ -674,10 +674,14 @@
         xhr.send()
     }
 
-    window.onload = async function () {
+    async function loadImg() {
         if (localStorage.getItem('img')) {
             document.getElementById('avatar').src = localStorage.getItem('img')
         }
+    }
+
+    window.onload = async function () {
+        loadImg()
         const token = localStorage.getItem('token');
         if (token) {
             var xhr = new XMLHttpRequest();
