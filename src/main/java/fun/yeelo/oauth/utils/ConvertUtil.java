@@ -17,7 +17,6 @@ public class ConvertUtil {
      * @param source     source
      * @param targetType 要转换为的目标类型
      * @return {@link R }
-     * @author 史金涛
      * @date 2020/12/29 23:04
      */
     public static <T, R> R convert(T source, Class<R> targetType) {
@@ -38,7 +37,6 @@ public class ConvertUtil {
      *
      * @param source     source
      * @param targetType 要转换为的目标类型
-     * @author 史金涛
      * @date 2020/12/29 20:11
      */
     public static <T, R> Page<R> convertPage(Page<T> source, Class<R> targetType) {
@@ -61,7 +59,6 @@ public class ConvertUtil {
      * @param source     source
      * @param targetType 要转换为的目标类型
      * @return {@link List<R> }
-     * @author 史金涛
      * @date 2020/12/29 22:57
      */
     public static <T, R> List<R> convertList(List<T> source, Class<R> targetType) {
