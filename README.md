@@ -1,5 +1,5 @@
 # 1.安装教程
-(安装成功后，请将data.db替换成releases中的data.db)
+(安装成功后，请将挂载目录下的data.db替换成releases中的data.db，并重新启动)
 
 方法1.修改docker-compose.yml里的必填参数，并执行命令：
 ```
