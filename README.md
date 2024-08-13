@@ -1,5 +1,5 @@
 # 1.安装教程
-
+(安装成功后，请替换release中的data.db)
 
 方法1.修改docker-compose.yml里的必填参数，并执行命令：
 ```
@@ -10,7 +10,8 @@ docker-compose up -d
 ```
 docker run 
 -d 
--it 
+-it
+-v ./db:/app/db                                     # 请替换挂载路径
 -e TZ=Asia/Shanghai 
 -e CLIENT_ID=                                       # 1.你的linux-do oauth client                       
 -e CLIENT_SECRET=                                   # 2.你的linux-do oauth secret
@@ -26,7 +27,8 @@ docker run
 ```
 docker run 
 -d 
--it 
+-it
+-v ./db:/app/db                                     
 -e TZ=Asia/Shanghai 
 -e CLIENT_ID=123                                                              
 -e CLIENT_SECRET=123                               
