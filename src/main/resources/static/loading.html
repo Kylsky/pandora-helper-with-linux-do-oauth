@@ -52,7 +52,7 @@
                     try {
                         let data = JSON.parse(xhr.responseText);
                         console.log('Token fetched and stored:', data);
-                        localStorage.setItem('img',data.avatarUrl)
+                        localStorage.setItem('img',data.avatar_url)
                         if (data.shareType === 'ChatGPT') {
                             startGPTChat(data.username,data.jmc)
                         }else if (data.shareType === 'Claude') {
