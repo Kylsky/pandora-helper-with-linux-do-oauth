@@ -20,3 +20,6 @@
 
 # 2.使用教程
 请参考： https://linux.do/t/topic/173810
+
+# 3.如果需要，请联系我
+https://linux.do/u/yelo/summary
