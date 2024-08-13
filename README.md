@@ -23,3 +23,10 @@
 
 # 3.如果需要，请联系我
 https://linux.do/u/yelo/summary
+
+# 4.特别鸣谢
+[始皇大大](https://linux.do/u/neo/summary)
+
+[年华大佬](https://linux.do/u/linux/summary)
+
+[PandoraHelper](https://github.com/nianhua99/PandoraHelper)
