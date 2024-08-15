@@ -60,7 +60,8 @@ public class CarController {
             String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
                                        ? ""
                                        : " ( Lv."+userMap.get(e.getUserId() ).getTrustLevel()+" )";
-            e.setUsername(userMap.get(e.getUserId()).getUniqueName() + levelDesc);
+            e.setUsername(userMap.get(e.getUserId()).getUniqueName());
+            e.setUsernameDesc(userMap.get(e.getUserId()).getUniqueName() + levelDesc);
             e.setEmail(e.getName());
 
             Integer count;

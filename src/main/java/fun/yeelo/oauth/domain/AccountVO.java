@@ -15,6 +15,7 @@ public class AccountVO extends Account{
     private String type;
 
     private String username;
+    private String usernameDesc;
 
     private Integer count;
 
