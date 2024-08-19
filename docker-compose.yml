@@ -2,6 +2,8 @@ version: '3'
 services:
   pandora-helper:
     image: kylsky/pandora_helper
+    volumes:
+      - ./db:/app/db
     environment:
       CLIENT_ID: ""                                   # 1.你的linux-do oauth client
       CLIENT_SECRET: ""                               # 2.你的linux-do oauth secret
