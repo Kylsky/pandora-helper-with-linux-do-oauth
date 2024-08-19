@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @MapperScan("fun.yeelo.oauth.dao")  // Adjust the package to match where your mappers are located
 public class Application {
     public static void main(String[] args) {
+        System.setProperty("https.protocols", "TLSv1.3,TLSv1.2,TLSv1.1,TLSv1");
         SpringApplicationBuilder builder = new SpringApplicationBuilder(Application.class).web(WebApplicationType.SERVLET);
 
         // set biz to use resource loader.
