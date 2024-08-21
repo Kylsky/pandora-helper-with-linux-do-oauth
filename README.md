@@ -18,7 +18,7 @@ docker run
 -e OAIFREE_PROXY=https://new.oaifree.com            # 3.默认oaifree，你可以填写你的代理地址
 -e FUCLAUDE_PROXY=https://demo.fuclaude.com         # 4.默认fuclaude，你可以填写你的fuclaude地址
 -e REDIRECT_URI=                                    # 5.你的应用跳转地址
--e ADMIN_NAME=                                      # 6.管理员用户名，建议填写你在linux-do的用户名
+-e ADMIN_NAME=                                      # 6.管理员用户名，建议填写你在linux-do的用户名，默认密码是123456
 --restart=always                                    # 7.如需修改端口，请修改第一个8181为你需要访问的服务器端口
 -p 8181:8181 --name pandora-helper
  kylsky/pandora_helper
