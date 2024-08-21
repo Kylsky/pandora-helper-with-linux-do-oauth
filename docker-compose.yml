@@ -11,7 +11,7 @@ services:
       OAIFREE_PROXY: "https://new.oaifree.com"        # 4.默认oaifree，你可以填写你的代理地址
       FUCLAUDE_PROXY: "https://demo.fuclaude.com"     # 5.默认fuclaude，你可以填写你的fuclaude地址
       TZ: "Asia/Shanghai"
-      ADMIN_NAME: "Admin"                             # 6.管理员用户名，建议填写你在linux-do的用户名
+      ADMIN_NAME: "Admin"                             # 6.管理员用户名，建议填写你在linux-do的用户名，默认密码是123456
 
     ports:
       - "8182:8181"                                   # 7.如需修改端口，请修改第一个8181为你需要访问的服务器端口
