@@ -146,10 +146,10 @@ public class ShareController {
                 shareVOS = shareVOS.stream().filter(e-> emailAddr.contains(e.getGptEmail())|| emailAddr.contains(e.getClaudeEmail())||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
             else if (accountType.equals(1)) {
-                shareVOS = shareVOS.stream().filter(e-> e.getGptEmail().contains(emailAddr)||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
+                shareVOS = shareVOS.stream().filter(e-> (e.getGptEmail()!=null && e.getGptEmail().contains(emailAddr))||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
             else if (accountType.equals(2)) {
-                shareVOS = shareVOS.stream().filter(e-> e.getClaudeEmail().contains(emailAddr)||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
+                shareVOS = shareVOS.stream().filter(e-> (e.getClaudeEmail()!=null && e.getClaudeEmail().contains(emailAddr))||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
         }
         PageVO<ShareVO> pageVO = new PageVO<>();
