@@ -135,7 +135,7 @@ public class UpdateTimer {
                 Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
                 gptConfig.setShareToken(map.get("token_key").toString());
                 gptConfigService.updateById(gptConfig);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 log.error("update share token error,unique_name:{}",share.getUniqueName(), e);
             }
         }

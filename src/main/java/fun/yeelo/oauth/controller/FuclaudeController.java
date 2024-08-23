@@ -81,11 +81,11 @@ public class FuclaudeController {
             return HttpResult.error("用户未激活,请联系管理员");
         }
         ShareClaudeConfig claudeShare = claudeConfigService.getByShareId(user.getId());
-        Account account = accountService.getById(claudeShare.getAccountId());
-        String token = claudeConfigService.generateAutoToken(account,user);
         if (claudeShare == null) {
             return HttpResult.error("权限未激活,请联系管理员");
         }
+        Account account = accountService.getById(claudeShare.getAccountId());
+        String token = claudeConfigService.generateAutoToken(account,user);
         return HttpResult.success(token);
     }
 

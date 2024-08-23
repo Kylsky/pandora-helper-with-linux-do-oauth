@@ -143,7 +143,7 @@ public class ShareController {
         }
         if (StringUtils.hasText(emailAddr)) {
             if (accountType==null){
-                shareVOS = shareVOS.stream().filter(e-> emailAddr.contains(e.getGptEmail())|| emailAddr.contains(e.getClaudeEmail())||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
+                shareVOS = shareVOS.stream().filter(e-> (e.getGptEmail()!=null && e.getGptEmail().contains(emailAddr))|| (e.getClaudeEmail()!=null && e.getClaudeEmail().contains(emailAddr))||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
             else if (accountType.equals(1)) {
                 shareVOS = shareVOS.stream().filter(e-> (e.getGptEmail()!=null && e.getGptEmail().contains(emailAddr))||e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
