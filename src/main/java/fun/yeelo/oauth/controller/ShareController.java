@@ -243,30 +243,13 @@ public class ShareController {
         Account account = accountService.getById(dto.getAccountId());
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, dto.getUniqueName(), shareId, expiresAt);
+                return gptConfigService.addShare(account, dto.getUniqueName(), shareId, null);
             case 2:
                 return claudeConfigService.addShare(account, shareId);
             default:
                 return HttpResult.success(false);
 
         }
-
-    }
-
-    @PatchMapping("/activate")
-    public HttpResult<Boolean> activate(HttpServletRequest request, @RequestParam Integer id, @RequestParam Integer accountId) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
-        Share share = shareService.getById(id);
-
-        return gptConfigService.addShare(accountService.getById(accountId), share.getUniqueName(), share.getId(), user.getExpiresAt());
 
     }
 
@@ -281,15 +264,15 @@ public class ShareController {
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
-        Share byId = shareService.getById(dto.getId());
-        if (byId.getPassword().equals(dto.getPassword())) {
-            dto.setPassword(null);
-        } else if (StringUtils.hasText(dto.getPassword())){
-            dto.setPassword(passwordEncoder.encode(dto.getPassword()));
+        if (dto.getId()==null){
+            log.error("更新用户出错，用户id为空");
+            return HttpResult.success(true);
         }
-        dto.setExpiresAt(StringUtils.hasText(dto.getExpiresAt()) ? dto.getExpiresAt() : "-");
-        dto.setComment(dto.getComment());
-        shareService.saveOrUpdate(dto);
+        Share updateVo = new Share();
+        updateVo.setId(dto.getId());
+        updateVo.setExpiresAt(StringUtils.hasText(dto.getExpiresAt()) ? dto.getExpiresAt() : "-");
+        updateVo.setComment(dto.getComment()==null ? "" : dto.getComment());
+        shareService.updateById(updateVo);
 
         return HttpResult.success(true);
     }
@@ -319,7 +302,7 @@ public class ShareController {
 
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), byId.getExpiresAt());
+                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), null);
             case 2:
                 return claudeConfigService.addShare(account, byId.getId());
             default:

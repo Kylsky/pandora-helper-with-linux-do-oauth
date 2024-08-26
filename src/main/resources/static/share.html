@@ -570,8 +570,8 @@
         .user-menu {
             position: absolute;
             bottom: 0px;
-            top: 773px;
-            left: 10px;
+            top: 94%;
+            left: 0.8%;
 
         }
         .user-avatar {
@@ -591,14 +591,15 @@
         .dropdown {
             display: none;
             position: absolute;
-            top: 0;
-            left: 50px;
+            top: -92%;
+            left: 120%;
             background-color: #fff;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border-radius: 4px;
             overflow: hidden;
             z-index: 1000;
         }
+
 
         .dropdown a {
             display: block;
@@ -620,8 +621,8 @@
         .user-menu {
             position: absolute;
             bottom: 0px;
-            top: 773px;
-            left: 10px;
+            top: 94%;
+            left: 0.8%;
 
         }
         .user-avatar {
@@ -638,17 +639,6 @@
             object-fit: cover;
         }
 
-        .dropdown {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 50px;
-            background-color: #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            z-index: 1000;
-        }
 
         .dropdown a {
             display: block;
@@ -675,6 +665,7 @@
         <ul>
             <li><a href="#" id="accountNav">账号管理</a></li>
             <li><a href="#" id="shareNav" class="active">分享管理</a></li>
+            <li><a href="#" id="redemptionNav">兑换码</a></li>
             <li><a href="#" id="carNav">停车场</a></li>
         </ul>
     </div>
@@ -684,6 +675,7 @@
                 <img id="avatar" src="/pics/linuxdo.webp" alt="User Avatar">
             </div>
             <div class="dropdown">
+                <a href="#" onclick="openModal('activateRedemptionModal')">兑换码激活</a>
                 <a href="#" onclick="logout()">退出登录</a>
             </div>
         </div>
@@ -716,6 +708,21 @@
         </div>
     </div>
 </div>
+
+<div id="activateRedemptionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('activateRedemptionModal')">&times;</span>
+        <h2>兑换码</h2>
+        <form style="padding-top: 20px; padding-bottom: 20px">
+
+<!--            <label for="activate-redemption">兑换码：</label>-->
+            <input type="text" id="activate-redemption" name="update-limit">
+
+            <button class="tanchuang-button" type="button" onclick="redemptionActivate()">保存</button>
+        </form>
+    </div>
+</div>
+
 
 <div id="configModal" class="modal">
     <div class="modal-content">
@@ -756,6 +763,26 @@
 </body>
 
 <script type="text/javascript">
+    function redemptionActivate() {
+        code = document.getElementById('activate-redemption').value
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/redemption/activate?code=" + code, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('activateRedemptionModal')
+                let data = JSON.parse(xhr.responseText);
+                if (data.status === 200) {
+                    alert(data.message)
+                } else {
+                    alert(data.message);
+                }
+            }
+        }
+        xhr.send();
+    }
 
     function openShareUpdateModel(shareId, uniqueName, password, expiresAt, comment, email, curAdminId) {
         if (curAdminId !== 1 || shareId !== curAdminId) {
@@ -1094,6 +1121,11 @@
     document.getElementById('carNav').addEventListener('click',async function (event) {
         event.preventDefault()
         window.location.href = 'car.html';
+    });
+
+    document.getElementById('redemptionNav').addEventListener('click',async function (event) {
+        event.preventDefault()
+        window.location.href = 'redemption.html';
     });
 
 

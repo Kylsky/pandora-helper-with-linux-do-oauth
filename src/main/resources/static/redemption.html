@@ -566,7 +566,7 @@
             cursor: pointer;
         }
 
-        #auditSelect {
+        #accountSelect {
             width: 100%;
             padding: 0.5rem;
             border: 1px solid #ddd;
@@ -630,9 +630,9 @@
     <div class="sidebar">
         <h2>Pandora Helper</h2>
         <ul>
-            <li><a href="#" id="accountNav" class="active">账号管理</a></li>
+            <li><a href="#" id="accountNav">账号管理</a></li>
             <li><a href="#" id="shareNav">分享管理</a></li>
-            <li><a href="#" id="redemptionNav">兑换码</a></li>
+            <li><a href="#" id="redemptionNav"  class="active">兑换码</a></li>
             <li><a href="#" id="carNav">停车场</a></li>
         </ul>
     </div>
@@ -646,152 +646,35 @@
                 <a href="#" onclick="logout()">退出登录</a>
             </div>
         </div>
-        <div id="accountPanel" class="panel">
-            <h2>账号管理</h2>
+        <div id="redemptionPanel" class="panel">
+            <h2>兑换码管理</h2>
             <div class="search-bar">
                 <input id="email-query" type="email-query" placeholder="Email">
                 <button onclick="emailQuery()">查询</button>
             </div>
-            <button class="create-new" onclick="openModal('accountModal')">新增</button>
+            <button class="create-new" onclick="openModalRedemption('redemptionModal')">新增</button>
             <table>
                 <thead>
                 <tr>
                     <th>邮箱</th>
                     <!--                    <th>密码</th>-->
                     <th>账号类型</th>
-                    <th>Access Token</th>
-                    <th>共享</th>
-                    <th>更新时间</th>
-                    <th>共享</th>
+                    <th>兑换码</th>
+                    <th>兑换时长</th>
                     <th>操作</th>
                 </tr>
                 </thead>
-                <tbody id="accountTableBody">
+                <tbody id="redemptionTableBody">
 
                 </tbody>
 
             </table>
             <div class="pagination">
-                <button id="accountPrevBtn">上一页</button>
-                <span id="accountPageInfo"></span>
-                <button id="accountNextBtn">下一页</button>
+                <button id="redemptionPrevBtn">上一页</button>
+                <span id="redemptionPageInfo"></span>
+                <button id="redemptionNextBtn">下一页</button>
             </div>
         </div>
-    </div>
-</div>
-
-
-<div id="auditModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('auditModal')">&times;</span>
-        <h2>审核</h2>
-        <form>
-            <input type="hidden" id="audit_account_id" name="audit_account_id">
-            <label for="auditSelect">选择申请：</label>
-            <select id="auditSelect">
-                <!--                <option value="option1">选项1</option>-->
-                <!--                <option value="option2">选项2</option>-->
-            </select>
-            <button class="tanchuang-button" type="button" onclick="submitAudit(true)">通过</button>
-            <button class="tanchuang-button" type="button" style="background-color: #d9534f"
-                    onclick="submitAudit(false)">拒绝
-            </button>
-        </form>
-    </div>
-</div>
-
-<div id="accountModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('accountModal')">&times;</span>
-        <h2>新增账号</h2>
-        <form style="padding-top: 20px; padding-bottom: 20px">
-            <label for="add-name">账号名称(用于展示)</label>
-            <input type='text' id="add-name" name="add-name">
-
-            <label for="add-email">邮箱</label>
-            <input type="email" id="add-email" name="add-email" required>
-
-            <label for="add-type">账号类型</label>
-            <select id="add-type" name="add-type" required>
-                <option value=1>ChatGPT</option>
-                <option value=2>Claude</option>
-            </select>
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-top: 10px; margin-bottom: 10px">
-
-                <!--            <div class="checkbox-container">-->
-                <label for="toggleSwitch">共享</label>
-                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
-                    <input type="checkbox" id="toggleSwitch">
-                    <span class="slider round"></span>
-                </label>
-
-                <label for="autoToggleSwitch">自动加入</label>
-                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
-                    <input type="checkbox" id="autoToggleSwitch">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-
-            <input type="hidden" id="toggleValue" name="toggleValue" value="0">
-            <input type="hidden" id="autoToggleValue" name="autoToggleValue" value="0">
-
-            <label for="add-limit">分享人数上限</label>
-            <input type="text" id="add-limit" name="add-limit">
-
-            <label for="add-account-refresh-token">Refresh Token</label>
-            <input type="text" id="add-account-refresh-token" name="add-account-refresh-token">
-
-            <label for="add-account-access-token">Access Token</label>
-            <input type="text" id="add-account-access-token" name="add-account-access-token">
-
-            <!--            <label for="add-account-comment">备注</label>-->
-            <!--            <input type="text" id="add-account-comment" name="add-account-comment">-->
-
-            <button class="tanchuang-button" type="button" onclick="addAccount()">保存</button>
-        </form>
-    </div>
-</div>
-
-<div id="accountUpdateModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('accountUpdateModal')">&times;</span>
-        <h2>修改账号</h2>
-        <form style="padding-top: 20px; padding-bottom: 20px">
-            <input type="hidden" id="update-userId" name="userId">
-            <label for="update-email">邮箱</label>
-            <input type="email" id="update-email" name="update-email">
-
-            <label for="update-name">账号名称(用于展示)</label>
-            <input type='text' id="update-name" name="update-name">
-
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-top: 10px; margin-bottom: 10px">
-
-                <label for="toggleSwitchUpdate">共享</label>
-                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
-                    <input type="checkbox" id="toggleSwitchUpdate">
-                    <span class="slider round"></span>
-                </label>
-
-                <label for="autoToggleSwitchUpdate">自动加入</label>
-                <label class="switch" style="margin-top: 4px; margin-bottom: 4px">
-                    <input type="checkbox" id="autoToggleSwitchUpdate">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <input type="hidden" id="toggleValueUpdate" name="toggleValueUpdate" value="0">
-            <input type="hidden" id="autoToggleValueUpdate" name="autoToggleValueUpdate" value="0">
-
-            <label for="add-limit">分享人数上限</label>
-            <input type="text" id="update-limit" name="update-limit">
-
-            <label for="update-account-refresh-token">Refresh Token</label>
-            <input type="text" id="update-account-refresh-token" name="update-account-refresh-token">
-
-            <label for="update-account-access-token">Access Token</label>
-            <input type="text" id="update-account-access-token" name="update-account-access-token">
-
-            <button class="tanchuang-button" type="button" onclick="updateAccount()">保存</button>
-        </form>
     </div>
 </div>
 
@@ -809,66 +692,50 @@
     </div>
 </div>
 
-<div id="shareModal" class="modal">
+
+<div id="redemptionModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeModal('shareModal')">&times;</span>
-        <h2>新增共享</h2>
-        <form>
-            <input type="hidden" id="add-share-id" name="add-share-id">
-            <label for="add-share-unique-name">用户名</label><br>
-            <input type="text" id="add-share-unique-name" name="add-share-unique-name"><br>
-            <label for="add-share-password">密码</label>
-            <input type="password" id="add-share-password" name="add-share-password" required><br>
-            <label for="add-share-comment">备注</label>
-            <input type="text" id="add-share-comment" name="add-comment"><br>
-            <label for="add-share-expiration">过期时间</label><br>
-            <input type="date" id="add-share-expiration" name="add-share-expiration"><br><br>
-            <button class="tanchuang-button" type="button" onclick="addShare()">保存</button>
+        <span class="close" onclick="closeModal('redemptionModal')">&times;</span>
+        <h2>新增兑换码</h2>
+        <form style="padding-top: 20px; padding-bottom: 20px">
+            <label for="accountSelect">账号</label>
+            <select id="accountSelect" name="accountSelect" required>
+            </select>
+            <label for="add-duration">兑换时长(天)</label>
+            <input type="text" id="add-duration" name="add-duration">
+
+            <label for="add-redemption-count">兑换码数量</label>
+            <input type="text" id="add-redemption-count" name="add-redemption-count">
+
+            <button class="tanchuang-button" type="button" onclick="addRedemption()">保存</button>
+        </form>
+    </div>
+</div>
+
+<div id="redemptionUpdateModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('redemptionUpdateModal')">&times;</span>
+        <h2>修改账号</h2>
+        <form style="padding-top: 20px; padding-bottom: 20px">
+            <input type="hidden" id="update-red-id" name="redId">
+
+            <label for="update-duration">兑换时长(天)</label>
+            <input type="text" id="update-duration" name="update-duration">
+
+            <button class="tanchuang-button" type="button" onclick="updateRedemption()">保存</button>
         </form>
     </div>
 </div>
 
 <script type="text/javascript">
-
-    function submitAudit(isAllow) {
-        // 转换为数值类型configSelect
-        var shareId = parseInt(document.getElementById('auditSelect').value);
-        if (isNaN(shareId) || shareId === undefined) {
-            closeModal('auditModal');
-            alert("无审核项");
-            return true;
-        }
-        var account = parseInt(document.getElementById('audit_account_id').value);
+    function fetchApplies() {
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/car/audit", true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        // 设置token
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                closeModal('auditModal');
-                var result = JSON.parse(xhr.responseText);
-                if (result.status) {
-                    alert("审核完成");
-                } else {
-                    alert("审核失败");
-                }
-                fetchAccounts('')
-                document.getElementById('audit_account_id').value = ''
-            }
-        }
-        xhr.send(JSON.stringify({shareId: shareId, accountId: account, allowApply: (isAllow ? 1 : 0)}));
-
-    }
-
-    function fetchApplies(accountId) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/car/fetchApplies?accountId=" + accountId, true);
+        xhr.open("GET", "/account/list", true);
         xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
         xhr.onreadystatechange = function () {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 var options = JSON.parse(xhr.responseText).data;
-                var select = document.getElementById('auditSelect');
+                var select = document.getElementById('accountSelect');
                 select.innerHTML = ''; // 清空现有选项
 
                 // let optEmpty = document.createElement('option');
@@ -879,317 +746,13 @@
 
                 options.forEach(function (option) {
                     var opt = document.createElement('option');
-                    opt.value = option.value;
-                    opt.innerHTML = option.label;
+                    opt.value = option.id;
+                    opt.innerHTML = option.email + " (" + option.type + ")";
                     select.appendChild(opt);
                 });
             }
         };
         xhr.send();
-    }
-
-    function openAuditModal(accountId) {
-        fetchApplies(accountId); // 获取配置选项
-        document.getElementById('audit_account_id').value = accountId;
-        document.getElementById('auditModal').style.display = 'flex';
-    }
-
-    document.getElementById('toggleSwitch').addEventListener('change', function () {
-        // 如果开关被激活，则值为1，否则为0
-        document.getElementById('toggleValue').value = this.checked ? 1 : 0;
-    });
-
-    document.getElementById('autoToggleSwitch').addEventListener('change', function () {
-        // 如果开关被激活，则值为1，否则为0
-        console.log('autoToggleValue change')
-        document.getElementById('autoToggleValue').value = this.checked ? 1 : 0;
-    });
-
-    document.getElementById('toggleSwitchUpdate').addEventListener('change', function () {
-        console.log('toggleValueUpdate change')
-        document.getElementById('toggleValueUpdate').value = this.checked ? 1 : 0;
-    });
-
-    document.getElementById('autoToggleSwitchUpdate').addEventListener('change', function () {
-        console.log('autoToggleValueUpdate change')
-        document.getElementById('autoToggleValueUpdate').value = this.checked ? 1 : 0;
-    });
-
-    function addAccount() {
-        let email = document.getElementById('add-email').value;
-        let name = document.getElementById('add-name').value;
-        let type = document.getElementById('add-type').value;
-        let limit = document.getElementById('add-limit').value;
-        let refresh = document.getElementById('add-account-refresh-token').value;
-        let access = document.getElementById('add-account-access-token').value;
-        let shared = document.getElementById('toggleValue').value
-        let auto = document.getElementById('autoToggleValue').value
-        let xhr = new XMLHttpRequest();
-        xhr.open("POST", "/account/add", true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        // 设置body
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                closeModal('accountModal')
-                if (xhr.status === 200) {
-                    alert("添加成功")
-                    fetchAccounts('')
-                    document.getElementById('add-email').value = '';
-                    document.getElementById('add-name').value = ''
-                    document.getElementById('add-limit').value = '';
-                    document.getElementById('add-account-refresh-token').value = '';
-                    document.getElementById('add-account-access-token').value = '';
-                    document.getElementById('toggleSwitch').checked = false;
-                    document.getElementById('autoToggleSwitch').checked = false;
-                    document.getElementById('toggleValue').value = 0;
-                    document.getElementById('autoToggleValue').value = 0;
-                } else {
-                    alert("添加失败");
-                }
-            }
-        }
-        xhr.send(JSON.stringify({
-            email: email,
-            name: name,
-            accountType: type,
-            userLimit: limit === '' ? null : limit,
-            accessToken: access,
-            refreshToken: refresh,
-            shared: shared,
-            auto: auto
-        }));
-
-    }
-
-    function openShareModel(accountId) {
-        openModal('shareModal', accountId)
-        document.getElementById('add-share-id').value = accountId
-    }
-
-    function addShare() {
-        var accountId = document.getElementById('add-share-id').value;
-        var username = document.getElementById('add-share-unique-name').value;
-        var password = document.getElementById('add-share-password').value;
-        var comment = document.getElementById('add-share-comment').value;
-        var expiration = document.getElementById('add-share-expiration').value;
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/share/add", true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        // 设置body
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                closeModal('shareModal')
-                let res = JSON.parse(xhr.responseText)
-                if (res.status) {
-                    alert("添加成功")
-                    fetchAccounts('')
-                    document.getElementById('add-share-id').value = '';
-                    document.getElementById('add-share-unique-name').value = '';
-                    document.getElementById('add-share-password').value = '';
-                    document.getElementById('add-share-comment').value = '';
-                    document.getElementById('add-share-expiration').value = '';
-                } else {
-                    alert(res.message);
-                    document.getElementById('add-share-id').value = '';
-                    document.getElementById('add-share-unique-name').value = '';
-                    document.getElementById('add-share-password').value = '';
-                    document.getElementById('add-share-comment').value = '';
-                    document.getElementById('add-share-expiration').value = '';
-                }
-            }
-        }
-        xhr.send(JSON.stringify({
-            accountId: accountId,
-            uniqueName: username,
-            password: password,
-            comment: comment,
-            expiresAt: expiration
-        }));
-    }
-
-
-    function updateAccount() {
-        var userId = document.getElementById('update-userId').value;
-        var email = document.getElementById('update-email').value;
-        var name = document.getElementById('update-name').value;
-        var limit = document.getElementById('update-limit').value;
-        var refresh = document.getElementById('update-account-refresh-token').value;
-        var access = document.getElementById('update-account-access-token').value;
-        var shared = document.getElementById('toggleValueUpdate').value
-        var auto = document.getElementById('autoToggleValueUpdate').value
-        var xhr = new XMLHttpRequest();
-        xhr.open("PATCH", "/account/update", true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        // 设置body
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                closeModal('accountModal')
-                if (xhr.status === 200) {
-                    closeModal('accountUpdateModal')
-                    alert("更新成功")
-                    fetchAccounts('')
-                    document.getElementById('update-userId').value = '';
-                    document.getElementById('update-email').value = '';
-                    document.getElementById('update-name').value = '';
-                    document.getElementById('update-limit').value = '';
-                    document.getElementById('update-account-refresh-token').value = '';
-                    document.getElementById('update-account-access-token').value = '';
-                    document.getElementById('toggleValueUpdate').value = 0;
-                    document.getElementById('autoToggleValueUpdate').value = 0;
-                    document.getElementById('toggleSwitchUpdate').checked = false;
-                    document.getElementById('autoToggleSwitchUpdate').checked = false;
-                } else {
-                    alert("更新失败");
-                }
-            }
-        }
-        xhr.send(JSON.stringify({
-            id: userId,
-            email: email,
-            name: name,
-            accessToken: access,
-            userLimit: limit === '' ? 4 : limit,
-            refreshToken: refresh,
-            shared: shared,
-            auto: auto
-        }));
-
-    }
-
-    function refreshAccount(accountId) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/account/refresh?accountId=" + accountId, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        // 设置body
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    alert("刷新成功")
-                    fetchAccounts('')
-                } else {
-                    alert("刷新失败");
-                }
-            }
-        }
-        xhr.send()
-    }
-
-    async function fetchAccounts(email) {
-
-        const tableBody = document.getElementById('accountTableBody');
-
-        const startIndex = (curAccountPage - 1) * 8;
-        const endIndex = startIndex + 8;
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/account/list?emailAddr=" + email, true);
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    const res = JSON.parse(xhr.responseText);
-                    tableBody.innerHTML = ''; // 清空现有的表格内容
-                    accountTotal = res.data.length
-                    const pageData = res.data.slice(startIndex, endIndex);
-
-                    pageData.forEach(account => {
-                        const refreshButton = account.type !== 'Claude'
-                            ? `<button class="refresh-btn" onclick="refreshAccount('${account.id}')">Refresh</button>`
-                            : '';
-                        const btColor = account.count > 0 ? '#FFDD55' : 'white';
-                        const shareButton = account.shared
-                            ? `<img style="cursor: pointer; background-color: ${btColor};" onclick="openAuditModal(${account.id})" src="pics/iconamoon--cloud-yes-fill.svg"/>`
-                            : `<img style="cursor: pointer; background-color: ${btColor};" onclick="openAuditModal(${account.id})" src="pics/dashicons--no.svg"/>`;
-
-                        const row = `
-                <tr>
-                    <td>${account.email}</td>
-                    <td style="width: 90px"><div class="ellipsis">${account.type}</div></td>
-                    <td><div class="ellipsis">${account.accessToken}</div></td>
-                    <td style="width: 60px;">${shareButton}</td>
-                    <td style="width: 150px;">${account.updateTime}</td>
-                    <td style="width: 150px;">
-                        <button onclick="fetchShareList('${account.email}', '${account.accountType}')">Share List</button>
-                        <button onclick="openShareModel('${account.id}')">+</button>
-                    </td>
-                    <td>
-                        ${refreshButton}
-                        <button class="edit-btn" onclick="editAccount('${account.id}','${account.email}',
-                        '${account.name}','${account.shared}',
-                        '${account.refreshToken}','${account.accessToken}',
-                        '${account.auto}','${account.userLimit}')">Edit</button>
-                        <button class="delete-btn" onclick="deleteAccount('${account.id}')">Delete</button>
-                    </td>
-                </tr>
-            `;
-                        tableBody.innerHTML += row;
-                        updateAccountPagination();
-                    });
-                }
-            }
-        }
-        xhr.send()
-    }
-
-    let curAccountPage = 1;
-    let accountTotal = 0;
-
-    function fetchConfigOptions(type) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/account/options?type=" + type, true);
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                var options = JSON.parse(xhr.responseText).data;
-                var select = document.getElementById('configSelect');
-                select.innerHTML = ''; // 清空现有选项
-
-                let optEmpty = document.createElement('option');
-                optEmpty.value = type === 1 ? "-1" : "-2"
-                optEmpty.label = '-';
-                optEmpty.innerHTML =
-                    select.appendChild(optEmpty);
-
-                options.forEach(function (option) {
-                    var opt = document.createElement('option');
-                    opt.value = option.value;
-                    opt.innerHTML = option.label;
-                    select.appendChild(opt);
-                });
-            }
-        };
-        xhr.send();
-    }
-
-
-    function editAccount(id, email, password, shared, refresh, access,auto,userLimit) {
-        openModal('accountUpdateModal', id, email, password, shared, refresh, access,auto,userLimit)
-    }
-
-    function deleteAccount(accountId) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("DELETE", "/account/delete?id=" + accountId, true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
-        // 设置body
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                closeModal('accountModal')
-                if (xhr.status === 200) {
-                    alert("删除成功")
-                    fetchAccounts('')
-                } else {
-                    alert("删除失败");
-                }
-            }
-        }
-        xhr.send(JSON.stringify({
-            id: accountId
-        }));
     }
 
     function redemptionActivate() {
@@ -1213,6 +776,137 @@
         xhr.send();
     }
 
+    function addRedemption() {
+        let accountId = parseInt(document.getElementById('accountSelect').value);
+        let duration = document.getElementById('add-duration').value;
+        let count = document.getElementById('add-redemption-count').value;
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", "/redemption/add", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('redemptionModal')
+                let data = JSON.parse(xhr.responseText)
+                if (xhr.status === 200) {
+                    alert("添加成功")
+                    fetchRedemptions('')
+                    document.getElementById('add-duration').value = '';
+                    document.getElementById('add-redemption-count').value = ''
+                } else {
+                    alert(data.message);
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            duration: duration,
+            count: count,
+            accountId: accountId,
+        }));
+
+    }
+
+    function updateRedemption() {
+        let duration = parseInt(document.getElementById('update-duration').value);
+        let id = parseInt(document.getElementById('update-red-id').value);
+        let xhr = new XMLHttpRequest();
+        xhr.open("PATCH", "/redemption/update", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('redemptionModal')
+                if (xhr.status === 200) {
+                    closeModal('redemptionUpdateModal')
+                    alert("更新成功")
+                    fetchRedemptions('')
+                    document.getElementById('update-duration').value = '';
+                    document.getElementById('update-red-id').value = '';
+                } else {
+                    alert("更新失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            id: id,
+            duration: duration
+        }));
+
+    }
+
+
+    async function fetchRedemptions(email) {
+
+        const tableBody = document.getElementById('redemptionTableBody');
+
+        const startIndex = (curRedemptionPage - 1) * 8;
+        const endIndex = startIndex + 8;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/redemption/list?emailAddr=" + email, true);
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    const res = JSON.parse(xhr.responseText);
+                    tableBody.innerHTML = ''; // 清空现有的表格内容
+                    redemptionTotal = res.data.length
+                    const pageData = res.data.slice(startIndex, endIndex);
+
+                    pageData.forEach(redemption => {
+                        const row = `
+                <tr>
+                    <td>${redemption.email}</td>
+                    <td><div class="ellipsis">${redemption.accountType}</div></td>
+                    <td><div class="ellipsis">${redemption.code}</div></td>
+                    <td>${redemption.duration}</td>
+                    <td>
+                        <button class="edit-btn" onclick="editRedemption('${redemption.id}', '${redemption.duration}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteRedemption('${redemption.id}')">Delete</button>
+                    </td>
+                </tr>
+            `;
+                        tableBody.innerHTML += row;
+                        updateRedemptionPagination();
+                    });
+                }
+            }
+        }
+        xhr.send()
+    }
+
+    let curRedemptionPage = 1;
+    let redemptionTotal = 0;
+
+
+    function editRedemption(id, duration) {
+        openModalCustom('redemptionUpdateModal', id, duration)
+    }
+
+    function deleteRedemption(redemptionId) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("DELETE", "/redemption/delete?id=" + redemptionId, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Authorization', "Bearer " + localStorage.getItem('token'));
+        // 设置body
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                closeModal('redemptionModal')
+                if (xhr.status === 200) {
+                    alert("删除成功")
+                    fetchRedemptions('')
+                } else {
+                    alert("删除失败");
+                }
+            }
+        }
+        xhr.send(JSON.stringify({
+            id: redemptionId
+        }));
+    }
+
     async function loadImg() {
         if (localStorage.getItem('img')) {
             document.getElementById('avatar').src = localStorage.getItem('img')
@@ -1232,7 +926,7 @@
                         const res = JSON.parse(xhr.responseText);
                         if (res.data) {
                             localStorage.setItem("token", token)
-                            fetchAccounts('')
+                            fetchRedemptions('')
                             return true
                         } else {
                             alert(res.message);
@@ -1253,33 +947,23 @@
         document.getElementById(modalId).style.display = 'flex';
     }
 
-    function openModal(modalId, id, email, password, shared, refresh, access,auto,userLimit) {
+    function openModalRedemption(modalId) {
+        fetchApplies(); // 获取配置选项
         document.getElementById(modalId).style.display = 'flex';
-        const userId = document.getElementById('update-userId')
-        const mailM = document.getElementById('update-email')
-        const passM = document.getElementById('update-name')
-        const accessM = document.getElementById('update-account-access-token')
-        const refreshM = document.getElementById('update-account-refresh-token')
-        const sharedM = document.getElementById('toggleValueUpdate')
-        const switchCondition = document.getElementById('toggleSwitchUpdate')
-        const autoSwitchCondition = document.getElementById('autoToggleSwitchUpdate')
-        const limit = document.getElementById('update-limit')
+    }
 
-        userId.value = id;
-        mailM.value = email;
-        passM.value = password;
-        accessM.value = access;
-        refreshM.value = refresh;
-        sharedM.value = shared;
-        userId.value = id;
-        switchCondition.checked = (shared === '1');
-        autoSwitchCondition.checked = (auto === '1');
-        limit.value = userLimit;
+    function openModalCustom(modalId, id, duration) {
+        document.getElementById(modalId).style.display = 'flex';
+        const redId = document.getElementById('update-red-id')
+        const redDuration = document.getElementById('update-duration')
+
+        redId.value = id;
+        redDuration.value = duration;
     }
 
     function emailQuery() {
         const email = document.getElementById('email-query')
-        fetchAccounts(email.value)
+        fetchRedemptions(email.value)
     }
 
     function closeModal(modalId) {
@@ -1287,7 +971,7 @@
     }
 
     document.getElementById('accountNav').addEventListener('click', async function () {
-        fetchAccounts('')
+        window.location.href = 'account.html';
     });
 
     document.getElementById('shareNav').addEventListener('click', async function () {
@@ -1299,39 +983,35 @@
     });
 
     document.getElementById('redemptionNav').addEventListener('click', async function () {
-        window.location.href = 'redemption.html';
+        await fetchRedemptions('')
     });
 
 
-    function updateAccountPagination() {
-        const pageInfo = document.getElementById('accountPageInfo');
-        const totalPages = Math.ceil(accountTotal / 8);
-        pageInfo.textContent = `第 ${curAccountPage} 页，共 ${totalPages} 页`;
+    function updateRedemptionPagination() {
+        const pageInfo = document.getElementById('redemptionPageInfo');
+        const totalPages = Math.ceil(redemptionTotal / 8);
+        pageInfo.textContent = `第 ${curRedemptionPage} 页，共 ${totalPages} 页`;
 
-        document.getElementById('accountPrevBtn').disabled = curAccountPage === 1;
-        document.getElementById('accountNextBtn').disabled = curAccountPage === totalPages;
+        document.getElementById('redemptionPrevBtn').disabled = curRedemptionPage === 1;
+        document.getElementById('redemptionNextBtn').disabled = curRedemptionPage === totalPages;
     }
 
-    document.getElementById('accountPrevBtn').addEventListener('click', () => {
+    document.getElementById('redemptionPrevBtn').addEventListener('click', () => {
         let email = document.getElementById('email-query').value
-        if (curAccountPage > 1) {
-            curAccountPage--;
-            fetchAccounts(email === undefined ? '' : email);
+        if (curRedemptionPage > 1) {
+            curRedemptionPage--;
+            fetchRedemptions(email === undefined ? '' : email);
         }
     });
 
-    document.getElementById('accountNextBtn').addEventListener('click', () => {
+    document.getElementById('redemptionNextBtn').addEventListener('click', () => {
         let email = document.getElementById('email-query').value
-        const totalPages = Math.ceil(accountTotal / 8);
-        if (curAccountPage < totalPages) {
-            curAccountPage++;
-            fetchAccounts(email === undefined ? '' : email);
+        const totalPages = Math.ceil(redemptionTotal / 8);
+        if (curRedemptionPage < totalPages) {
+            curRedemptionPage++;
+            fetchRedemptions(email === undefined ? '' : email);
         }
     });
-
-    function fetchShareList(email, type) {
-        window.location.href = 'share.html?email=' + email + "&type=" + type
-    }
 
 
     let timeout;

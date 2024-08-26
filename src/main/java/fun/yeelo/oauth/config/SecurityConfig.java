@@ -63,6 +63,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/pandora.html").permitAll()
                 .antMatchers("/share.html").permitAll()
                 .antMatchers("/car.html").permitAll()
+                .antMatchers("/redemption.html").permitAll()
                 .antMatchers("/reset.html").permitAll()
                 .antMatchers("/pics/**").permitAll()
                 .antMatchers("/pandora/**").permitAll()

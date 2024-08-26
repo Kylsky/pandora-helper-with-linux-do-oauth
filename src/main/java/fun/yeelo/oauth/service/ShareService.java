@@ -111,7 +111,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
 
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), byId.getExpiresAt());
+                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), share.getDuration());
             case 2:
                 return claudeConfigService.addShare(account, byId.getId());
             default:

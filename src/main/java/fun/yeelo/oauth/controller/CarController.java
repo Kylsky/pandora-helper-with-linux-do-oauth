@@ -53,7 +53,7 @@ public class CarController {
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
-        List<Account> accountList = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getShared, true)).stream().filter(e -> !e.getUserId().equals(user.getId())).collect(Collectors.toList());
+        List<Account> accountList = new ArrayList<>(accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getShared, true)));
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
         accountVOS.forEach(e -> {
             e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");

@@ -34,4 +34,6 @@ public class ShareVO extends Share{
 
     private String username;
 
+    private Integer duration;
+
 }

@@ -7,10 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.GptConfigMapper;
-import fun.yeelo.oauth.domain.Account;
-import fun.yeelo.oauth.domain.Share;
-import fun.yeelo.oauth.domain.ShareClaudeConfig;
-import fun.yeelo.oauth.domain.ShareGptConfig;
+import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +60,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
         return configs.get(0);
     }
 
-    public HttpResult<Boolean> addShare(Account account, String uniqueName, Integer shareId, String expire) {
+    public HttpResult<Boolean> addShare(Account account, String uniqueName, Integer shareId, Integer expire) {
         long duration = 0L;
         //if (StringUtils.hasText(expire) && !expire.equals("-")) {
         //    expire += " 00:00:00";
@@ -71,6 +68,20 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
         //    duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
         //}
         String shareToken;
+        if (expire != null) {
+            Share share = new Share();
+            share.setId(shareId);
+            Share byId = shareService.getById(shareId);
+            LocalDateTime expireDateTime;
+            if (byId != null && StringUtils.hasText(byId.getExpiresAt())) {
+                String expiresAt = byId.getExpiresAt();
+                expireDateTime = LocalDateTime.parse(expiresAt,DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            }else {
+                expireDateTime = LocalDateTime.now();
+            }
+            share.setExpiresAt(expireDateTime.plusDays(expire).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            shareService.updateById(share);
+        }
         // 删除旧的share token
         try {
             List<ShareGptConfig> list = this.list(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));
