@@ -766,8 +766,8 @@
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 closeModal('activateRedemptionModal')
                 let data = JSON.parse(xhr.responseText);
-                if (data.status === 200) {
-                    alert(data.message)
+                if (data.status) {
+                    alert("激活成功")
                 } else {
                     alert(data.message);
                 }
@@ -778,8 +778,8 @@
 
     function addRedemption() {
         let accountId = parseInt(document.getElementById('accountSelect').value);
-        let duration = document.getElementById('add-duration').value;
-        let count = document.getElementById('add-redemption-count').value;
+        let duration = parseInt(document.getElementById('add-duration').value);
+        let count = parseInt(document.getElementById('add-redemption-count').value);
         let xhr = new XMLHttpRequest();
         xhr.open("POST", "/redemption/add", true);
         xhr.setRequestHeader('Content-Type', 'application/json');
@@ -789,7 +789,7 @@
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 closeModal('redemptionModal')
                 let data = JSON.parse(xhr.responseText)
-                if (xhr.status === 200) {
+                if (data.status) {
                     alert("添加成功")
                     fetchRedemptions('')
                     document.getElementById('add-duration').value = '';
@@ -914,7 +914,6 @@
     }
 
     window.onload = async function () {
-        loadImg()
         const token = localStorage.getItem('token');
         if (token) {
             var xhr = new XMLHttpRequest();
@@ -941,6 +940,9 @@
             alert('未监测到登录状态,请登录');
             window.location.href = 'index.html';
         }
+
+        await loadImg()
+
     }
 
     function openModal(modalId) {

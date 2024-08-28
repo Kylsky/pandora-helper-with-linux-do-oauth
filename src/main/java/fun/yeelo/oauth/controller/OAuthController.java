@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.util.JSONPObject;
 import fun.yeelo.oauth.domain.Share;
 import fun.yeelo.oauth.domain.ShareVO;
 import fun.yeelo.oauth.service.ShareService;
+import fun.yeelo.oauth.utils.ConvertUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,7 +134,7 @@ public class OAuthController {
                     userToAdd.setTrustLevel(share.getTrustLevel());
                     userToAdd.setPassword(passwordEncoder.encode("123456"));
                     userToAdd.setComment("");
-                    shareService.save(share);
+                    shareService.save(ConvertUtil.convert(userToAdd,Share.class));
                 }else {
                     Integer trustLevel = share.getTrustLevel();
                     String avatarUrl = share.getAvatarUrl();

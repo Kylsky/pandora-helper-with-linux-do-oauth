@@ -1,10 +1,13 @@
 package fun.yeelo.oauth.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.GptConfigService;
+import fun.yeelo.oauth.service.RedemptionService;
 import fun.yeelo.oauth.service.ShareService;
+import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +52,8 @@ public class LoginController {
     private AccountService accountService;
     @Value("${admin-name:admin}")
     private String adminName;
+    @Autowired
+    private RedemptionService redemptionService;
 
     @PostConstruct
     public void initiate() {
@@ -73,6 +78,20 @@ public class LoginController {
             return HttpResult.error("用户名或密码不能为空", HttpStatus.BAD_REQUEST);
         }
         Share user = shareService.getByUserName(username);
+        List<Redemption> list = redemptionService.list(new LambdaQueryWrapper<Redemption>().eq(Redemption::getCode, password));
+        if (!CollectionUtils.isEmpty(list)) {
+            ShareVO userToAdd = new ShareVO();
+            userToAdd.setUniqueName(username);
+            userToAdd.setTrustLevel(-1);
+            userToAdd.setPassword(passwordEncoder.encode("123456"));
+            userToAdd.setComment("");
+            Share share = ConvertUtil.convert(userToAdd, Share.class);
+            shareService.save(share);
+
+            redemptionService.activate(share.getId(), password);
+            password = "123456";
+            user = share;
+        }
         if (user == null) {
             return HttpResult.error("用户不存在，请重试");
         }

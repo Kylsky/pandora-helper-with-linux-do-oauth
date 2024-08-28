@@ -7,10 +7,7 @@ import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.AccountMapper;
 import fun.yeelo.oauth.dao.RedemptionMapper;
 import fun.yeelo.oauth.dao.ShareMapper;
-import fun.yeelo.oauth.domain.Account;
-import fun.yeelo.oauth.domain.Redemption;
-import fun.yeelo.oauth.domain.RedemptionVO;
-import fun.yeelo.oauth.domain.Share;
+import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +62,54 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
                 red.setAccountType(accType);
             }
         });
-        redemptionVOS = redemptionVOS.stream().filter(e->StringUtils.hasText(e.getEmail())).collect(Collectors.toList());
+        redemptionVOS = redemptionVOS.stream().filter(e->StringUtils.hasText(e.getEmail()) && (!StringUtils.hasText(email)||(StringUtils.hasText(email) && e.getEmail().contains(email)))).collect(Collectors.toList());
         return HttpResult.success(redemptionVOS);
     }
+
+    public HttpResult<Boolean> activate(HttpServletRequest request, String code) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Redemption one = getOne(new LambdaQueryWrapper<Redemption>().eq(Redemption::getCode, code));
+        if (one == null) {
+            return HttpResult.error("兑换码不存在");
+        }
+        if (StringUtils.hasText(one.getTargetUserName()) && !one.getTargetUserName().equals(username)) {
+            return HttpResult.error("您无法使用此兑换码");
+        }
+        ShareVO shareVO = new ShareVO();
+        shareVO.setId(user.getId());
+        shareVO.setAccountId(one.getAccountId());
+        shareVO.setDuration(one.getDuration().equals(-1) ? null : one.getDuration());
+        HttpResult<Boolean> distribute = shareService.distribute(shareVO);
+        if (distribute.isStatus()){
+            removeById(one.getId());
+            return distribute;
+        }
+        return distribute;
+    }
+
+    public HttpResult<Boolean> activate(Integer shareId, String code) {
+        Redemption one = getOne(new LambdaQueryWrapper<Redemption>().eq(Redemption::getCode, code));
+        if (one == null) {
+            return HttpResult.error("兑换码不存在");
+        }
+        ShareVO shareVO = new ShareVO();
+        shareVO.setId(shareId);
+        shareVO.setAccountId(one.getAccountId());
+        shareVO.setDuration(one.getDuration().equals(-1) ? null : one.getDuration());
+        HttpResult<Boolean> distribute = shareService.distribute(shareVO);
+        if (distribute.isStatus()){
+            removeById(one.getId());
+            return distribute;
+        }
+        return distribute;
+    }
+
 }

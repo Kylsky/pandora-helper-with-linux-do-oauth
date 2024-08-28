@@ -61,7 +61,7 @@ public class RedemptionController {
         }
         Redemption redemption = redemptionService.getById(id);
         if (redemption!=null && redemption.getUserId().equals(user.getId())) {
-            accountService.delete(id);
+            redemptionService.removeById(id);
         }else {
             return HttpResult.error("您无权删除该兑换码");
         }
@@ -87,11 +87,18 @@ public class RedemptionController {
         if (dto.getAccountId()==null){
             return HttpResult.error("尚未选择账号，请重试");
         }
+        if (dto.getCount() > 4) {
+            return HttpResult.error("最多支持一次性生成4个兑换码");
+        }
+        if (dto.getDuration() > 30){
+            return HttpResult.error("最多支持30天");
+        }
         for (int i = 0; i < dto.getCount(); i++) {
+            dto.setId(null);
             dto.setUserId(user.getId());
             dto.setCreateTime(LocalDateTime.now());
             dto.setCode(UUID.randomUUID().toString().replace("-","").substring(0,10));
-            redemptionService.saveOrUpdate(dto);
+            redemptionService.save(dto);
         }
 
         return HttpResult.success(true);
@@ -123,28 +130,8 @@ public class RedemptionController {
     }
 
     @GetMapping("/activate")
-    public HttpResult<Boolean> emailOptions(HttpServletRequest request, @RequestParam String code) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
-        Redemption one = redemptionService.getOne(new LambdaQueryWrapper<Redemption>().eq(Redemption::getCode, code));
-        if (one == null) {
-            return HttpResult.error("兑换码不存在");
-        }
-        if (StringUtils.hasText(one.getTargetUserName()) && !one.getTargetUserName().equals(username)) {
-            return HttpResult.error("您无法使用此兑换码");
-        }
-        ShareVO shareVO = new ShareVO();
-        shareVO.setId(user.getId());
-        shareVO.setAccountId(one.getAccountId());
-        shareVO.setDuration(one.getDuration().equals(-1) ? null : one.getDuration());
-        return shareService.distribute(shareVO);
+    public HttpResult<Boolean> activate(HttpServletRequest request, @RequestParam String code) {
+        return redemptionService.activate(request,code);
     }
 
 }

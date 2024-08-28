@@ -774,8 +774,8 @@
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 closeModal('activateRedemptionModal')
                 let data = JSON.parse(xhr.responseText);
-                if (data.status === 200) {
-                    alert(data.message)
+                if (data.status) {
+                    alert("激活成功")
                 } else {
                     alert(data.message);
                 }
@@ -1048,7 +1048,6 @@
         if (!token) {
             alert('未监测到登录状态，请登录');
             window.location.href = 'index.html';
-            return;
         }
 
         try {
@@ -1069,6 +1068,7 @@
                 const email = getQueryStringValue("email") || '';
                 const type = getQueryStringValue("type") || '';
                 await fetchShares(email, type);
+                await loadImg();
             } else {
                 alert(res.message);
                 window.location.href = 'index.html';
@@ -1085,8 +1085,8 @@
     }
 
     window.onload = async function () {
-        await loadImg();
         await checkTokenAndLoadData();
+        await loadImg()
     }
 
 

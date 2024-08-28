@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -73,9 +74,9 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
             share.setId(shareId);
             Share byId = shareService.getById(shareId);
             LocalDateTime expireDateTime;
-            if (byId != null && StringUtils.hasText(byId.getExpiresAt())) {
+            if (byId != null && StringUtils.hasText(byId.getExpiresAt()) && !byId.getExpiresAt().equals("-")) {
                 String expiresAt = byId.getExpiresAt();
-                expireDateTime = LocalDateTime.parse(expiresAt,DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                expireDateTime = LocalDateTime.parse(expiresAt+" 00:00:00",DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
             }else {
                 expireDateTime = LocalDateTime.now();
             }
