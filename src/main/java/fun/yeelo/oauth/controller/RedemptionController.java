@@ -1,6 +1,7 @@
 package fun.yeelo.oauth.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import fun.yeelo.oauth.config.HttpResult;
@@ -43,9 +44,27 @@ public class RedemptionController {
     @Autowired
     private RedemptionService redemptionService;
 
+    @GetMapping("/getById")
+    public HttpResult<Redemption> getById(HttpServletRequest request, @RequestParam Integer id){
+        Redemption byId = redemptionService.getById(id);
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        if (!byId.getUserId().equals(user.getId())) {
+            return HttpResult.error("你无权访问该内容");
+        }
+        return HttpResult.success(byId);
+    }
+
     @GetMapping("/list")
-    public HttpResult<List<RedemptionVO>> list(HttpServletRequest request,@RequestParam(required = false) String emailAddr) {
-        return redemptionService.listRedemptions(request,emailAddr);
+    public HttpResult<PageVO<RedemptionVO>> list(HttpServletRequest request, @RequestParam(required = false) String emailAddr, @RequestParam Integer page, @RequestParam Integer size) {
+        return redemptionService.listRedemptions(request,emailAddr,page,size);
     }
 
     @DeleteMapping("/delete")

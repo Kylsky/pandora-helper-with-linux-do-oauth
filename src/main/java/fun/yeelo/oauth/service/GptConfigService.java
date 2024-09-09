@@ -133,9 +133,9 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
             Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
             shareToken = map.get("token_key").toString();
             log.info("新增share完成,share_token:{}", shareToken);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("新增 chatgpt share 异常:", e);
-            return HttpResult.error("新增 chatgpt share 异常");
+            return HttpResult.error("调取share token异常");
         }
         // 删除旧的
         this.baseMapper.delete(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));

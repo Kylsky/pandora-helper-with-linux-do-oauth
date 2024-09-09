@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -33,16 +34,24 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
+        if (dto.getIds()==null && dto.getShareId()!=null ) {
+            dto.setIds(Collections.singletonList(dto.getShareId()));
+        }
         if (!dto.getAllowApply().equals(1)) {
-            this.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId,dto.getAccountId()).eq(CarApply::getShareId,dto.getShareId()));
+            dto.getIds().forEach(id -> {
+                this.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId, dto.getId()).eq(CarApply::getShareId, id));
+            });
             return HttpResult.success();
         }
 
-        ShareVO shareVO = new ShareVO();
-        shareVO.setId(dto.getShareId());
-        shareVO.setAccountId(dto.getAccountId());
-        this.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId,dto.getAccountId()).eq(CarApply::getShareId,dto.getShareId()));
-        return shareService.distribute(shareVO);
+        dto.getIds().forEach(id -> {
+            ShareVO shareVO = new ShareVO();
+            shareVO.setId(id);
+            shareVO.setAccountId(dto.getAccountId());
+            this.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId, dto.getAccountId()).eq(CarApply::getShareId, id));
+            shareService.distribute(shareVO);
+        });
+        return HttpResult.success();
     }
 }
 

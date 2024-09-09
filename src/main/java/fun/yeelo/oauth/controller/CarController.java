@@ -40,7 +40,7 @@ public class CarController {
     private ClaudeConfigService claudeConfigService;
 
     @GetMapping("/list")
-    public HttpResult<List<AccountVO>> list(HttpServletRequest request, @RequestParam(required = false) String owner) {
+    public HttpResult<PageVO<AccountVO>> list(HttpServletRequest request, @RequestParam(required = false) String owner,@RequestParam Integer page,@RequestParam Integer size) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -77,11 +77,16 @@ public class CarController {
             e.setCountDesc(count+" / "+(e.getUserLimit().equals(-1)? "无限制":e.getUserLimit()));
             e.setCount(count);
         });
+        Map<Integer, List<CarApply>> applys = carService.list().stream().collect(Collectors.groupingBy(e -> e.getAccountId()));
         accountVOS = accountVOS.stream()
                              .filter(e-> !StringUtils.hasText(owner) || e.getUsername().contains(owner))
                              .sorted(Comparator.comparing(AccountVO::getType))
                              .collect(Collectors.toList());
-        return HttpResult.success(accountVOS);
+        accountVOS.forEach(e->e.setApplyNum(applys.get(e.getId())==null?0:applys.get(e.getId()).size()));
+        PageVO pageVO = new PageVO();
+        pageVO.setTotal(accountVOS.size());
+        pageVO.setData(pageVO==null ? accountVOS : accountVOS.subList(10*(page-1),Math.min(10*(page-1)+size,accountVOS.size())));
+        return HttpResult.success(pageVO);
     }
 
     @GetMapping("/fetchApplies")
@@ -100,7 +105,7 @@ public class CarController {
         List<LabelDTO> labels = carService.list(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId, accountId))
                                       .stream()
                                       .map(e -> {
-                                          return new LabelDTO(e.getShareId() + "", userMap.get(e.getShareId()).getUniqueName() + "");
+                                          return new LabelDTO(e.getShareId() + "", userMap.get(e.getShareId()).getUniqueName() + "",userMap.get(e.getShareId()).getUniqueName() + "");
                                       })
                                       .collect(Collectors.toList());
 

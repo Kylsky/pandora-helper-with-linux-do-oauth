@@ -90,29 +90,29 @@ public class FuclaudeController {
     }
 
     @PostMapping("/login")
-    public HttpEntity<String> login(@RequestBody LoginDTO resetDTO) {
+    public HttpResult<String> login(@RequestBody LoginDTO resetDTO) {
         String username = resetDTO.getUsername();
         String password = resetDTO.getPassword();
         if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
-            return new ResponseEntity<>("用户名或密码不能为空", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("用户名或密码不能为空");
         }
         Share user = shareService.getByUserName(username);
         if (user == null) {
-            return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("用户不存在，请重试");
         }
         ShareClaudeConfig claudeShare = claudeConfigService.getByShareId(user.getId());
         if (claudeShare==null) {
-            return new ResponseEntity<>("当前用户未激活Claude", HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("当前用户未激活Claude");
         }
         Account account = accountService.getById(claudeShare.getAccountId());
         String token = claudeConfigService.generateAutoToken(account,user);
         if (token==null) {
-            return new ResponseEntity<>("生成OAUTH_TOKEN异常，请联系管理员", HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("生成OAUTH_TOKEN异常，请联系管理员");
         }
         if (!passwordEncoder.matches(password,user.getPassword())){
-            return new ResponseEntity<>("密码错误，请重试", HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("密码错误，请重试");
         }
-        return new ResponseEntity<>(token, HttpStatus.OK);
+        return HttpResult.success(token);
 
     }
 }

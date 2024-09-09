@@ -36,4 +36,6 @@ public class ShareVO extends Share{
 
     private Integer duration;
 
+    private Boolean self = false;
+
 }

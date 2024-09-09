@@ -21,4 +21,6 @@ public class AccountVO extends Account{
 
     private String countDesc;
 
+    private Integer applyNum;
+
 }

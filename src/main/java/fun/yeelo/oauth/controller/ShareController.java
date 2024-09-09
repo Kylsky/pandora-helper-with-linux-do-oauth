@@ -65,11 +65,30 @@ public class ShareController {
     @Value("${linux-do.oaifree.auth-api}")
     private String authUrl;
 
+    @GetMapping("/getById")
+    public HttpResult<Share> getById(HttpServletRequest request, @RequestParam Integer id){
+        Share byId = shareService.getById(id);
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        if (user.getId()!=1 && (!byId.getId().equals(user.getId()) && !byId.getParentId().equals(user.getId()))) {
+            return HttpResult.error("你无权访问该内容");
+        }
+        return HttpResult.success(byId);
+    }
+
     @GetMapping("/list")
     public HttpResult<PageVO<ShareVO>> list(HttpServletRequest request,
                                           @RequestParam(required = false) String emailAddr,
                                           @RequestParam(required = false) Integer accountType,
-                                          @RequestParam(required = false) Integer start) {
+                                          @RequestParam(required = false) Integer page,
+                                            @RequestParam(required = false) Integer size) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
 
@@ -113,12 +132,13 @@ public class ShareController {
             //}
             if (share.getId().equals(user.getId())) {
                 share.setUniqueName(share.getUniqueName()+"(我)");
+                share.setSelf(true);
             }
             share.setCurAdminId(user.getId());
             if (gptConfig != null) {
-                int size = gptAccountMap.getOrDefault(gptConfig.getAccountId(),new ArrayList<>()).size();
+                int total = gptAccountMap.getOrDefault(gptConfig.getAccountId(),new ArrayList<>()).size();
                 share.setGptEmail(accountService.getById(gptConfig.getAccountId()).getEmail());
-                share.setGptCarName(accountService.getById(gptConfig.getAccountId()).getName()+" ("+size+"人)");;
+                share.setGptCarName(accountService.getById(gptConfig.getAccountId()).getName()+" ("+total+"人)");;
                 share.setGptConfigId(gptConfig.getId());
             } else {
                 share.setGptEmail("-");
@@ -126,9 +146,9 @@ public class ShareController {
             }
 
             if (claudeConfig != null) {
-                int size = claudeAccountMap.getOrDefault(claudeConfig.getAccountId(),new ArrayList<>()).size();
+                int total = claudeAccountMap.getOrDefault(claudeConfig.getAccountId(),new ArrayList<>()).size();
                 share.setClaudeEmail(accountService.getById(claudeConfig.getAccountId()).getEmail());
-                share.setClaudeCarName(accountService.getById(claudeConfig.getAccountId()).getName()+" ("+size+"人)");
+                share.setClaudeCarName(accountService.getById(claudeConfig.getAccountId()).getName()+" ("+total+"人)");
                 share.setClaudeConfigId(claudeConfig.getId());
             } else {
                 share.setClaudeEmail("-");
@@ -153,7 +173,7 @@ public class ShareController {
             }
         }
         PageVO<ShareVO> pageVO = new PageVO<>();
-        pageVO.setData(start==null?shareVOS:shareVOS.subList(start,Math.min(shareVOS.size(),start+8)));
+        pageVO.setData(page==null?shareVOS:shareVOS.subList(10*(page-1),Math.min(10*(page-1)+size,shareVOS.size())));
         pageVO.setTotal(shareVOS.size());
         return HttpResult.success(pageVO);
     }
@@ -233,8 +253,6 @@ public class ShareController {
             return HttpResult.error("用户名已存在");
         }
 
-        String expiresAt = dto.getExpiresAt();
-
         dto.setPassword(passwordEncoder.encode(dto.getPassword()));
         dto.setParentId(user.getId());
         shareService.getBaseMapper().insert(dto);
@@ -268,12 +286,17 @@ public class ShareController {
             log.error("更新用户出错，用户id为空");
             return HttpResult.success(true);
         }
+
+        Share share = shareService.getById(dto.getId());
+
         Share updateVo = new Share();
+        if (user.getId().equals(share.getParentId())) {
+            updateVo.setExpiresAt(StringUtils.hasText(dto.getExpiresAt())  ? dto.getExpiresAt() : "-");
+        }
         updateVo.setId(dto.getId());
-        updateVo.setExpiresAt(StringUtils.hasText(dto.getExpiresAt()) ? dto.getExpiresAt() : "-");
+
         updateVo.setComment(dto.getComment()==null ? "" : dto.getComment());
         shareService.updateById(updateVo);
-
         return HttpResult.success(true);
     }
 

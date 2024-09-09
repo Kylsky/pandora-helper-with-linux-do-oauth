@@ -161,10 +161,6 @@
     </style>
 </head>
 <body>
-<div id="loginForm" style="display:none;">
-    <input type="password" id="pass" placeholder="Enter your password">
-    <button onclick="return adminLogin(event)">登录</button>
-</div>
 <div class="login-container">
     <h1 style="margin-left: 10px">Fuclaude<span class="toggle-icon" onclick="switchToPandora()" ><img src="pics/ph--user-switch.svg" title="切换至Panel" alt="hi"></span></h1>
 
@@ -186,15 +182,8 @@
     </div>
 </div>
 <script>
-
-
-
     function reset() {
         window.location.href = 'reset.html'
-    }
-
-    function panel() {
-        window.location.href = 'index.html'
     }
 
     function userlogin() {

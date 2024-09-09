@@ -1,11 +1,13 @@
 package fun.yeelo.oauth.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.CarService;
+import fun.yeelo.oauth.service.GptConfigService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
@@ -26,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
@@ -47,11 +50,59 @@ public class AccountController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private CarService carService;
+    @Autowired
+    private GptConfigService gptConfigService;
+
+    @GetMapping("/statistic")
+    public HttpResult<List<InfoVO>> statistic(HttpServletRequest request, Integer id) {
+        Account byId = accountService.getById(id);
+        List<ShareGptConfig> gptShares = gptConfigService.list().stream().filter(e -> e.getAccountId().equals(id)).collect(Collectors.toList());
+        String chatUrl = "https://chat.oaifree.com/token/info/";
+        List<InfoVO> info = new ArrayList<>();
+        Map<Integer, Share> shareMap = shareService.list().stream().collect(Collectors.toMap(Share::getId, Function.identity()));
+        gptShares.parallelStream().forEach(e -> {
+            InfoVO infoVO = new InfoVO();
+            infoVO.setUniqueName(shareMap.get(e.getShareId()).getUniqueName());
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("Authorization", "Bearer " + byId.getAccessToken());
+            Map map = null;
+
+            try {
+                UsageVO usageVO = new UsageVO();
+                ResponseEntity<String> stringResponseEntity = restTemplate.exchange(chatUrl + e.getShareToken(), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+                map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+                Map<String, String> usage = (Map<String, String>) map.get("usage");
+                usage.entrySet().stream().forEach(entry -> {
+                    switch (entry.getKey()) {
+                        case "gpt-4o":
+                            usageVO.setGpt4o(Integer.valueOf(entry.getValue()));
+                            break;
+                        case "gpt-4":
+                            usageVO.setGpt4(Integer.valueOf(entry.getValue()));
+                            break;
+                        case "gpt-4o-mini":
+                            usageVO.setGpt4omini(Integer.valueOf(entry.getValue()));
+                            break;
+                    }
+                    infoVO.setUsage(usageVO);
+                });
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
+            ;
+            info.add(infoVO);
+        });
+        return HttpResult.success(info);
+    }
 
     @GetMapping("/list")
-    public HttpResult<List<AccountVO>> list(HttpServletRequest request,@RequestParam(required = false) String emailAddr) {
+    public HttpResult<PageVO<AccountVO>> list(HttpServletRequest request,
+                                              @RequestParam(required = false) String emailAddr,
+                                              @RequestParam(required = false) Integer page,
+                                              @RequestParam(required = false) Integer size) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -61,23 +112,26 @@ public class AccountController {
         }
         List<Account> accountList = accountService.findByUserId(user.getId());
         if (StringUtils.hasText(emailAddr)) {
-            accountList = accountList.stream().filter(e->e.getEmail().contains(emailAddr)).collect(Collectors.toList());
+            accountList = accountList.stream().filter(e -> e.getEmail().contains(emailAddr)).collect(Collectors.toList());
         }
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
         Map<Integer, List<CarApply>> accountIdMap = carService.list().stream().collect(Collectors.groupingBy(CarApply::getAccountId));
-        accountVOS.forEach(e->{
+        accountVOS.forEach(e -> {
             //e.setEmail("车辆"+(num.getAndIncrement()));
-            e.setType(e.getAccountType().equals(1)?"ChatGPT":"Claude");
-            e.setCount(accountIdMap.getOrDefault(e.getId(),new ArrayList<>()).size());
+            e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
+            e.setCount(accountIdMap.getOrDefault(e.getId(), new ArrayList<>()).size());
         });
         accountVOS = accountVOS.stream().sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
-        return HttpResult.success(accountVOS);
+        PageVO<AccountVO> pageVO = new PageVO<>();
+        pageVO.setTotal(accountVOS.size());
+        pageVO.setData(page == null ? accountVOS : accountVOS.subList(10 * (page - 1), Math.min(10 * (page - 1) + size, accountVOS.size())));
+        return HttpResult.success(pageVO);
     }
 
     @DeleteMapping("/delete")
     public HttpResult<Boolean> delete(HttpServletRequest request, @RequestParam Integer id) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -86,20 +140,38 @@ public class AccountController {
             return HttpResult.error("用户不存在，请联系管理员");
         }
         Account account = accountService.findById(id);
-        if (account!=null && account.getUserId().equals(user.getId())) {
+        if (account != null && account.getUserId().equals(user.getId())) {
             accountService.delete(id);
-        }else {
+        } else {
             return HttpResult.error("您无权删除该账号");
         }
 
         return HttpResult.success(true);
     }
 
+    @GetMapping("/getById")
+    public HttpResult<Account> getById(HttpServletRequest request, @RequestParam Integer id) {
+        Account byId = accountService.getById(id);
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        if (!byId.getUserId().equals(user.getId()) || user.getId() != 1) {
+            return HttpResult.error("你无权访问该账号");
+        }
+        return HttpResult.success(byId);
+    }
+
 
     @PostMapping("/add")
-    public HttpResult<Boolean> add(HttpServletRequest request,@RequestBody AccountVO dto) {
+    public HttpResult<Boolean> add(HttpServletRequest request, @RequestBody AccountVO dto) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -116,9 +188,9 @@ public class AccountController {
     }
 
     @PatchMapping("/update")
-    public HttpResult<Boolean> update(HttpServletRequest request,@RequestBody Account dto) {
+    public HttpResult<Boolean> update(HttpServletRequest request, @RequestBody Account dto) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -137,9 +209,9 @@ public class AccountController {
     }
 
     @PostMapping("/refresh")
-    public HttpResult<Boolean> refresh(HttpServletRequest request,@RequestParam Integer accountId) {
+    public HttpResult<Boolean> refresh(HttpServletRequest request, @RequestParam Integer accountId) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -148,7 +220,7 @@ public class AccountController {
             return HttpResult.error("用户不存在，请联系管理员");
         }
         Account account = accountService.getById(accountId);
-        if (account==null) {
+        if (account == null) {
             return HttpResult.error("账号不存在");
         }
         if (!StringUtils.hasText(account.getRefreshToken())) {
@@ -177,14 +249,13 @@ public class AccountController {
         }
 
 
-
         return HttpResult.success(true);
     }
 
     @GetMapping("/getAccount")
-    public HttpResult<Account> getAccount(HttpServletRequest request,@RequestParam Integer accountId) {
+    public HttpResult<Account> getAccount(HttpServletRequest request, @RequestParam Integer accountId) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -193,7 +264,7 @@ public class AccountController {
             return HttpResult.error("用户不存在，请联系管理员");
         }
         Account account = accountService.getById(accountId);
-        if (account==null) {
+        if (account == null) {
             return HttpResult.error("账号不存在");
         }
 
@@ -202,20 +273,25 @@ public class AccountController {
 
 
     @GetMapping("/options")
-    public HttpResult<List<LabelDTO>> emailOptions(HttpServletRequest request, @RequestParam Integer type) {
+    public HttpResult<List<LabelDTO>> emailOptions(HttpServletRequest request,
+                                                   @RequestParam Integer type) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String s = jwtTokenUtil.extractUsername(token);
         Share byUserName = shareService.getByUserName(s);
-        List<LabelDTO> emails = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType,type))
+        List<LabelDTO> emails = accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType, type))
                                         .stream()
-                                        .filter(e->e.getUserId().equals(byUserName.getId()))
-                                        .map(e -> new LabelDTO(e.getId().toString(), e.getName()))
+                                        .filter(e -> e.getUserId().equals(byUserName.getId()))
+                                        .map(e -> new LabelDTO(e.getId().toString(), e.getName(), e.getName()))
                                         .sorted(Comparator.comparing(LabelDTO::getLabel))
                                         .collect(Collectors.toList());
-        return HttpResult.success(emails);
+        List<LabelDTO> res = new ArrayList<>();
+        LabelDTO labelDTO = new LabelDTO("-1", "----默认选项：下车----", "----默认选项：下车----");
+        res.add(labelDTO);
+        res.addAll(emails);
+        return HttpResult.success(res);
     }
 
 }

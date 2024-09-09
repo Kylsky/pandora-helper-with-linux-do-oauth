@@ -164,10 +164,6 @@
     </style>
 </head>
 <body>
-<div id="loginForm" style="display:none;">
-    <input type="password" id="pass" placeholder="Enter your password">
-    <button onclick="return adminLogin(event)">登录</button>
-</div>
 <div class="login-container">
     <h1 style="margin-left: 10px">Panel<span class="toggle-icon" onclick="switchToIndex()" ><img src="pics/ph--user-switch.svg" title="切换至Pandora" alt="hi"></span></h1>
     <form onsubmit="return userlogin(event)">
@@ -186,7 +182,7 @@
         <a href="https://shop.yeelo.fun" target="_blank">Powered by Yeelo</a>
     </div>
 </div>
-<script>
+<script >
 
     function reset() {
         window.location.href = 'reset.html'

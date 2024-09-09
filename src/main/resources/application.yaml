@@ -9,9 +9,10 @@ linux-do:
   oauth2:
     client:
       registration:
-        client-id: vMZlVu7FMSQOu6mbXJyVevBXhAbuPzhS
-        client-secret: Zfpc1cYPxkNhDAog80CTCOvRKgIGSCG4
-        redirect-uri: https://connect.yeelo.fun/oauth2/callback
+        client-id: TwUBbmaaRnjzH04ZMoV50Kqluhmmtc1m
+        client-secret: kBl7pI4j7VlVz5eUVOA1f5mGkpTGCy5f
+#        redirect-uri: https://connect.yeelo.fun/oauth2/callback
+        redirect-uri: http://127.0.0.1:8181/oauth2/callback
         #        client-id: ${CLIENT_ID}
         #        client-secret: ${CLIENT_SECRET}
         #        redirect-uri: ${REDIRECT_URI}
@@ -33,8 +34,8 @@ spring:
     password:
   main:
     allow-circular-references: true
-  profiles:
-    active: prod
+#  profiles:
+#    active: prod
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
 admin-name: yeelo

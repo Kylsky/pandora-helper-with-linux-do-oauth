@@ -1,6 +1,7 @@
 package fun.yeelo.oauth.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import fun.yeelo.oauth.config.HttpResult;
@@ -29,7 +30,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
     @Autowired
     private AccountService accountService;
 
-    public HttpResult<List<RedemptionVO>> listRedemptions(HttpServletRequest request, String email) {
+    public HttpResult<PageVO<RedemptionVO>> listRedemptions(HttpServletRequest request, String email, Integer page, Integer size) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)){
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -63,7 +64,10 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
             }
         });
         redemptionVOS = redemptionVOS.stream().filter(e->StringUtils.hasText(e.getEmail()) && (!StringUtils.hasText(email)||(StringUtils.hasText(email) && e.getEmail().contains(email)))).collect(Collectors.toList());
-        return HttpResult.success(redemptionVOS);
+        PageVO<RedemptionVO> pageVO = new PageVO<>();
+        pageVO.setData(page==null ? redemptionVOS : redemptionVOS.subList(10*(page-1),Math.min(10*(page-1)+size,redemptionVOS.size())));
+        pageVO.setTotal(redemptionVOS.size());
+        return HttpResult.success(pageVO);
     }
 
     public HttpResult<Boolean> activate(HttpServletRequest request, String code) {
@@ -86,7 +90,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         ShareVO shareVO = new ShareVO();
         shareVO.setId(user.getId());
         shareVO.setAccountId(one.getAccountId());
-        shareVO.setDuration(one.getDuration().equals(-1) ? null : one.getDuration());
+        shareVO.setDuration(one.getDuration().equals(-1) || user.getId().equals(1) ? null : one.getDuration());
         HttpResult<Boolean> distribute = shareService.distribute(shareVO);
         if (distribute.isStatus()){
             removeById(one.getId());

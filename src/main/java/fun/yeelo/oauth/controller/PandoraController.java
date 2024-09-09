@@ -123,54 +123,54 @@ public class PandoraController {
     }
 
     @PostMapping("/reset")
-    public HttpEntity<String> reset(@RequestBody ResetDTO resetDTO) {
+    public HttpResult<String> reset(@RequestBody ResetDTO resetDTO) {
         String username = resetDTO.getUsername();
         String password = resetDTO.getOldPassword();
         String newPassword = resetDTO.getNewPassword();
         String confirmPassword = resetDTO.getConfirmPassword();
         if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
-            return new ResponseEntity<>("用户名或密码不能为空", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("用户名或密码不能为空");
         }
         if (!StringUtils.hasText(newPassword) || !StringUtils.hasText(confirmPassword)) {
-            return new ResponseEntity<>("新密码为空", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("新密码为空");
         }
         if (!newPassword.equals(confirmPassword)) {
-            return new ResponseEntity<>("两次密码不一致", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("两次密码不一致");
         }
         if (newPassword.length() < 8) {
-            return new ResponseEntity<>("密码长度必须超过大于等于8位，请重新输入。", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("密码长度必须超过大于等于8位，请重新输入。");
         }
         Share user = shareService.getByUserName(username);
         if (user == null) {
-            return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("用户不存在，请重试");
         }
         if (!passwordEncoder.matches(password,user.getPassword())){
-            return new ResponseEntity<>("密码错误，请重试", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("密码错误，请重试");
         }
         Share update = new ShareVO();
         update.setId(user.getId());
         update.setPassword(passwordEncoder.encode(newPassword));
         boolean res = shareService.updateById(update);
-        return res ? new ResponseEntity<>("重置成功", HttpStatus.OK) : new ResponseEntity<>("重置失败", HttpStatus.INTERNAL_SERVER_ERROR);
+        return res ? HttpResult.success("重置成功") : HttpResult.error("重置失败");
     }
 
     @PostMapping("/login")
-    public HttpEntity<String> login(@RequestBody LoginDTO resetDTO) {
+    public HttpResult<String> login(@RequestBody LoginDTO resetDTO) {
         String username = resetDTO.getUsername();
         String password = resetDTO.getPassword();
         if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
-            return new ResponseEntity<>("用户名或密码不能为空", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("用户名或密码不能为空");
         }
         Share user = shareService.getByUserName(username);
         if (user == null) {
-            return new ResponseEntity<>("用户不存在，请重试", HttpStatus.BAD_REQUEST);
+            return HttpResult.error("用户不存在，请重试");
         }
         ShareGptConfig gptShare = gptConfigService.getByShareId(user.getId());
         if (gptShare==null || !StringUtils.hasText(gptShare.getShareToken())) {
-            return new ResponseEntity<>("当前用户未激活ChatGPT", HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("当前用户未激活ChatGPT");
         }
         if (!passwordEncoder.matches(password,user.getPassword())){
-            return new ResponseEntity<>("密码错误，请重试", HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("密码错误，请重试");
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -194,9 +194,9 @@ public class PandoraController {
             }
         } catch (IOException e) {
             log.error("Check user error:", e);
-            return new ResponseEntity<>("系统内部异常", HttpStatus.INTERNAL_SERVER_ERROR);
+            return HttpResult.error("系统内部异常");
         }
-        return new ResponseEntity<>(res.getAddress(), HttpStatus.OK);
+        return HttpResult.success(res.getAddress());
 
     }
 }

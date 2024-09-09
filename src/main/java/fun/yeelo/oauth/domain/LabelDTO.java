@@ -8,8 +8,12 @@ public class LabelDTO {
 
     private String label;
 
-    public LabelDTO(String value, String label) {
+    private String text;
+
+    public LabelDTO(String value, String label, String text) {
         this.value = value;
         this.label = label;
+        this.text = text;
     }
+
 }
