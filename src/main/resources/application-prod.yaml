@@ -22,7 +22,6 @@ linux-do:
 spring:
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:/Users/kyle/IdeaProjects/linuxdo-auth/src/main/resources/db/data1.db
     username:
     password:
 mybatis-plus:

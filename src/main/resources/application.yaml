@@ -9,13 +9,6 @@ linux-do:
   oauth2:
     client:
       registration:
-        client-id: TwUBbmaaRnjzH04ZMoV50Kqluhmmtc1m
-        client-secret: kBl7pI4j7VlVz5eUVOA1f5mGkpTGCy5f
-#        redirect-uri: https://connect.yeelo.fun/oauth2/callback
-        redirect-uri: http://127.0.0.1:8181/oauth2/callback
-        #        client-id: ${CLIENT_ID}
-        #        client-secret: ${CLIENT_SECRET}
-        #        redirect-uri: ${REDIRECT_URI}
         authorization-grant-type: authorization_code
         scope: read,write
       provider:
@@ -28,12 +21,13 @@ spring:
     database-platform: org.hibernate.dialect.MySQLDialect
   datasource:
     driver-class-name: org.sqlite.JDBC
-#    url: jdbc:sqlite:${PANDORA_DB_PATH}
+    # 如需调试，请在此处修改你的db文件位置
     url: jdbc:sqlite:/Users/kyle/IdeaProjects/linuxdo-auth/src/main/resources/db/data.db
     username:
     password:
   main:
     allow-circular-references: true
+  # 如需调试，请注释此处配置环境代码
   profiles:
     active: prod
 mybatis-plus:
