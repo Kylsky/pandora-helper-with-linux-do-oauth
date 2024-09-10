@@ -209,7 +209,7 @@ public class AccountController {
     }
 
     @PostMapping("/refresh")
-    public HttpResult<Boolean> refresh(HttpServletRequest request, @RequestParam Integer accountId) {
+    public HttpResult<Boolean> refresh(HttpServletRequest request, @RequestParam Integer id) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -219,7 +219,7 @@ public class AccountController {
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
-        Account account = accountService.getById(accountId);
+        Account account = accountService.getById(id);
         if (account == null) {
             return HttpResult.error("账号不存在");
         }
@@ -238,7 +238,7 @@ public class AccountController {
                 log.info("refresh success");
                 String newToken = map.get("access_token").toString();
                 Account updateDTO = new Account();
-                updateDTO.setId(accountId);
+                updateDTO.setId(id);
                 updateDTO.setAccessToken(newToken);
                 accountService.saveOrUpdate(updateDTO);
                 return HttpResult.success(true);
@@ -288,7 +288,7 @@ public class AccountController {
                                         .sorted(Comparator.comparing(LabelDTO::getLabel))
                                         .collect(Collectors.toList());
         List<LabelDTO> res = new ArrayList<>();
-        LabelDTO labelDTO = new LabelDTO("-1", "----默认选项：下车----", "----默认选项：下车----");
+        LabelDTO labelDTO = new LabelDTO(type.equals(1) ? "-1" : "-2", "----默认选项：下车----", "----默认选项：下车----");
         res.add(labelDTO);
         res.addAll(emails);
         return HttpResult.success(res);

@@ -284,7 +284,7 @@ public class ShareController {
         }
         if (dto.getId()==null){
             log.error("更新用户出错，用户id为空");
-            return HttpResult.success(true);
+            return HttpResult.error("更新用户异常，用户id为空");
         }
 
         Share share = shareService.getById(dto.getId());

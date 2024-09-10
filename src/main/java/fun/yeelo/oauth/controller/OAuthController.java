@@ -3,6 +3,7 @@ package fun.yeelo.oauth.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.fasterxml.jackson.databind.util.JSONPObject;
+import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.Share;
 import fun.yeelo.oauth.domain.ShareVO;
 import fun.yeelo.oauth.service.ShareService;
@@ -71,13 +72,13 @@ public class OAuthController {
     }
 
     @GetMapping("/callback")
-    public HttpEntity<String> handleAuthorizationCode(@RequestParam("code") String code,
+    public HttpResult<String> handleAuthorizationCode(@RequestParam("code") String code,
                                                       @RequestParam("state") String state,
                                                       HttpServletRequest request) {
         HttpSession session = request.getSession();
         String sessionState = (String) session.getAttribute("oauth2State");
         if (!StringUtils.hasText(state) || !sessionState.equals(state)) {
-            return new ResponseEntity<>("Invalid state", HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("Invalid State");
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -148,12 +149,12 @@ public class OAuthController {
                     }
                 }
 
-                return new ResponseEntity<>(jsonString, HttpStatus.OK);
+                return HttpResult.success(jsonString);
             } else {
-                return new ResponseEntity<>("Failed to obtain user info", HttpStatus.UNAUTHORIZED);
+                return HttpResult.error("Failed to obtain user info");
             }
         } else {
-            return new ResponseEntity<>("Failed to obtain access token", HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("Failed to obtain access token");
         }
 
 

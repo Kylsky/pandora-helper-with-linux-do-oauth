@@ -23,4 +23,6 @@ public class AccountVO extends Account{
 
     private Integer applyNum;
 
+    private boolean authorized;
+
 }

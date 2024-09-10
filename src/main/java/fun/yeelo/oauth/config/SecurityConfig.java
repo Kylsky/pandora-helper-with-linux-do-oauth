@@ -50,33 +50,31 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable()
-                .formLogin().loginPage("/index")
+                .formLogin().loginPage("/")
                 .and().cors().configurationSource(corsConfigurationSource())
                 .and()
                 .authorizeRequests()
                 .antMatchers("/").permitAll()
                 .antMatchers("/user/login").permitAll()
-                .antMatchers("/index").permitAll()
-                .antMatchers("/loading").permitAll()
-                .antMatchers("/panel").permitAll()
-                .antMatchers("/admin").permitAll()
+                .antMatchers("/account").permitAll()
+                .antMatchers("/share").permitAll()
+                .antMatchers("/redemption").permitAll()
+                .antMatchers("/car").permitAll()
                 .antMatchers("/reset").permitAll()
+                .antMatchers("/pandora").permitAll()
+                .antMatchers("/loading").permitAll()
+                .antMatchers("/claude").permitAll()
+                .antMatchers("/navi").permitAll()
                 .antMatchers("/favicon.ico").permitAll()
                 .antMatchers("/index.html").permitAll()
-                .antMatchers("/claude.html").permitAll()
-                .antMatchers("/loading.html").permitAll()
-                .antMatchers("/admin.html").permitAll()
-                .antMatchers("/account.html").permitAll()
-                .antMatchers("/pandora.html").permitAll()
-                .antMatchers("/share.html").permitAll()
-                .antMatchers("/car.html").permitAll()
-                .antMatchers("/redemption.html").permitAll()
-                .antMatchers("/reset.html").permitAll()
-                .antMatchers("/pics/**").permitAll()
                 .antMatchers("/pandora/**").permitAll()
                 .antMatchers("/fuclaude/**").permitAll()
                 .antMatchers("/share/checkUser").permitAll()
                 .antMatchers("/oauth2/**").permitAll()
+                .antMatchers("/js/**").permitAll()
+                .antMatchers("/css/**").permitAll()
+                .antMatchers("/img/**").permitAll()
+                .antMatchers("/fonts/**").permitAll()
                 .anyRequest().authenticated()
 
                 .and().exceptionHandling()
@@ -89,7 +87,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(Collections.singletonList("*")); // 替换为你的前端地址
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true); // 是否允许跨域时发送 cookie
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

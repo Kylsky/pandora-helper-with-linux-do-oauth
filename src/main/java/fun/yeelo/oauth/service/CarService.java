@@ -39,7 +39,7 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         }
         if (!dto.getAllowApply().equals(1)) {
             dto.getIds().forEach(id -> {
-                this.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId, dto.getId()).eq(CarApply::getShareId, id));
+                this.remove(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId, dto.getAccountId()).eq(CarApply::getShareId, id));
             });
             return HttpResult.success();
         }

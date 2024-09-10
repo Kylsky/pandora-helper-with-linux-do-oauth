@@ -15,4 +15,4 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 设置运行 jar 文件的命令
-CMD ["java", "-Xmx2048m","-Xms2048m", "-jar", "/app/my-app.jar", "--spring.datasource.url=jdbc:sqlite:/app/db/data.db"]
+CMD ["java", "-Xmx4096m","-Xms4096m", "-jar", "/app/my-app.jar", "--spring.datasource.url=jdbc:sqlite:/app/db/data.db"]

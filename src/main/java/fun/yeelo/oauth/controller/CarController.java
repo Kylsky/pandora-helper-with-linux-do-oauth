@@ -56,11 +56,12 @@ public class CarController {
         List<Account> accountList = new ArrayList<>(accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getShared, true)));
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
         accountVOS.forEach(e -> {
+            Share targetUser = userMap.get(e.getUserId());
             e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
             String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
                                        ? ""
                                        : " ( Lv."+userMap.get(e.getUserId() ).getTrustLevel()+" )";
-            e.setUsername(userMap.get(e.getUserId()).getUniqueName());
+            e.setUsername(targetUser.getUniqueName());
             e.setUsernameDesc(userMap.get(e.getUserId()).getUniqueName() + levelDesc);
             e.setEmail(e.getName());
 
@@ -82,7 +83,11 @@ public class CarController {
                              .filter(e-> !StringUtils.hasText(owner) || e.getUsername().contains(owner))
                              .sorted(Comparator.comparing(AccountVO::getType))
                              .collect(Collectors.toList());
-        accountVOS.forEach(e->e.setApplyNum(applys.get(e.getId())==null?0:applys.get(e.getId()).size()));
+        accountVOS.forEach(e->{
+            Share targetUser = userMap.get(e.getUserId());
+            e.setApplyNum(applys.get(e.getId())==null?0:applys.get(e.getId()).size());
+            e.setAuthorized(targetUser.getId().equals(user.getId()) && e.getApplyNum()>0);
+        });
         PageVO pageVO = new PageVO();
         pageVO.setTotal(accountVOS.size());
         pageVO.setData(pageVO==null ? accountVOS : accountVOS.subList(10*(page-1),Math.min(10*(page-1)+size,accountVOS.size())));
