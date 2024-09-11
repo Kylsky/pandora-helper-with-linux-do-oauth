@@ -9,6 +9,10 @@ linux-do:
   oauth2:
     client:
       registration:
+        # 如需调试，请编辑下方client-id、client-secret、redirect-uri
+#        client-id: ${CLIENT_ID}
+#        client-secret: ${CLIENT_SECRET}
+#        redirect-uri: ${REDIRECT_URI}
         authorization-grant-type: authorization_code
         scope: read,write
       provider:
@@ -28,8 +32,9 @@ spring:
   main:
     allow-circular-references: true
   # 如需调试，请注释此处配置环境代码
-  profiles:
-    active: prod
+#  profiles:
+#    active: prod
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
+# 如需调试，请修改你的管理员用户名，默认密码为123456
 admin-name: yeelo
