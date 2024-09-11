@@ -10,9 +10,9 @@ linux-do:
     client:
       registration:
         # 如需调试，请编辑下方client-id、client-secret、redirect-uri
-#        client-id: ${CLIENT_ID}
-#        client-secret: ${CLIENT_SECRET}
-#        redirect-uri: ${REDIRECT_URI}
+        client-id: 123
+        client-secret: 123
+        redirect-uri: https://connect.yeelo.fun
         authorization-grant-type: authorization_code
         scope: read,write
       provider:
