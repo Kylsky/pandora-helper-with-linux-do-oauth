@@ -29,19 +29,19 @@ docker run
 ```
 docker volume create --driver local --opt type=none --opt o=bind --opt device=/home/db db-data
 
-docker run 
--d 
--it
--v db-data:/app/db                                     
--e TZ=Asia/Shanghai 
--e CLIENT_ID=123                                                              
--e CLIENT_SECRET=123                               
--e OAIFREE_PROXY=https://new.oaifree.com            
--e FUCLAUDE_PROXY=https://demo.fuclaude.com         
--e REDIRECT_URI=https://my.helper.com                                     
--e ADMIN_NAME=Admin                                 
---restart=always                                    
--p 8181:8181 --name pandora-helper
+docker run \
+-d \
+-it \
+-v db-data:/app/db \
+-e TZ=Asia/Shanghai\ 
+-e CLIENT_ID=123 \
+-e CLIENT_SECRET=123 \
+-e OAIFREE_PROXY=https://new.oaifree.com \
+-e FUCLAUDE_PROXY=https://demo.fuclaude.com \
+-e REDIRECT_URI=https://my.helper.com \
+-e ADMIN_NAME=Admin \
+--restart=always \
+-p 8181:8181 --name pandora-helper \
  kylsky/pandora_helper_v2
 ```
 
