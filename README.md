@@ -23,7 +23,7 @@ docker run
 -e ADMIN_NAME=                                      # 6.管理员用户名，建议填写你在linux-do的用户名，默认密码是123456
 --restart=always                                    # 7.如需修改端口，请修改第一个8181为你需要访问的服务器端口
 -p 8181:8181 --name pandora-helper
- kylsky/pandora_helper
+ kylsky/pandora_helper_v2
 ```
 下面是一个例子：
 ```
@@ -42,7 +42,7 @@ docker run
 -e ADMIN_NAME=Admin                                 
 --restart=always                                    
 -p 8181:8181 --name pandora-helper
- kylsky/pandora_helper
+ kylsky/pandora_helper_v2
 ```
 
 # 2.使用教程
