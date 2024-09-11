@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
-import fun.yeelo.oauth.service.AccountService;
-import fun.yeelo.oauth.service.CarService;
-import fun.yeelo.oauth.service.GptConfigService;
-import fun.yeelo.oauth.service.ShareService;
+import fun.yeelo.oauth.service.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -52,6 +50,8 @@ public class AccountController {
     private CarService carService;
     @Autowired
     private GptConfigService gptConfigService;
+    @Autowired
+    private ClaudeConfigService claudeConfigService;
 
     @GetMapping("/statistic")
     public HttpResult<List<InfoVO>> statistic(HttpServletRequest request, Integer id) {
@@ -142,6 +142,23 @@ public class AccountController {
         Account account = accountService.findById(id);
         if (account != null && account.getUserId().equals(user.getId())) {
             accountService.delete(id);
+            Integer accountType = account.getAccountType();
+            switch (accountType) {
+                case 1:
+                    List<ShareGptConfig> shareList = gptConfigService.list(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getAccountId, id));
+                    CompletableFuture.runAsync(() -> {
+                        shareList.parallelStream().forEach(e->{
+                            ShareVO shareVO = new ShareVO();
+                            shareVO.setAccountId(-1);
+                            shareVO.setId(e.getId());
+                            shareService.distribute(shareVO);
+                        });
+                    });
+                    break;
+                case 2:
+                    claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId,id));
+                    break;
+            }
         } else {
             return HttpResult.error("您无权删除该账号");
         }
