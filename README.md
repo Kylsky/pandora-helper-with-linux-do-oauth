@@ -1,4 +1,12 @@
-# 1.安装教程
+# 1.界面展示
+<img width="1547" alt="image" src="https://github.com/user-attachments/assets/ffc4484d-3c48-4de3-8ad9-f2e56e965e24">
+<img width="1547" alt="image" src="https://github.com/user-attachments/assets/41520e74-3bff-4f6d-bcb3-81646f6232ff">
+<img width="1547" alt="image" src="https://github.com/user-attachments/assets/3e145d37-6ac1-4558-a455-04ce7087c1dc">
+<img width="1547" alt="image" src="https://github.com/user-attachments/assets/3bee941c-987f-4301-a937-47904c12f57f">
+<img width="1547" alt="image" src="https://github.com/user-attachments/assets/53a561cf-105c-498f-b0b2-12d62c6424aa">
+<img width="1547" alt="image" src="https://github.com/user-attachments/assets/838b407d-df83-4f42-a5f1-dc811913af7f">
+
+# 2.安装教程
 方法1.修改docker-compose.yml里的必填参数，并执行命令：
 ```
 docker-compose up -d 
@@ -45,13 +53,13 @@ docker run \
  kylsky/pandora_helper_v2
 ```
 
-# 2.使用教程
+# 3.使用教程
 请参考： https://linux.do/t/topic/173810
 
-# 3.如果需要，请联系我
+# 4.如果需要，请联系我
 https://linux.do/u/yelo/summary
 
-# 4.特别鸣谢
+# 5.特别鸣谢
 [始皇大大](https://linux.do/u/neo/summary)
 
 [年华大佬](https://linux.do/u/linux/summary)
