@@ -57,3 +57,7 @@ https://linux.do/u/yelo/summary
 [年华大佬](https://linux.do/u/linux/summary)
 
 [PandoraHelper](https://github.com/nianhua99/PandoraHelper)
+
+
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Kylsky/pandora-helper-with-linux-do-oauth&type=Date)](https://star-history.com/#Kylsky/pandora-helper-with-linux-do-oauth&Date)
