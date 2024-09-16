@@ -1,7 +1,7 @@
 version: '3'
 services:
   pandora-helper:
-    image: kylsky/pandora_helper
+    image: kylsky/pandora_helper_v2
     volumes:
       - db-data:/app/db
     environment:
