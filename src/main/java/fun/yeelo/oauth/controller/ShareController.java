@@ -263,7 +263,7 @@ public class ShareController {
             case 1:
                 return gptConfigService.addShare(account, dto.getUniqueName(), shareId, null);
             case 2:
-                return claudeConfigService.addShare(account, shareId);
+                return claudeConfigService.addShare(account, shareId,null);
             default:
                 return HttpResult.success(false);
 
@@ -327,7 +327,7 @@ public class ShareController {
             case 1:
                 return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), null);
             case 2:
-                return claudeConfigService.addShare(account, byId.getId());
+                return claudeConfigService.addShare(account, byId.getId(),null);
             default:
                 return HttpResult.error("激活出现异常");
         }
@@ -413,7 +413,7 @@ public class ShareController {
         ShareClaudeConfig claudeShare = claudeConfigService.getById(claudeConfigId);
         Account account = accountService.getById(claudeShare.getAccountId());
         Share share = shareService.getById(claudeShare.getShareId());
-        String token = claudeConfigService.generateAutoToken(account, share);
+        String token = claudeConfigService.generateAutoToken(account, share,null);
 
         if (token==null){
             return HttpResult.error("获取登录信息失败");

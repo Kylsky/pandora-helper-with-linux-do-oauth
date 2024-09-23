@@ -60,20 +60,18 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
     }
 
 
-    public HttpResult<Boolean> addShare(Account account, int shareId) {
+    public HttpResult<Boolean> addShare(Account account, int shareId, Integer expire) {
         // 删除原有的
         this.baseMapper.delete(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, shareId));
-        Share byId = shareService.getById(shareId);
 
         ShareClaudeConfig shareClaudeConfig = new ShareClaudeConfig();
         shareClaudeConfig.setShareId(shareId);
         shareClaudeConfig.setAccountId(account.getId());
         save(shareClaudeConfig);
-        //generateAutoToken(account, byId,shareId);
         return HttpResult.success();
     }
 
-    public String generateAutoToken(Account account, Share byId) {
+    public String generateAutoToken(Account account, Share byId, Integer expire) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("User-Agent", "curl/7.64.1");  // 模拟 curl 的 User-Agent
@@ -85,13 +83,16 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         if (StringUtils.hasText(expiresAt) && !expiresAt.equals("-")) {
             expiresAt += " 00:00:00";
             LocalDateTime expireDay = LocalDateTime.parse(expiresAt, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            duration = Duration.between(LocalDateTime.now(),expireDay).getSeconds();
+            duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
         }
 
         personJsonObject.put("session_key", account.getAccessToken());
         personJsonObject.put("unique_name", byId.getUniqueName());
         if (duration <= 0L) {
             personJsonObject.put("expires_in", 3600 * 24 * 7);
+        }
+        if (expire != null) {
+            personJsonObject.put("expires_in", expire);
         }
 
         HttpEntity<ObjectNode> requestEntity = new HttpEntity<>(personJsonObject, headers);

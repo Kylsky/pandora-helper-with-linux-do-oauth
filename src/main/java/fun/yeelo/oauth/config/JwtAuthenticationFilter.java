@@ -4,6 +4,7 @@ import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -36,7 +37,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ") && !authorizationHeader.substring(7).contains("null")) {
             jwt = authorizationHeader.substring(7);
-            username = jwtTokenUtil.extractUsername(jwt);
+            try {
+                username = jwtTokenUtil.extractUsername(jwt);
+            }
+            catch (Exception ex) {
+                username = null;
+            }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

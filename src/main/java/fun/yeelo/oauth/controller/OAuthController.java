@@ -35,6 +35,9 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/oauth2")
 public class OAuthController {
+    @Value("${linux-do.oauth2.client.registration.redirect-uri}")
+    private String apiUrl;
+
     private static final Logger log = LoggerFactory.getLogger(OAuthController.class);
     @Value("${linux-do.oauth2.client.registration.client-id}")
     private String clientId;
@@ -59,6 +62,11 @@ public class OAuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @GetMapping("/config")
+    public String config() {
+        return apiUrl;
+    }
+
     @GetMapping("/initiate")
     public String initiateAuth(HttpServletRequest request,
                                @RequestParam(required = false) String type) {
@@ -77,7 +85,7 @@ public class OAuthController {
                                                       HttpServletRequest request) {
         HttpSession session = request.getSession();
         String sessionState = (String) session.getAttribute("oauth2State");
-        if (!StringUtils.hasText(state) || !sessionState.equals(state)) {
+        if (!StringUtils.hasText(state) || !state.equals(sessionState)) {
             return HttpResult.error("Invalid State");
         }
 

@@ -2,7 +2,7 @@ server:
   port: 8181
 
 linux-do:
-  fuclaude: https://fuclaude.yeelo.fun
+  fuclaude: https://demo.fuclaude.com
   oaifree:
     auth-api: https://new.oaifree.com
     token-api: https://new.oaifree.com/api/auth/oauth_token

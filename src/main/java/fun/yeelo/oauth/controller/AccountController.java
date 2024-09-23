@@ -3,6 +3,7 @@ package fun.yeelo.oauth.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.jndi.ldap.Ber;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.*;
@@ -53,8 +54,43 @@ public class AccountController {
     @Autowired
     private ClaudeConfigService claudeConfigService;
 
+    @GetMapping("/share")
+    public HttpResult<String> share(HttpServletRequest request,
+                                    @RequestParam(required = false) Integer id) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Account account = accountService.getById(id);
+        String addr = "";
+        switch (account.getAccountType()) {
+            case 1:
+                break;
+            case 2:
+                addr = claudeConfigService.generateAutoToken(account, user, 3600);
+                break;
+        }
+
+        return HttpResult.success(addr);
+    }
+
+
     @GetMapping("/statistic")
     public HttpResult<List<InfoVO>> statistic(HttpServletRequest request, Integer id) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
         Account byId = accountService.getById(id);
         List<ShareGptConfig> gptShares = gptConfigService.list().stream().filter(e -> e.getAccountId().equals(id)).collect(Collectors.toList());
         String chatUrl = "https://chat.oaifree.com/token/info/";
@@ -84,6 +120,12 @@ public class AccountController {
                         case "gpt-4o-mini":
                             usageVO.setGpt4omini(Integer.valueOf(entry.getValue()));
                             break;
+                        case "o1-preview":
+                            usageVO.setO1Preview(Integer.valueOf(entry.getValue()));
+                            break;
+                        case "o1-mini":
+                            usageVO.setO1Mini(Integer.valueOf(entry.getValue()));
+                            break;
                     }
                     infoVO.setUsage(usageVO);
                 });
@@ -100,7 +142,8 @@ public class AccountController {
     public HttpResult<PageVO<AccountVO>> list(HttpServletRequest request,
                                               @RequestParam(required = false) String emailAddr,
                                               @RequestParam(required = false) Integer page,
-                                              @RequestParam(required = false) Integer size) {
+                                              @RequestParam(required = false) Integer size,
+                                              @RequestParam(required = false) Integer type) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -121,7 +164,7 @@ public class AccountController {
             e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
             e.setCount(accountIdMap.getOrDefault(e.getId(), new ArrayList<>()).size());
         });
-        accountVOS = accountVOS.stream().sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
+        accountVOS = accountVOS.stream().filter(e -> type == null || (type.equals(e.getAccountType())&&e.getShared().equals(1)&&e.getAuto().equals(1))).sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
         PageVO<AccountVO> pageVO = new PageVO<>();
         pageVO.setTotal(accountVOS.size());
         pageVO.setData(page == null ? accountVOS : accountVOS.subList(10 * (page - 1), Math.min(10 * (page - 1) + size, accountVOS.size())));
@@ -147,7 +190,7 @@ public class AccountController {
                 case 1:
                     List<ShareGptConfig> shareList = gptConfigService.list(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getAccountId, id));
                     CompletableFuture.runAsync(() -> {
-                        shareList.parallelStream().forEach(e->{
+                        shareList.parallelStream().forEach(e -> {
                             ShareVO shareVO = new ShareVO();
                             shareVO.setAccountId(-1);
                             shareVO.setId(e.getId());
@@ -156,7 +199,7 @@ public class AccountController {
                     });
                     break;
                 case 2:
-                    claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId,id));
+                    claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, id));
                     break;
             }
         } else {

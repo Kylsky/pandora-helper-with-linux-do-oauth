@@ -113,7 +113,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             case 1:
                 return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), share.getDuration());
             case 2:
-                return claudeConfigService.addShare(account, byId.getId());
+                return claudeConfigService.addShare(account, byId.getId(), null);
             default:
                 return HttpResult.error("激活出现异常");
         }

@@ -85,7 +85,7 @@ public class FuclaudeController {
             return HttpResult.error("权限未激活,请联系管理员");
         }
         Account account = accountService.getById(claudeShare.getAccountId());
-        String token = claudeConfigService.generateAutoToken(account,user);
+        String token = claudeConfigService.generateAutoToken(account,user,null);
         return HttpResult.success(token);
     }
 
@@ -105,7 +105,7 @@ public class FuclaudeController {
             return HttpResult.error("当前用户未激活Claude");
         }
         Account account = accountService.getById(claudeShare.getAccountId());
-        String token = claudeConfigService.generateAutoToken(account,user);
+        String token = claudeConfigService.generateAutoToken(account,user,null);
         if (token==null) {
             return HttpResult.error("生成OAUTH_TOKEN异常，请联系管理员");
         }
