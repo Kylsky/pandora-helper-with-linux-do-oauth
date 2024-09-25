@@ -53,8 +53,20 @@ docker run \
  kylsky/pandora_helper_v2
 ```
 
-# 3.使用教程
-请参考： https://linux.do/t/topic/173810
+# 3.特性&使用教程
+特性：
+1.支持账号密码、oauth2、激活码三种形式登录使用
+2.支持后台切换用户账号，实现用户无感知使用
+3.基于oaifree的对话隔离
+4.基于fuclaude的对话隔离
+5.统一的用户体系，一个账号同时登陆chatgpt、claude及后台
+6.支持兑换码形式的账号分发，可二开对接发卡站
+7.支持免费号池的使用和搭建
+8.支持自动上车、审核上车，支持车上人数限制
+9.基于oairfree的用户级别账号用量统计
+10.access token的定时刷新，减少人工运维成本（需要refresh_token）
+
+使用教程请参考： https://linux.do/t/topic/173810
 
 # 4.如果需要，请联系我
 https://linux.do/u/yelo/summary
