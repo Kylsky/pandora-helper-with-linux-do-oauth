@@ -153,7 +153,7 @@ public class AccountController {
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
-        List<Account> accountList = accountService.findByUserId(user.getId());
+        List<Account> accountList = type != null ? accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType,type)) : accountService.findByUserId(user.getId());
         if (StringUtils.hasText(emailAddr)) {
             accountList = accountList.stream().filter(e -> e.getEmail().contains(emailAddr)).collect(Collectors.toList());
         }
