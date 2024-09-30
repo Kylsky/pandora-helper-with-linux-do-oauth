@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.jndi.ldap.Ber;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.service.*;
@@ -11,6 +12,8 @@ import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.CollectionUtils;
@@ -54,6 +57,36 @@ public class AccountController {
     @Autowired
     private ClaudeConfigService claudeConfigService;
 
+    @Autowired
+    private CacheManager cacheManager;
+
+    public boolean checkIdWithinFiveMinutes(Integer id, Boolean addFlag) {
+        Cache cache = cacheManager.getCache("idCount");
+        if (cache == null) {
+            throw new IllegalStateException("Cache not configured properly");
+        }
+
+        // 获取当前计数
+        Integer count = cache.get(id, Integer.class);
+        if (count == null) {
+            count = 0;
+        }
+
+        // 增加计数
+        if (addFlag) {
+            count++;
+            cache.put(id, count);
+        }
+
+        // 判断是否达到三次
+        if (count > 3) {
+            System.out.println("ID " + id + " 在五分钟内已经出现了三次！");
+            return true;
+        }
+
+        return false;
+    }
+
     @GetMapping("/share")
     public HttpResult<String> share(HttpServletRequest request,
                                     @RequestParam(required = false) Integer id) {
@@ -65,6 +98,10 @@ public class AccountController {
         Share user = shareService.getByUserName(username);
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
+        }
+        boolean b = checkIdWithinFiveMinutes(id,true);
+        if (b){
+            return HttpResult.error("当前账号使用繁忙，请稍后再试");
         }
         Account account = accountService.getById(id);
         String addr = "";
@@ -165,6 +202,10 @@ public class AccountController {
             e.setCount(accountIdMap.getOrDefault(e.getId(), new ArrayList<>()).size());
         });
         accountVOS = accountVOS.stream().filter(e -> type == null || (type.equals(e.getAccountType())&&e.getShared().equals(1)&&e.getAuto().equals(1))).sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
+        for (AccountVO accountVO : accountVOS) {
+            Integer id = accountVO.getId();
+            accountVO.setSessionToken(checkIdWithinFiveMinutes(id,false) ?"1":"");
+        }
         PageVO<AccountVO> pageVO = new PageVO<>();
         pageVO.setTotal(accountVOS.size());
         pageVO.setData(page == null ? accountVOS : accountVOS.subList(10 * (page - 1), Math.min(10 * (page - 1) + size, accountVOS.size())));
