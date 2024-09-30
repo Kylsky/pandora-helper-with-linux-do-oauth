@@ -1,3 +1,4 @@
+需要部署请移步至最新版本分支：https://github.com/Kylsky/pandora-helper-with-linux-do-oauth/tree/develop-vue-version
 # 1.安装教程
 (安装成功后，请将挂载目录下的data.db替换成releases中的data.db，并重新启动)
 
