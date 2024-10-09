@@ -47,87 +47,17 @@ public class AccountController {
     @Autowired
     private AccountService accountService;
     @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
     private CarService carService;
     @Autowired
     private GptConfigService gptConfigService;
     @Autowired
     private ClaudeConfigService claudeConfigService;
 
-    @Autowired
-    private CacheManager cacheManager;
-
-    public boolean checkIdWithinFiveMinutes(Integer id, Boolean addFlag) {
-        Cache cache = cacheManager.getCache("idCount");
-        if (cache == null) {
-            throw new IllegalStateException("Cache not configured properly");
-        }
-
-        // 获取当前时间
-        Instant now = Instant.now();
-
-        // 获取缓存中的时间戳列表
-        List<Instant> timestamps = cache.get(id, List.class) == null ? new LinkedList<>() : cache.get(id, List.class);
-        // 删除五分钟前的时间戳
-        timestamps = timestamps.stream()
-                               .filter(timestamp -> timestamp.isAfter(now.minusSeconds(300)))
-                               .collect(Collectors.toList());
-        if (timestamps == null) {
-            timestamps = new LinkedList<>();
-        }
-
-        // 过滤出五分钟内的时间戳
-        timestamps = timestamps.stream()
-                             .filter(timestamp -> timestamp.isAfter(now.minusSeconds(300)))
-                             .collect(Collectors.toList());
-
-        // 判断是否达到三次
-        if (timestamps.size() >= 3) {
-            log.info("ACCOUNT ID: " + id + " 在五分钟内已经出现了三次！");
-            return true;
-        }
-
-        // 添加当前时间戳到列表
-        if (addFlag) {
-            log.info("检测到ACCOUNT ID: " + id + " 的使用");
-            timestamps.add(now);
-            // 更新缓存
-            cache.put(id, timestamps);
-        }
-
-        return false;
-    }
-
     @GetMapping("/share")
     public HttpResult<String> share(HttpServletRequest request,
                                     @RequestParam(required = false) Integer id) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
-        boolean b = checkIdWithinFiveMinutes(id,true);
-        if (b){
-            return HttpResult.error("当前账号使用繁忙，请稍后再试");
-        }
-        Account account = accountService.getById(id);
-        String addr = "";
-        switch (account.getAccountType()) {
-            case 1:
-                break;
-            case 2:
-                addr = claudeConfigService.generateAutoToken(account, user, 3600);
-                break;
-        }
-
-        return HttpResult.success(addr);
+        return accountService.share(request,id);
     }
-
 
     @GetMapping("/statistic")
     public HttpResult<List<InfoVO>> statistic(HttpServletRequest request, Integer id) {
@@ -216,7 +146,7 @@ public class AccountController {
         accountVOS = accountVOS.stream().filter(e -> type == null || (type.equals(e.getAccountType())&&e.getShared().equals(1)&&e.getAuto().equals(1))).sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
         for (AccountVO accountVO : accountVOS) {
             Integer id = accountVO.getId();
-            accountVO.setSessionToken(checkIdWithinFiveMinutes(id,false) ?"1":"");
+            accountVO.setSessionToken(accountService.checkIdWithinFiveMinutes(id,false) ?"1":"");
         }
         PageVO<AccountVO> pageVO = new PageVO<>();
         pageVO.setTotal(accountVOS.size());
