@@ -24,11 +24,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -66,22 +64,36 @@ public class AccountController {
             throw new IllegalStateException("Cache not configured properly");
         }
 
-        // 获取当前计数
-        Integer count = cache.get(id, Integer.class);
-        if (count == null) {
-            count = 0;
+        // 获取当前时间
+        Instant now = Instant.now();
+
+        // 获取缓存中的时间戳列表
+        List<Instant> timestamps = cache.get(id, List.class) == null ? new LinkedList<>() : cache.get(id, List.class);
+        // 删除五分钟前的时间戳
+        timestamps = timestamps.stream()
+                               .filter(timestamp -> timestamp.isAfter(now.minusSeconds(300)))
+                               .collect(Collectors.toList());
+        if (timestamps == null) {
+            timestamps = new LinkedList<>();
         }
 
-        // 增加计数
-        if (addFlag) {
-            count++;
-            cache.put(id, count);
-        }
+        // 过滤出五分钟内的时间戳
+        timestamps = timestamps.stream()
+                             .filter(timestamp -> timestamp.isAfter(now.minusSeconds(300)))
+                             .collect(Collectors.toList());
 
         // 判断是否达到三次
-        if (count > 3) {
-            System.out.println("ID " + id + " 在五分钟内已经出现了三次！");
+        if (timestamps.size() >= 3) {
+            log.info("ACCOUNT ID: " + id + " 在五分钟内已经出现了三次！");
             return true;
+        }
+
+        // 添加当前时间戳到列表
+        if (addFlag) {
+            log.info("检测到ACCOUNT ID: " + id + " 的使用");
+            timestamps.add(now);
+            // 更新缓存
+            cache.put(id, timestamps);
         }
 
         return false;
