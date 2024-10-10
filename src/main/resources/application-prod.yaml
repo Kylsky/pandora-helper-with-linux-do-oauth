@@ -24,6 +24,9 @@ spring:
     driver-class-name: org.sqlite.JDBC
     username:
     password:
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
 
