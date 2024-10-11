@@ -140,7 +140,7 @@ public class AccountController {
         Map<Integer, List<CarApply>> accountIdMap = carService.list().stream().collect(Collectors.groupingBy(CarApply::getAccountId));
         accountVOS.forEach(e -> {
             //e.setEmail("车辆"+(num.getAndIncrement()));
-            e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
+            e.setType(e.getAccountType().equals(1) ? "ChatGPT" : e.getAccountType().equals(2)?"Claude":"API");
             e.setCount(accountIdMap.getOrDefault(e.getId(), new ArrayList<>()).size());
         });
         accountVOS = accountVOS.stream().filter(e -> type == null || (type.equals(e.getAccountType())&&e.getShared().equals(1)&&e.getAuto().equals(1))).sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
@@ -331,7 +331,7 @@ public class AccountController {
                                         .sorted(Comparator.comparing(LabelDTO::getLabel))
                                         .collect(Collectors.toList());
         List<LabelDTO> res = new ArrayList<>();
-        LabelDTO labelDTO = new LabelDTO(type.equals(1) ? "-1" : "-2", "----默认选项：下车----", "----默认选项：下车----");
+        LabelDTO labelDTO = new LabelDTO(type.equals(1) ? "-1" : type.equals(2)?"-2":"-3", "----默认选项：下车----", "----默认选项：下车----");
         res.add(labelDTO);
         res.addAll(emails);
         return HttpResult.success(res);

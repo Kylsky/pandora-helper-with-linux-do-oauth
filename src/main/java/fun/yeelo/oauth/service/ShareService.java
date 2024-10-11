@@ -37,6 +37,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
     private ClaudeConfigService claudeConfigService;
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private ApiConfigService apiConfigService;
 
 
     public List<Share> findAll() {
@@ -105,6 +107,10 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,share.getId()));
             return HttpResult.success();
         }
+        else if (share.getAccountId()!=null && share.getAccountId().equals(-3)) {
+            apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId,share.getId()));
+            return HttpResult.success();
+        }
         else if (account == null) {
             return HttpResult.error("账号不存在");
         }
@@ -114,6 +120,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
                 return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), share.getDuration());
             case 2:
                 return claudeConfigService.addShare(account, byId.getId(), null);
+            case 3:
+                return apiConfigService.addShare(account, byId.getId(), null);
             default:
                 return HttpResult.error("激活出现异常");
         }

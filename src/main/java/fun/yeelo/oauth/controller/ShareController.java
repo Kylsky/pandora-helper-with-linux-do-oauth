@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
-import fun.yeelo.oauth.service.AccountService;
-import fun.yeelo.oauth.service.ClaudeConfigService;
-import fun.yeelo.oauth.service.GptConfigService;
-import fun.yeelo.oauth.service.ShareService;
+import fun.yeelo.oauth.service.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +54,8 @@ public class ShareController {
     private GptConfigService gptConfigService;
     @Autowired
     private ClaudeConfigService claudeConfigService;
+    @Autowired
+    private ApiConfigService apiConfigService;
     @Autowired
     private UserDetailsService userDetailsService;
     @Value("${linux-do.oaifree.token-api}")
@@ -116,17 +115,22 @@ public class ShareController {
                                                       .collect(Collectors.toMap(ShareGptConfig::getShareId, Function.identity()));
         Map<Integer, List<ShareGptConfig>> gptAccountMap = gptConfigService.list().stream().collect(Collectors.groupingBy(ShareGptConfig::getAccountId));
         Map<Integer, List<ShareClaudeConfig>> claudeAccountMap = claudeConfigService.list().stream().collect(Collectors.groupingBy(ShareClaudeConfig::getAccountId));
+        Map<Integer, List<ShareApiConfig>> apiAccountMap = apiConfigService.list().stream().collect(Collectors.groupingBy(ShareApiConfig::getAccountId));
 
         // 获取claude config
         Map<Integer, ShareClaudeConfig> claudeMap = claudeConfigService.list()
                                                             .stream().filter(e -> e.getShareId().equals(user.getId()) || accountIdMap.containsKey(e.getAccountId()))
                                                             .collect(Collectors.toMap(ShareClaudeConfig::getShareId, Function.identity()));
+        Map<Integer, ShareApiConfig> apiMap = apiConfigService.list()
+                                                            .stream().filter(e -> e.getShareId().equals(user.getId()) || accountIdMap.containsKey(e.getAccountId()))
+                                                            .collect(Collectors.toMap(ShareApiConfig::getShareId, Function.identity()));
 
         // 设置邮箱
         shareVOS = shareVOS.stream().filter(e -> user.getId().equals(1) || e.getId().equals(user.getId()) || (claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId()))).collect(Collectors.toList());
         for (ShareVO share : shareVOS) {
             ShareGptConfig gptConfig = gptMap.get(share.getId());
             ShareClaudeConfig claudeConfig = claudeMap.get(share.getId());
+            ShareApiConfig apiConfig = apiMap.get(share.getId());
             //if (gptConfig == null && claudeConfig == null) {
             //    continue;
             //}
@@ -154,6 +158,14 @@ public class ShareController {
                 share.setClaudeEmail("-");
                 share.setClaudeCarName("-");
 
+            }
+
+            if (apiConfig != null) {
+                int total = apiAccountMap.getOrDefault(apiConfig.getAccountId(),new ArrayList<>()).size();
+                share.setApiCarName(accountService.getById(apiConfig.getAccountId()).getName()+" ("+total+"人)");
+                share.setApiConfigId(apiConfig.getId());
+            } else {
+                share.setApiCarName("-");
             }
 
             if (!StringUtils.hasText(share.getExpiresAt())) {
@@ -264,6 +276,8 @@ public class ShareController {
                 return gptConfigService.addShare(account, dto.getUniqueName(), shareId, null);
             case 2:
                 return claudeConfigService.addShare(account, shareId,null);
+            case 3:
+                return apiConfigService.addShare(account, shareId, null);
             default:
                 return HttpResult.success(false);
 
@@ -315,8 +329,13 @@ public class ShareController {
         Share byId = shareService.getById(share.getId());
         if (share.getAccountId()!=null && share.getAccountId().equals(-1)) {
             return gptConfigService.deleteShare(share.getId());
-        }else if (share.getAccountId()!=null && share.getAccountId().equals(-2)) {
+        }
+        else if (share.getAccountId()!=null && share.getAccountId().equals(-2)) {
             claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId,share.getId()));
+            return HttpResult.success();
+        }
+        else if (share.getAccountId()!=null && share.getAccountId().equals(-3)) {
+            apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId,share.getId()));
             return HttpResult.success();
         }
         else if (account == null) {
@@ -328,6 +347,8 @@ public class ShareController {
                 return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), null);
             case 2:
                 return claudeConfigService.addShare(account, byId.getId(),null);
+            case 3:
+                return apiConfigService.addShare(account, byId.getId(), null);
             default:
                 return HttpResult.error("激活出现异常");
         }
@@ -414,6 +435,20 @@ public class ShareController {
         Account account = accountService.getById(claudeShare.getAccountId());
         Share share = shareService.getById(claudeShare.getShareId());
         String token = claudeConfigService.generateAutoToken(account, share,null);
+
+        if (token==null){
+            return HttpResult.error("获取登录信息失败");
+        }else {
+            return HttpResult.success(token);
+        }
+    }
+
+    @GetMapping("/getApiShare")
+    public HttpResult<String> getApiShare(@RequestParam Integer apiConfigId) {
+        ShareApiConfig apiShare = apiConfigService.getById(apiConfigId);
+        Account account = accountService.getById(apiShare.getAccountId());
+        Share share = shareService.getById(apiShare.getShareId());
+        String token = "https://next.yeelo.top" +"/#/?settings={%22key%22:%22"+ account.getRefreshToken()+"%22,%22url%22:%22"+account.getAccessToken()+"%22}";
 
         if (token==null){
             return HttpResult.error("获取登录信息失败");

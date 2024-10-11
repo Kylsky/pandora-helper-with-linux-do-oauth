@@ -38,6 +38,8 @@ public class CarController {
     private GptConfigService gptConfigService;
     @Autowired
     private ClaudeConfigService claudeConfigService;
+    @Autowired
+    private ApiConfigService apiConfigService;
 
     @GetMapping("/list")
     public HttpResult<PageVO<AccountVO>> list(HttpServletRequest request, @RequestParam(required = false) String owner,@RequestParam Integer page,@RequestParam Integer size) {
@@ -50,6 +52,7 @@ public class CarController {
         Map<Integer, Share> userMap = shareService.list().stream().collect(Collectors.toMap(Share::getId, Function.identity()));
         Map<Integer, List<ShareGptConfig>> gptMap = gptConfigService.list().stream().collect(Collectors.groupingBy(ShareGptConfig::getAccountId));
         Map<Integer, List<ShareClaudeConfig>> claudeMap = claudeConfigService.list().stream().collect(Collectors.groupingBy(ShareClaudeConfig::getAccountId));
+        Map<Integer, List<ShareApiConfig>> apiMap = apiConfigService.list().stream().collect(Collectors.groupingBy(ShareApiConfig::getAccountId));
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
@@ -57,7 +60,7 @@ public class CarController {
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
         accountVOS.forEach(e -> {
             Share targetUser = userMap.get(e.getUserId());
-            e.setType(e.getAccountType().equals(1) ? "ChatGPT" : "Claude");
+            e.setType(e.getAccountType().equals(1) ? "ChatGPT" : e.getAccountType().equals(2)?"Claude":"API");
             String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
                                        ? ""
                                        : " ( Lv."+userMap.get(e.getUserId() ).getTrustLevel()+" )";
@@ -71,9 +74,14 @@ public class CarController {
                 case 1:
                     count = gptMap.getOrDefault(e.getId(), new ArrayList<>()).size();
                     break;
-                default:
+                case 2:
                     count = claudeMap.getOrDefault(e.getId(), new ArrayList<>()).size();
                     break;
+                case 3:
+                    count = apiMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                    break;
+                default:
+                    count = 0;
             }
             e.setCountDesc(count+" / "+(e.getUserLimit().equals(-1)? "无限制":e.getUserLimit()));
             e.setCount(count);
@@ -145,6 +153,13 @@ public class CarController {
                 curAccountUser = claudeConfigService.count(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, account.getId()));
                 List<ShareClaudeConfig> cladueList = claudeConfigService.list(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, dto.getShareId()).eq(ShareClaudeConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(cladueList)) {
+                    return HttpResult.error("您已该在车上，请勿重复申请");
+                }
+                break;
+            case 3:
+                curAccountUser = apiConfigService.count(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId, account.getId()));
+                List<ShareApiConfig> apiList = apiConfigService.list(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, dto.getShareId()).eq(ShareApiConfig::getAccountId, dto.getAccountId()));
+                if (!CollectionUtils.isEmpty(apiList)) {
                     return HttpResult.error("您已该在车上，请勿重复申请");
                 }
                 break;

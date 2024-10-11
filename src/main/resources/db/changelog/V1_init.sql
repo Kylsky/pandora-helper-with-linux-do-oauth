@@ -116,4 +116,13 @@ CREATE TABLE IF NOT EXISTS "share_gpt_config" (
                                     PRIMARY KEY ("id")
 );
 
+CREATE TABLE IF NOT EXISTS "share_api_config" (
+                                    "id" INTEGER NOT NULL,
+                                    "share_id" INTEGER NOT NULL,
+                                    "account_id" INTEGER NOT NULL,
+                                    "api_proxy" varchar(255),
+                                    "api_key" varchar(255),
+                                    PRIMARY KEY ("id")
+);
+
 PRAGMA foreign_keys = true;

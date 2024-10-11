@@ -19,6 +19,8 @@ public class ShareVO extends Share{
 
     private Integer claudeConfigId;
 
+    private Integer apiConfigId;
+
     private String token;
 
     // 共享类型，1gpt，2claude
@@ -31,6 +33,8 @@ public class ShareVO extends Share{
     private String gptCarName;
 
     private String claudeCarName;
+
+    private String apiCarName;
 
     private String username;
 

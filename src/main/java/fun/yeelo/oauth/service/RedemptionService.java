@@ -57,6 +57,9 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
                     case 2:
                         accType = "Claude";
                         break;
+                    case 3:
+                        accType = "API";
+                        break;
                     default:
                         accType = "ChatGPT";
                 }
