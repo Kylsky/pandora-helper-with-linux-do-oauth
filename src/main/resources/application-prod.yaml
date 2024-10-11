@@ -31,3 +31,4 @@ mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
 
 admin-name: ${ADMIN_NAME}
+chat_site: ${CHAT_SITE}

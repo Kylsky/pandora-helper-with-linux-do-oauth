@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/share")
 @Slf4j
 public class ShareController {
+    @Value("${chat_site}")
+    private String chatSite;
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Value("${linux-do.fuclaude}")
     private String fuclaudeUrl;
@@ -447,8 +449,7 @@ public class ShareController {
     public HttpResult<String> getApiShare(@RequestParam Integer apiConfigId) {
         ShareApiConfig apiShare = apiConfigService.getById(apiConfigId);
         Account account = accountService.getById(apiShare.getAccountId());
-        Share share = shareService.getById(apiShare.getShareId());
-        String token = "https://next.yeelo.top" +"/#/?settings={%22key%22:%22"+ account.getRefreshToken()+"%22,%22url%22:%22"+account.getAccessToken()+"%22}";
+        String token = chatSite +"/#/?settings={%22key%22:%22"+ account.getRefreshToken()+"%22,%22url%22:%22"+account.getAccessToken()+"%22}";
 
         if (token==null){
             return HttpResult.error("获取登录信息失败");

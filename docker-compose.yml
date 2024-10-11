@@ -12,9 +12,9 @@ services:
       FUCLAUDE_PROXY: "https://demo.fuclaude.com"     # 5.默认fuclaude，你可以填写你的fuclaude地址
       TZ: "Asia/Shanghai"
       ADMIN_NAME: "Admin"                             # 6.管理员用户名，建议填写你在linux-do的用户名，默认密码是123456
-
+      CHAT_SITE: "https://next.yeelo.top"             # 7.填写你的ChatGPTNextWeb地址
     ports:
-      - "8181:8181"                                   # 7.如需修改端口，请修改第一个8181为你需要访问的服务器端口
+      - "8181:8181"                                   # 8.如需修改端口，请修改第一个8181为你需要访问的服务器端口
     restart: always
 
 volumes:
