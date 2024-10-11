@@ -29,7 +29,8 @@ docker run
 -e FUCLAUDE_PROXY=https://demo.fuclaude.com         # 4.默认fuclaude，你可以填写你的fuclaude地址
 -e REDIRECT_URI=                                    # 5.你的应用跳转地址
 -e ADMIN_NAME=                                      # 6.管理员用户名，建议填写你在linux-do的用户名，默认密码是123456
---restart=always                                    # 7.如需修改端口，请修改第一个8181为你需要访问的服务器端口
+-e CHAT_SITE=https://xx.xx                          # 7.填写你的ChatGPTNextWeb地址
+--restart=always                                    # 8.如需修改端口，请修改第一个8181为你需要访问的服务器端口
 -p 8181:8181 --name pandora-helper
  kylsky/pandora_helper_v2
 ```
@@ -48,6 +49,7 @@ docker run \
 -e FUCLAUDE_PROXY=https://demo.fuclaude.com \
 -e REDIRECT_URI=https://my.helper.com \
 -e ADMIN_NAME=Admin \
+-e CHAT_SITE=https://next.yeelo.top \
 --restart=always \
 -p 8181:8181 --name pandora-helper \
  kylsky/pandora_helper_v2
@@ -65,6 +67,7 @@ docker run \
 - 支持自动上车、审核上车，支持车上人数限制
 - 基于oairfree的用户级别账号用量统计
 - access token的定时刷新，减少人工运维成本（需要refresh_token）
+- 支持基于ChatGPTNextWeb的API共享
 
 使用教程请参考： https://linux.do/t/topic/173810
 
