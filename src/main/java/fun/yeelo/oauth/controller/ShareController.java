@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/share")
 @Slf4j
 public class ShareController {
-    @Value("${chat_site}")
+    @Value("${chat_site:https://next.yeelo.top}")
     private String chatSite;
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Value("${linux-do.fuclaude}")
