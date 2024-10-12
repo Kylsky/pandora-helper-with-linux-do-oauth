@@ -483,4 +483,51 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             return HttpResult.success(token);
         }
     }
+
+    public String generateGPTUrl(Share share,Account account){
+        String shareToken = "";
+        try {
+            log.info("开始新增share");
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
+            personJsonObject.add("access_token", account.getAccessToken());
+            personJsonObject.add("unique_name", share.getUniqueName());
+            personJsonObject.add("expires_in", 3600);
+            personJsonObject.add("gpt35_limit", -1);
+            personJsonObject.add("gpt4_limit", -1);
+            personJsonObject.add("site_limit", "");
+            personJsonObject.add("show_userinfo", false);
+            personJsonObject.add("show_conversations", false);
+            personJsonObject.add("reset_limit", true);
+            personJsonObject.add("temporary_chat", false);
+            ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            shareToken = map.get("token_key").toString();
+            log.info("新增share完成,share_token:{}", shareToken);
+        } catch (Exception e) {
+            log.error("新增 chatgpt share 异常:", e);
+            return null;
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
+
+        ObjectNode personJsonObject = objectMapper.createObjectNode();
+        personJsonObject.put("share_token", shareToken);
+        ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(tokenUrl, new HttpEntity<>(personJsonObject, headers), String.class);
+        try {
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            if (map.containsKey("login_url")) {
+                String loginUrl = map.get("login_url").toString();
+                loginUrl = loginUrl.replace(CommonConst.DEFAULT_AUTH_URL, authUrl);
+                log.info("获取login url成功:{}", loginUrl);
+                return loginUrl;
+            }
+        } catch (IOException e) {
+            log.error("Check user error:", e);
+            return null;
+        }
+        return null;
+    }
 }

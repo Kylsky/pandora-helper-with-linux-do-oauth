@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.AccountMapper;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -81,6 +83,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         String addr = "";
         switch (account.getAccountType()) {
             case 1:
+                addr = shareService.generateGPTUrl(user,account);
+                if (addr == null) {
+                    return HttpResult.error("当前账号异常，请选择其他账号");
+                }
                 break;
             case 2:
                 addr = claudeConfigService.generateAutoToken(account, user, 3600);
