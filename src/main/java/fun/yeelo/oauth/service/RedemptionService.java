@@ -1,13 +1,10 @@
 package fun.yeelo.oauth.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import fun.yeelo.oauth.config.HttpResult;
-import fun.yeelo.oauth.dao.AccountMapper;
 import fun.yeelo.oauth.dao.RedemptionMapper;
-import fun.yeelo.oauth.dao.ShareMapper;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
@@ -16,8 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -119,4 +118,97 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         return distribute;
     }
 
+    public HttpResult<Redemption> getRedemptionById(HttpServletRequest request, Integer id) {
+        Redemption byId = getById(id);
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        if (!byId.getUserId().equals(user.getId())) {
+            return HttpResult.error("你无权访问该内容");
+        }
+        return HttpResult.success(byId);
+    }
+
+    public HttpResult<Boolean> deleteRedemption(HttpServletRequest request, Integer id) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Redemption redemption = getById(id);
+        if (redemption!=null && redemption.getUserId().equals(user.getId())) {
+            removeById(id);
+        }else {
+            return HttpResult.error("您无权删除该兑换码");
+        }
+
+        return HttpResult.success(true);
+    }
+
+    public HttpResult<Boolean> addRedemption(HttpServletRequest request, RedemptionVO dto) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        if (dto.getCount()==null || dto.getCount()<=0){
+            dto.setCount(1);
+        }
+        if (dto.getAccountId()==null){
+            return HttpResult.error("尚未选择账号，请重试");
+        }
+        if (dto.getCount() > 4) {
+            return HttpResult.error("最多支持一次性生成4个兑换码");
+        }
+        if (dto.getDuration() > 30){
+            return HttpResult.error("最多支持30天");
+        }
+        for (int i = 0; i < dto.getCount(); i++) {
+            dto.setId(null);
+            dto.setUserId(user.getId());
+            dto.setCreateTime(LocalDateTime.now());
+            dto.setCode(UUID.randomUUID().toString().replace("-","").substring(0,10));
+            save(dto);
+        }
+
+        return HttpResult.success(true);
+    }
+
+    public HttpResult<Boolean> updateRedemption(HttpServletRequest request, Redemption dto) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)){
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Redemption updatePO = new Redemption();
+        if (!StringUtils.hasText(dto.getTargetUserName())) {
+            updatePO.setTargetUserName(dto.getTargetUserName());
+        }
+        updatePO.setDuration(dto.getDuration());
+        updatePO.setTimeUnit(dto.getTimeUnit());
+        updatePO.setId(dto.getId());
+        if (updatePO.getId()!=null){
+            updateById(updatePO);
+        }
+
+        return HttpResult.success(true);
+    }
 }
