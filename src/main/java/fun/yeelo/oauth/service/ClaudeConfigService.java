@@ -9,13 +9,11 @@ import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.ClaudeConfigMapper;
 import fun.yeelo.oauth.dao.GptConfigMapper;
-import fun.yeelo.oauth.domain.Account;
-import fun.yeelo.oauth.domain.Share;
-import fun.yeelo.oauth.domain.ShareClaudeConfig;
-import fun.yeelo.oauth.domain.ShareGptConfig;
+import fun.yeelo.oauth.domain.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
@@ -23,12 +21,14 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareClaudeConfig> implements IService<ShareClaudeConfig> {
@@ -41,6 +41,10 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
     private final ObjectMapper objectMapper = new ObjectMapper();
     @Value("${linux-do.fuclaude}")
     private String fuclaudeUrl;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AccountService accountService;
 
 
     public List<ShareClaudeConfig> findAll() {
@@ -106,5 +110,55 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
             log.error("获取oauth_token异常", ex);
             return null;
         }
+    }
+
+    public HttpResult<String> checkLinuxDoUser(String username, String jmc, HttpServletRequest request) {
+        String jmcFromSession = request.getSession().getAttribute("jmc") == null ? "" : request.getSession().getAttribute("jmc").toString();
+        if (!StringUtils.hasText(jmc) || !jmc.equals(jmcFromSession)) {
+            return HttpResult.error("请遵守登录规范！");
+        }
+        Share user = shareService.getByUserName(username);
+        if (Objects.isNull(user)) {
+            // 新建默认share
+            ShareVO share = new ShareVO();
+            share.setUniqueName(username);
+            share.setIsShared(false);
+            share.setPassword(passwordEncoder.encode("123456"));
+            share.setComment("");
+            shareService.save(share);
+            return HttpResult.error("用户未激活,请联系管理员");
+        }
+        ShareClaudeConfig claudeShare = getByShareId(user.getId());
+        if (claudeShare == null) {
+            return HttpResult.error("权限未激活,请联系管理员");
+        }
+        Account account = accountService.getById(claudeShare.getAccountId());
+        String token = generateAutoToken(account,user,null);
+        return HttpResult.success(token);
+    }
+
+    public HttpResult<String> login(LoginDTO resetDTO) {
+        String username = resetDTO.getUsername();
+        String password = resetDTO.getPassword();
+        if (!StringUtils.hasText(username) || !StringUtils.hasText(password)) {
+            return HttpResult.error("用户名或密码不能为空");
+        }
+        Share user = shareService.getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请重试");
+        }
+        ShareClaudeConfig claudeShare = getByShareId(user.getId());
+        if (claudeShare==null) {
+            return HttpResult.error("当前用户未激活Claude");
+        }
+        Account account = accountService.getById(claudeShare.getAccountId());
+        String token = generateAutoToken(account,user,null);
+        if (token==null) {
+            return HttpResult.error("生成OAUTH_TOKEN异常，请联系管理员");
+        }
+        if (!passwordEncoder.matches(password,user.getPassword())){
+            return HttpResult.error("密码错误，请重试");
+        }
+        return HttpResult.success(token);
     }
 }
