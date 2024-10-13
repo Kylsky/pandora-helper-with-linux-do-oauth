@@ -74,10 +74,10 @@ public class PandoraController {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @GetMapping("/checkUser")
-    public HttpEntity<ShareVO> checkLinuxDoUser(@RequestParam String username, @RequestParam String jmc, HttpServletRequest request) {
+    public HttpResult<ShareVO> checkLinuxDoUser(@RequestParam String username, @RequestParam String jmc, HttpServletRequest request) {
         String jmcFromSession = request.getSession().getAttribute("jmc") == null ? "" : request.getSession().getAttribute("jmc").toString();
         if (!StringUtils.hasText(jmc) || !jmc.equals(jmcFromSession)) {
-            return new ResponseEntity<>(new ShareVO(), HttpStatus.UNAUTHORIZED);
+            return HttpResult.error("登录校验码失败，请重试");
         }
         Share user = shareService.getByUserName(username);
         if (Objects.isNull(user)) {
@@ -88,7 +88,7 @@ public class PandoraController {
             share.setPassword(passwordEncoder.encode("123456"));
             share.setComment("");
             shareService.save(share);
-            return new ResponseEntity<>(share, HttpStatus.OK);
+            return HttpResult.success(share);
         }
         // 获取share的gpt配置
         ShareGptConfig byShareId = gptConfigService.getByShareId(user.getId());
@@ -96,7 +96,7 @@ public class PandoraController {
         ShareVO res = new ShareVO();
         res.setIsShared(byShareId!=null && byShareId.getShareToken() != null);
         if (!res.getIsShared()) {
-            return new ResponseEntity<>(res, HttpStatus.OK);
+            return HttpResult.success(res);
         }
         BeanUtils.copyProperties(user, res);
 
@@ -119,7 +119,7 @@ public class PandoraController {
         } catch (IOException e) {
             log.error("Check user error:", e);
         }
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        return HttpResult.success(res);
     }
 
     @PostMapping("/reset")
