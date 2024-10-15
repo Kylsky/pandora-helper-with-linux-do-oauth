@@ -234,6 +234,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         accountVOS = accountVOS.stream()
                              .filter(e -> type == null || (type.equals(e.getAccountType())&&e.getShared().equals(1)&&e.getAuto().equals(1)))
                              .sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
+        accountVOS.stream().forEach(e->{
+            e.setRefreshToken(null);
+            e.setAccessToken(null);
+        });
         for (AccountVO accountVO : accountVOS) {
             Integer id = accountVO.getId();
             accountVO.setSessionToken(checkIdWithinFiveMinutes(id,false) ?"1":"");
