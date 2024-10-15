@@ -116,6 +116,8 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
                              .collect(Collectors.toList());
         accountVOS.forEach(e -> {
             Share targetUser = userMap.get(e.getUserId());
+            e.setAccessToken(null);
+            e.setRefreshToken(null);
             e.setApplyNum(applys.get(e.getId()) == null ? 0 : applys.get(e.getId()).size());
             e.setAuthorized(targetUser.getId().equals(user.getId()) && e.getApplyNum() > 0);
         });
