@@ -67,7 +67,24 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
     }
 
 
-    public HttpResult<Boolean> addShare(Account account, int shareId, String expireAt) {
+    public HttpResult<Boolean> addShare(Account account, int shareId, Integer duration, String expireAt) {
+        if (duration != null) {
+
+            ShareClaudeConfig byId = this.getByShareId(shareId);
+            if (byId != null) {
+                LocalDateTime expireDateTime;
+                if (byId.getExpiresAt() != null) {
+                    expireDateTime = byId.getExpiresAt();
+                } else {
+                    expireDateTime = LocalDateTime.now();
+                }
+                byId.setExpiresAt(expireDateTime.plusDays(duration));
+                this.updateById(byId);
+                return HttpResult.success();
+            } else {
+                expireAt = LocalDateTime.now().plusDays(duration).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            }
+        }
         // 删除原有的
         this.baseMapper.delete(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, shareId));
 
@@ -143,7 +160,7 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
             return HttpResult.error("权限未激活,请联系管理员");
         }
         Account account = accountService.getById(claudeShare.getAccountId());
-        String token = generateAutoToken(account,user,null);
+        String token = generateAutoToken(account, user, null);
         return HttpResult.success(token);
     }
 
@@ -158,15 +175,15 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
             return HttpResult.error("用户不存在，请重试");
         }
         ShareClaudeConfig claudeShare = getByShareId(user.getId());
-        if (claudeShare==null) {
+        if (claudeShare == null) {
             return HttpResult.error("当前用户未激活Claude");
         }
         Account account = accountService.getById(claudeShare.getAccountId());
-        String token = generateAutoToken(account,user,null);
-        if (token==null) {
+        String token = generateAutoToken(account, user, null);
+        if (token == null) {
             return HttpResult.error("生成OAUTH_TOKEN异常，请联系管理员");
         }
-        if (!passwordEncoder.matches(password,user.getPassword())){
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             return HttpResult.error("密码错误，请重试");
         }
         return HttpResult.success(token);

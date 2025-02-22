@@ -32,7 +32,6 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -118,11 +117,11 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
 
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), share.getDuration(), null);
+                return gptConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             case 2:
-                return claudeConfigService.addShare(account, byId.getId(), null);
+                return claudeConfigService.addShare(account, byId.getId(), share.getDuration(),null);
             case 3:
-                return apiConfigService.addShare(account, byId.getId(), null);
+                return apiConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             default:
                 return HttpResult.error("激活出现异常");
         }
@@ -339,11 +338,11 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         Account account = accountService.getById(dto.getAccountId());
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, dto.getUniqueName(), shareId, null, dto.getExpiresAt());
+                return gptConfigService.addShare(account, shareId, null, dto.getExpiresAt());
             case 2:
-                return claudeConfigService.addShare(account, shareId, dto.getExpiresAt());
+                return claudeConfigService.addShare(account, shareId, null, dto.getExpiresAt());
             case 3:
-                return apiConfigService.addShare(account, shareId, dto.getExpiresAt());
+                return apiConfigService.addShare(account, shareId, null, dto.getExpiresAt());
             default:
                 return HttpResult.success(false);
 
@@ -412,11 +411,11 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
 
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, byId.getUniqueName(), byId.getId(), null, share.getExpiresAt());
+                return gptConfigService.addShare(account, byId.getId(), null, share.getExpiresAt());
             case 2:
-                return claudeConfigService.addShare(account, byId.getId(), share.getExpiresAt());
+                return claudeConfigService.addShare(account, byId.getId(), null, share.getExpiresAt());
             case 3:
-                return apiConfigService.addShare(account, byId.getId(), share.getExpiresAt());
+                return apiConfigService.addShare(account, byId.getId(), null, share.getExpiresAt());
             default:
                 return HttpResult.error("激活出现异常");
         }

@@ -8,6 +8,7 @@ import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.GptConfigMapper;
 import fun.yeelo.oauth.domain.account.Account;
 import fun.yeelo.oauth.domain.share.Share;
+import fun.yeelo.oauth.domain.share.ShareClaudeConfig;
 import fun.yeelo.oauth.domain.share.ShareGptConfig;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -55,83 +55,25 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
         return configs.get(0);
     }
 
-    public HttpResult<Boolean> addShare(Account account, String uniqueName, Integer shareId, Integer expire, String expireAt) {
-        long duration = 0L;
-        //if (StringUtils.hasText(expire) && !expire.equals("-")) {
-        //    expire += " 00:00:00";
-        //    LocalDateTime expireDay = LocalDateTime.parse(expire, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        //    duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
-        //}
-        String shareToken;
+    public HttpResult<Boolean> addShare(Account account, Integer shareId, Integer expire, String expireAt) {
+        // 更新过期时间
         if (expire != null) {
-            Share share = new Share();
-            share.setId(shareId);
-            Share byId = shareService.getById(shareId);
-            LocalDateTime expireDateTime;
-            if (byId != null && StringUtils.hasText(byId.getExpiresAt()) && !byId.getExpiresAt().equals("-")) {
-                String expiresAt = byId.getExpiresAt();
-                expireDateTime = LocalDateTime.parse(expiresAt+" 00:00:00",DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            }else {
-                expireDateTime = LocalDateTime.now();
-            }
-            share.setExpiresAt(expireDateTime.plusDays(expire).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
-            shareService.updateById(share);
-        }
-        // 删除旧的share token
-        //try {
-        //    List<ShareGptConfig> list = this.list(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));
-        //    if (!CollectionUtils.isEmpty(list)) {
-        //        Integer accountId = list.get(0).getAccountId();
-        //        Account formerAccount = accountService.getById(accountId);
-        //        HttpHeaders headers = new HttpHeaders();
-        //        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        //        MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
-        //        personJsonObject.add("access_token", formerAccount.getAccessToken());
-        //        personJsonObject.add("unique_name", uniqueName);
-        //        personJsonObject.add("expires_in", -1);
-        //        personJsonObject.add("gpt35_limit", -1);
-        //        personJsonObject.add("gpt4_limit", -1);
-        //        personJsonObject.add("site_limit", "");
-        //        personJsonObject.add("show_userinfo", false);
-        //        personJsonObject.add("show_conversations", false);
-        //        personJsonObject.add("reset_limit", true);
-        //        personJsonObject.add("temporary_chat", false);
-        //        ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
-        //        Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-        //        if (map.containsKey("detail") && map.get("detail").equals("revoke token key successfully")) {
-        //            log.info("delete success");
-        //        }
-        //    }
-        //} catch (Exception e) {
-        //    log.error("删除旧的账号失败", e);
-        //    return HttpResult.error("删除旧账号失败");
-        //}
 
-        // 获取新的share token
-        //try {
-        //    log.info("开始新增share");
-        //    HttpHeaders headers = new HttpHeaders();
-        //    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        //    MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
-        //    personJsonObject.add("access_token", account.getAccessToken());
-        //    personJsonObject.add("unique_name", uniqueName);
-        //    personJsonObject.add("expires_in", duration);
-        //    personJsonObject.add("gpt35_limit", -1);
-        //    personJsonObject.add("gpt4_limit", -1);
-        //    personJsonObject.add("site_limit", "");
-        //    personJsonObject.add("show_userinfo", false);
-        //    personJsonObject.add("show_conversations", false);
-        //    personJsonObject.add("reset_limit", true);
-        //    personJsonObject.add("temporary_chat", false);
-        //    ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
-        //    Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-        //    shareToken = map.get("token_key").toString();
-        //    log.info("新增share完成,share_token:{}", shareToken);
-        //} catch (Exception e) {
-        //    log.error("新增 chatgpt share 异常:", e);
-        //    return HttpResult.error("调取share token异常");
-        //}
-        // 删除旧的
+            ShareGptConfig byId = this.getByShareId(shareId);
+            if (byId != null) {
+                LocalDateTime expireDateTime;
+                if (byId.getExpiresAt() != null) {
+                    expireDateTime = byId.getExpiresAt();
+                } else {
+                    expireDateTime = LocalDateTime.now();
+                }
+                byId.setExpiresAt(expireDateTime.plusDays(expire));
+                this.updateById(byId);
+                return HttpResult.success();
+            } else {
+                expireAt = LocalDateTime.now().plusDays(expire).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            }
+        }
         this.baseMapper.delete(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));
 
         // 增加新的
