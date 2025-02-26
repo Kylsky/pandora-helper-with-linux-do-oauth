@@ -329,6 +329,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
 
         dto.setPassword(passwordEncoder.encode(dto.getPassword()));
         dto.setParentId(user.getId());
+        dto.setExpiresAt(null);
         getBaseMapper().insert(dto);
         if (user.getId().equals(1)) {
             midjourneyService.addUser(dto, dto.getMjEnable() ? "NORMAL" : "DISABLED");

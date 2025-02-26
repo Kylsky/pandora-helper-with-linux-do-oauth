@@ -17,4 +17,4 @@ COPY ./target/classes/db/data.db /app/db/data.db
 
 
 # 设置运行 jar 文件的命令
-CMD ["java", "-Xmx2048m","-Xms2048m", "-jar", "/app/my-app.jar"]
+CMD ["java", "-jar", "/app/my-app.jar"]
