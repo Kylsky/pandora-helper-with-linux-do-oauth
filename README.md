@@ -99,3 +99,6 @@
 <img src="https://github.com/user-attachments/assets/dd151c39-7b76-4d9a-b973-40b599610f00" width="40%" alt="Star History Chart">
 
 <div class="contact-footer">
+
+### 🥰 特别鸣谢
+感谢[MN API (All in One的中转站聚合平台)](https://www.mnapi.com/)对本项目的支持
