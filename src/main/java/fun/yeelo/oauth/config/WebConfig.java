@@ -49,6 +49,7 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addViewController("/pandora").setViewName("index");
         registry.addViewController("/loading").setViewName("index");
         registry.addViewController("/claude").setViewName("index");
+        registry.addViewController("/draw").setViewName("index");
         registry.addViewController("/navi").setViewName("index");
         WebMvcConfigurer.super.addViewControllers(registry);
     }
