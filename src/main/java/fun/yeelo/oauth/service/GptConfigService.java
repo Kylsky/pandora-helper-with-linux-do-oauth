@@ -28,24 +28,10 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
     @Autowired
     private GptConfigMapper gptConfigMapper;
     @Autowired
-    private RestTemplate restTemplate;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    @Autowired
     private ShareService shareService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private AccountService accountService;
-
-
-    public List<ShareGptConfig> findAll() {
-        return gptConfigMapper.selectList(null);
-    }
-
-    public ShareGptConfig findById(Integer id) {
-        return gptConfigMapper.selectById(id);
-    }
 
     public ShareGptConfig getByShareId(Integer shareId) {
         List<ShareGptConfig> configs = gptConfigMapper.selectList(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));
@@ -58,7 +44,6 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
     public HttpResult<Boolean> addShare(Account account, Integer shareId, Integer expire, String expireAt) {
         // 更新过期时间
         if (expire != null) {
-
             ShareGptConfig byId = this.getByShareId(shareId);
             if (byId != null) {
                 LocalDateTime expireDateTime;
@@ -105,34 +90,6 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
             gptAccount = accountService.getById(one.getAccountId());
         }
         this.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, shareId));
-
-        // 删除oaifree的share token
-        //if (gptAccount != null) {
-        //    try {
-        //        HttpHeaders headers = new HttpHeaders();
-        //        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        //        MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
-        //        personJsonObject.add("access_token", gptAccount.getAccessToken());
-        //        personJsonObject.add("unique_name", share.getUniqueName());
-        //        personJsonObject.add("expires_in", -1);
-        //        personJsonObject.add("gpt35_limit", -1);
-        //        personJsonObject.add("gpt4_limit", -1);
-        //        personJsonObject.add("site_limit", "");
-        //        personJsonObject.add("show_userinfo", false);
-        //        personJsonObject.add("show_conversations", false);
-        //        personJsonObject.add("reset_limit", true);
-        //        personJsonObject.add("temporary_chat", false);
-        //        ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
-        //        Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-        //        if (map.containsKey("detail") && map.get("detail").equals("revoke token key successfully")) {
-        //            log.info("delete success");
-        //            return HttpResult.success(true);
-        //        }
-        //    } catch (Exception e) {
-        //        log.error("Check user error:", e);
-        //        return HttpResult.error("删除用户异常");
-        //    }
-        //}
 
         return HttpResult.success();
     }

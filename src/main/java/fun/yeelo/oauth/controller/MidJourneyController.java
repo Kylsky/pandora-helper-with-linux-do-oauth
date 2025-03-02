@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import fun.yeelo.oauth.config.HttpResult;
+import fun.yeelo.oauth.configurations.MidjourneyProperties;
 import fun.yeelo.oauth.domain.midjourney.*;
 import fun.yeelo.oauth.domain.share.Share;
 import fun.yeelo.oauth.service.MidjourneyService;
@@ -33,15 +34,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequestMapping("/mj")
 public class MidJourneyController {
-    @Value("${midjourney.url}")
-    private String mjUrl;
-
-    @Value("${midjourney.key}")
-    private String mjKey;
+    @Autowired
+    private MidjourneyProperties midjourneyProperties;
 
     @Autowired
     private ShareService shareService;
-
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
@@ -49,12 +46,9 @@ public class MidJourneyController {
     @Autowired
     private MidjourneyService midjourneyService;
 
-    @Value("${midjourney.enable}")
-    private Boolean mjEnable;
-
     @GetMapping("/users")
     public HttpResult<UserResponse> getUsers(HttpServletRequest request, @RequestParam(required = false) String username) {
-        if (!mjEnable) {
+        if (!midjourneyProperties.getEnable()) {
             return HttpResult.error("未启用MJ");
         }
         String token = jwtTokenUtil.getTokenFromRequest(request);
@@ -90,7 +84,7 @@ public class MidJourneyController {
         headers.set("accept", "application/json, text/plain, */*");
         headers.set("accept-language", "zh-CN");
         headers.set("content-type", "application/json");
-        headers.set("mj-api-secret", StringUtils.hasText(mjKey) ? mjKey : admin.getId() + "+" + admin.getUniqueName() + "+" + admin.getPassword().substring(0, 10));
+        headers.set("mj-api-secret", StringUtils.hasText(midjourneyProperties.getKey()) ? midjourneyProperties.getKey() : admin.getId() + "+" + admin.getUniqueName() + "+" + admin.getPassword().substring(0, 10));
         headers.set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0");
 
         // 创建请求体
@@ -120,7 +114,7 @@ public class MidJourneyController {
 
         // 发送请求并返回响应
         ResponseEntity<String> exchange = new RestTemplate().postForEntity(
-                mjUrl + "/mj/admin/tasks",
+                midjourneyProperties.getUrl() + "/mj/admin/tasks",
                 requestEntity,
                 String.class
         );

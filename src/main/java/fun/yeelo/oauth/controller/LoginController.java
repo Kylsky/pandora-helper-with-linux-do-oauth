@@ -41,9 +41,6 @@ public class LoginController {
     @Autowired
     private MidjourneyService midjourneyService;
 
-    @Value("${midjourney.key}")
-    private String mjKey;
-
     @Autowired
     private UpdateTimer updateTimer;
 
@@ -55,10 +52,10 @@ public class LoginController {
 
     @Autowired
     private ShareService shareService;
-    @Autowired
-    private AccountService accountService;
+
     @Value("${admin-name:admin}")
     private String adminName;
+
     @Autowired
     private RedemptionService redemptionService;
 

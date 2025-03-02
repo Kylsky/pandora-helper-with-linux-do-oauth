@@ -21,16 +21,6 @@ import javax.servlet.http.HttpServletRequest;
 @Slf4j
 public class RedemptionController {
     @Autowired
-    private RestTemplate restTemplate;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    @Autowired
-    private ShareService shareService;
-    @Autowired
-    private AccountService accountService;
-    @Autowired
-    private CarService carService;
-    @Autowired
     private RedemptionService redemptionService;
 
     @GetMapping("/getById")

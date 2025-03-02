@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.config.MirrorConfig;
+import fun.yeelo.oauth.configurations.MirrorProperties;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.domain.share.ResetDTO;
 import fun.yeelo.oauth.domain.share.Share;
@@ -14,6 +15,7 @@ import fun.yeelo.oauth.service.GptConfigService;
 import fun.yeelo.oauth.service.MidjourneyService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -33,32 +35,21 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/pandora")
+@Slf4j
 public class PandoraController {
-    @Autowired
-    private UserDetailsService userDetailsService;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-
-    private static final Logger log = LoggerFactory.getLogger(PandoraController.class);
     @Autowired
     private RestTemplate restTemplate;
 
     @Value("${linux-do.oaifree.auth-api}")
     private String authUrl;
 
-    private final static String DEFAULT_AUTH_URL = "https://new.oaifree.com";
-
     @Value("${linux-do.oaifree.token-api}")
     private String tokenUrl;
 
-    @Value("${mirror.enable}")
-    private Boolean mirrorEnable;
+    private final static String DEFAULT_AUTH_URL = "https://new.oaifree.com";
 
-    @Value("${mirror.host}")
-    private String mirrorHost;
-
-    @Value("${mirror.password}")
-    private String mirrorPwd;
+    @Autowired
+    private MirrorProperties mirrorProperties;
 
     @Autowired
     private ShareService shareService;
@@ -99,7 +90,7 @@ public class PandoraController {
         ShareGptConfig byShareId = gptConfigService.getByShareId(user.getId());
         // 判断是否有share token
         ShareVO res = new ShareVO();
-        if (!mirrorEnable) {
+        if (!mirrorProperties.getEnable()) {
             res.setIsShared(byShareId!=null && byShareId.getShareToken() != null);
             if (!res.getIsShared()) {
                 return HttpResult.success(res);
@@ -110,7 +101,7 @@ public class PandoraController {
 
         BeanUtils.copyProperties(user, res);
 
-        if (mirrorEnable) {
+        if (mirrorProperties.getEnable()) {
             return mirrorConfig.getMirrorUrl(user.getUniqueName(), byShareId.getAccountId());
         }else {
             try {
@@ -189,7 +180,7 @@ public class PandoraController {
             return HttpResult.error("密码错误，请重试");
         }
 
-        if (mirrorEnable) {
+        if (mirrorProperties.getEnable()) {
             return mirrorConfig.getSimpleMirrorUrl(user.getUniqueName(), gptShare.getAccountId());
         }else {
             HttpHeaders headers = new HttpHeaders();

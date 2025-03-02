@@ -119,7 +119,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             case 1:
                 return gptConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             case 2:
-                return claudeConfigService.addShare(account, byId.getId(), share.getDuration(),null);
+                return claudeConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             case 3:
                 return apiConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             default:
@@ -366,7 +366,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         }
 
         Share share = getById(dto.getId());
-        if (dto.getMjEnable()!=null && !StringUtils.hasText(share.getMjUserId())) {
+        if (dto.getMjEnable() != null && !StringUtils.hasText(share.getMjUserId())) {
             midjourneyService.addUser(share, dto.getMjEnable() ? "NORMAL" : "DISABLED");
         }
         if (dto.getMjEnable() != null && dto.getMjEnable() && user.getId().equals(1)) {
@@ -578,6 +578,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             return HttpResult.error("用户不存在，请联系管理员");
         }
         ShareGptConfig gptConfig = gptConfigService.getOne(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, user.getId()));
+        ShareClaudeConfig claudeConfig = claudeConfigService.getOne(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, user.getId()));
+        ShareApiConfig apiConfig = apiConfigService.getOne(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, user.getId()));
         if (gptConfig == null) {
             return HttpResult.error("用户未开通GPT服务");
         }

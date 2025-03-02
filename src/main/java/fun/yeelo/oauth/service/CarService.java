@@ -3,6 +3,7 @@ package fun.yeelo.oauth.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import fun.yeelo.oauth.annotation.RequireLogin;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.CarMapper;
 import fun.yeelo.oauth.domain.*;
@@ -13,7 +14,9 @@ import fun.yeelo.oauth.domain.car.CarApplyVO;
 import fun.yeelo.oauth.domain.share.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import fun.yeelo.oauth.utils.UserContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -40,16 +43,8 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
     @Autowired
     private AccountService accountService;
 
-    public HttpResult<Boolean> audit(HttpServletRequest request, CarApplyVO dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    @RequireLogin
+    public HttpResult<Boolean> audit(CarApplyVO dto) {
         if (dto.getIds() == null && dto.getShareId() != null) {
             dto.setIds(Collections.singletonList(dto.getShareId()));
         }
@@ -71,13 +66,9 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         return HttpResult.success();
     }
 
+    @RequireLogin
     public HttpResult<PageVO<AccountVO>> listCars(HttpServletRequest request, String owner, Integer page, Integer size) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
+        Share user = UserContext.getCurrentUser();
         Map<Integer, Share> userMap = shareService.list().stream().collect(Collectors.toMap(Share::getId, Function.identity()));
         Map<Integer, List<ShareGptConfig>> gptMap = gptConfigService.list().stream().collect(Collectors.groupingBy(ShareGptConfig::getAccountId));
         Map<Integer, List<ShareClaudeConfig>> claudeMap = claudeConfigService.list().stream().collect(Collectors.groupingBy(ShareClaudeConfig::getAccountId));
@@ -87,7 +78,7 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         }
         List<Account> accountList = new ArrayList<>(accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getShared, true)));
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
-        accountVOS.stream().filter(e->userMap.containsKey(e.getUserId())).forEach(e -> {
+        accountVOS.stream().filter(e -> userMap.containsKey(e.getUserId())).forEach(e -> {
             Share targetUser = userMap.get(e.getUserId());
             e.setType(e.getAccountType().equals(1) ? "ChatGPT" : e.getAccountType().equals(2) ? "Claude" : "API");
             String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
@@ -100,24 +91,17 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
             Integer count;
 
             switch (e.getAccountType()) {
-                case 1:
-                    count = gptMap.getOrDefault(e.getId(), new ArrayList<>()).size();
-                    break;
-                case 2:
-                    count = claudeMap.getOrDefault(e.getId(), new ArrayList<>()).size();
-                    break;
-                case 3:
-                    count = apiMap.getOrDefault(e.getId(), new ArrayList<>()).size();
-                    break;
-                default:
-                    count = 0;
+                case 1 -> count = gptMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                case 2 -> count = claudeMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                case 3 -> count = apiMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                default -> count = 0;
             }
             e.setCountDesc(count + " / " + (e.getUserLimit().equals(-1) ? "无限制" : e.getUserLimit()));
             e.setCount(count);
         });
         Map<Integer, List<CarApply>> applys = list().stream().collect(Collectors.groupingBy(e -> e.getAccountId()));
         accountVOS = accountVOS.stream()
-                             .filter(e -> e.getType()!=null)
+                             .filter(e -> e.getType() != null)
                              .sorted(Comparator.comparing(AccountVO::getType))
                              .collect(Collectors.toList());
         accountVOS.forEach(e -> {
@@ -133,16 +117,9 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         return HttpResult.success(pageVO);
     }
 
+    @RequireLogin
     public HttpResult<List<LabelDTO>> fetchApplies(HttpServletRequest request, Integer accountId) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+
         Map<Integer, Share> userMap = shareService.list().stream().collect(Collectors.toMap(Share::getId, Function.identity()));
         List<LabelDTO> labels = list(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId, accountId))
                                         .stream()
@@ -155,42 +132,35 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         return HttpResult.success(labels);
     }
 
+    @RequireLogin
     public HttpResult<Boolean> carApply(HttpServletRequest request, CarApply dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+        Share user = UserContext.getCurrentUser();
         dto.setShareId(user.getId());
         Account account = accountService.getById(dto.getAccountId());
         Integer accountType = account.getAccountType();
         Integer curAccountUser = 0;
         switch (accountType) {
-            case 1:
+            case 1 -> {
                 curAccountUser = gptConfigService.count(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getAccountId, account.getId()));
                 List<ShareGptConfig> list = gptConfigService.list(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, dto.getShareId()).eq(ShareGptConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(list)) {
                     return HttpResult.error("您已在该车上，请勿重复申请");
                 }
-                break;
-            case 2:
+            }
+            case 2 -> {
                 curAccountUser = claudeConfigService.count(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, account.getId()));
                 List<ShareClaudeConfig> cladueList = claudeConfigService.list(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, dto.getShareId()).eq(ShareClaudeConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(cladueList)) {
                     return HttpResult.error("您已该在车上，请勿重复申请");
                 }
-                break;
-            case 3:
+            }
+            case 3 -> {
                 curAccountUser = apiConfigService.count(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId, account.getId()));
                 List<ShareApiConfig> apiList = apiConfigService.list(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, dto.getShareId()).eq(ShareApiConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(apiList)) {
                     return HttpResult.error("您已该在车上，请勿重复申请");
                 }
-                break;
+            }
         }
 
         if (!account.getUserLimit().equals(-1) && curAccountUser >= account.getUserLimit()) {
@@ -218,7 +188,7 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
             carApplyVO.setAllowApply(1);
             carApplyVO.setShareId(user.getId());
             carApplyVO.setAccountId(account.getId());
-            audit(request, carApplyVO);
+            audit(carApplyVO);
             return HttpResult.success();
         }
 

@@ -18,12 +18,7 @@ import java.util.*;
 @RequestMapping("/account")
 @Slf4j
 public class AccountController {
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    @Autowired
-    private ShareService shareService;
     @Autowired
     private AccountService accountService;
 

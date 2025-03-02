@@ -36,7 +36,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
 
     public HttpResult<PageVO<RedemptionVO>> listRedemptions(HttpServletRequest request, String email, Integer page, Integer size) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -47,39 +47,32 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         List<Redemption> list = list(new LambdaQueryWrapper<Redemption>().eq(Redemption::getUserId, user.getId()));
         List<RedemptionVO> redemptionVOS = ConvertUtil.convertList(list, RedemptionVO.class);
         Map<Integer, Account> accountMap = accountService.list().stream().collect(Collectors.toMap(Account::getId, Function.identity()));
-        redemptionVOS.stream().forEach(red -> {
+        redemptionVOS.forEach(red -> {
             Account account = accountMap.get(red.getAccountId());
             if (account == null) {
                 red.setEmail("");
-            }else {
+            } else {
                 red.setEmail(account.getEmail());
                 String accType;
-                switch (account.getAccountType()){
-                    case 1:
-                        accType = "ChatGPT";
-                        break;
-                    case 2:
-                        accType = "Claude";
-                        break;
-                    case 3:
-                        accType = "API";
-                        break;
-                    default:
-                        accType = "ChatGPT";
+                switch (account.getAccountType()) {
+                    case 1 -> accType = "ChatGPT";
+                    case 2 -> accType = "Claude";
+                    case 3 -> accType = "API";
+                    default -> accType = "ChatGPT";
                 }
                 red.setAccountType(accType);
             }
         });
-        redemptionVOS = redemptionVOS.stream().filter(e->StringUtils.hasText(e.getEmail()) && (!StringUtils.hasText(email)||(StringUtils.hasText(email) && e.getEmail().contains(email)))).collect(Collectors.toList());
+        redemptionVOS = redemptionVOS.stream().filter(e -> StringUtils.hasText(e.getEmail()) && (!StringUtils.hasText(email) || (StringUtils.hasText(email) && e.getEmail().contains(email)))).collect(Collectors.toList());
         PageVO<RedemptionVO> pageVO = new PageVO<>();
-        pageVO.setData(page==null ? redemptionVOS : redemptionVOS.subList(10*(page-1),Math.min(10*(page-1)+size,redemptionVOS.size())));
+        pageVO.setData(page == null ? redemptionVOS : redemptionVOS.subList(10 * (page - 1), Math.min(10 * (page - 1) + size, redemptionVOS.size())));
         pageVO.setTotal(redemptionVOS.size());
         return HttpResult.success(pageVO);
     }
 
     public HttpResult<Boolean> activate(HttpServletRequest request, String code) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -99,7 +92,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         shareVO.setAccountId(one.getAccountId());
         shareVO.setDuration(one.getDuration().equals(-1) || user.getId().equals(1) ? null : one.getDuration());
         HttpResult<Boolean> distribute = shareService.distribute(shareVO);
-        if (distribute.isStatus()){
+        if (distribute.isStatus()) {
             removeById(one.getId());
             return distribute;
         }
@@ -116,7 +109,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         shareVO.setAccountId(one.getAccountId());
         shareVO.setDuration(one.getDuration().equals(-1) ? null : one.getDuration());
         HttpResult<Boolean> distribute = shareService.distribute(shareVO);
-        if (distribute.isStatus()){
+        if (distribute.isStatus()) {
             removeById(one.getId());
             return distribute;
         }
@@ -126,7 +119,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
     public HttpResult<Redemption> getRedemptionById(HttpServletRequest request, Integer id) {
         Redemption byId = getById(id);
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -142,7 +135,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
 
     public HttpResult<Boolean> deleteRedemption(HttpServletRequest request, Integer id) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -151,9 +144,9 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
             return HttpResult.error("用户不存在，请联系管理员");
         }
         Redemption redemption = getById(id);
-        if (redemption!=null && redemption.getUserId().equals(user.getId())) {
+        if (redemption != null && redemption.getUserId().equals(user.getId())) {
             removeById(id);
-        }else {
+        } else {
             return HttpResult.error("您无权删除该兑换码");
         }
 
@@ -162,7 +155,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
 
     public HttpResult<Boolean> addRedemption(HttpServletRequest request, RedemptionVO dto) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -170,23 +163,23 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
-        if (dto.getCount()==null || dto.getCount()<=0){
+        if (dto.getCount() == null || dto.getCount() <= 0) {
             dto.setCount(1);
         }
-        if (dto.getAccountId()==null){
+        if (dto.getAccountId() == null) {
             return HttpResult.error("尚未选择账号，请重试");
         }
         if (dto.getCount() > 4) {
             return HttpResult.error("最多支持一次性生成4个兑换码");
         }
-        if (dto.getDuration() > 30){
+        if (dto.getDuration() > 30) {
             return HttpResult.error("最多支持30天");
         }
         for (int i = 0; i < dto.getCount(); i++) {
             dto.setId(null);
             dto.setUserId(user.getId());
             dto.setCreateTime(LocalDateTime.now());
-            dto.setCode(UUID.randomUUID().toString().replace("-","").substring(0,10));
+            dto.setCode(UUID.randomUUID().toString().replace("-", "").substring(0, 10));
             save(dto);
         }
 
@@ -195,7 +188,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
 
     public HttpResult<Boolean> updateRedemption(HttpServletRequest request, Redemption dto) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
+        if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
         }
         String username = jwtTokenUtil.extractUsername(token);
@@ -210,7 +203,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         updatePO.setDuration(dto.getDuration());
         updatePO.setTimeUnit(dto.getTimeUnit());
         updatePO.setId(dto.getId());
-        if (updatePO.getId()!=null){
+        if (updatePO.getId() != null) {
             updateById(updatePO);
         }
 

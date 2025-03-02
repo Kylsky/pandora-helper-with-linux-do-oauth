@@ -19,19 +19,7 @@ import java.util.List;
 @Slf4j
 public class CarController {
     @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    @Autowired
-    private ShareService shareService;
-    @Autowired
-    private AccountService accountService;
-    @Autowired
     private CarService carService;
-    @Autowired
-    private GptConfigService gptConfigService;
-    @Autowired
-    private ClaudeConfigService claudeConfigService;
-    @Autowired
-    private ApiConfigService apiConfigService;
 
     @GetMapping("/list")
     public HttpResult<PageVO<AccountVO>> list(HttpServletRequest request, @RequestParam(required = false) String owner, @RequestParam Integer page, @RequestParam Integer size) {
@@ -50,8 +38,8 @@ public class CarController {
     }
 
     @PostMapping("/audit")
-    public HttpResult<Boolean> refresh(HttpServletRequest request, @RequestBody CarApplyVO dto) {
-        return carService.audit(request,dto);
+    public HttpResult<Boolean> refresh(@RequestBody CarApplyVO dto) {
+        return carService.audit(dto);
     }
 
 

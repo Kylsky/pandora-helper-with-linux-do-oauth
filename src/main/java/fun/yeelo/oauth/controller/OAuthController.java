@@ -3,13 +3,15 @@ package fun.yeelo.oauth.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import fun.yeelo.oauth.config.HttpResult;
+import fun.yeelo.oauth.configurations.MidjourneyProperties;
+import fun.yeelo.oauth.configurations.OAuth2Properties;
 import fun.yeelo.oauth.domain.share.Share;
 import fun.yeelo.oauth.domain.share.ShareVO;
 import fun.yeelo.oauth.service.MidjourneyService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.ConvertUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,33 +35,12 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/oauth2")
+@Slf4j
 public class OAuthController {
-    @Value("${linux-do.oauth2.client.registration.redirect-uri}")
-    private String apiUrl;
-
-    @Value("${midjourney.url}")
-    private String mjUrl;
-    @Value("${midjourney.key}")
-    private String mjKey;
-
-    private static final Logger log = LoggerFactory.getLogger(OAuthController.class);
-    @Value("${linux-do.oauth2.client.registration.client-id}")
-    private String clientId;
-
-    @Value("${linux-do.oauth2.client.registration.client-secret}")
-    private String clientSecret;
-
-    @Value("${linux-do.oauth2.client.registration.redirect-uri}")
-    private String redirectUri;
-
-    @Value("${linux-do.oauth2.client.provider.authorization-uri}")
-    private String authorizationEndpoint;
-
-    @Value("${linux-do.oauth2.client.provider.token-uri}")
-    private String tokenEndpoint;
-
-    @Value("${linux-do.oauth2.client.provider.user-info-uri}")
-    private String userEndpoint;
+    @Autowired
+    private OAuth2Properties oAuth2Properties;
+    @Autowired
+    private MidjourneyProperties mjProperties;
 
     @Autowired
     private ShareService shareService;
@@ -71,8 +52,8 @@ public class OAuthController {
     @GetMapping("/config")
     public JSONObject config() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("apiUrl", apiUrl.replace("/loading",""));
-        jsonObject.put("mjUrl", mjUrl);
+        jsonObject.put("apiUrl", oAuth2Properties.getClient().getRegistration().getRedirectUri().replace("/loading", ""));
+        jsonObject.put("mjUrl", mjProperties.getUrl());
         return jsonObject;
     }
 
@@ -83,7 +64,11 @@ public class OAuthController {
         String state = new BigInteger(130, new SecureRandom()).toString(32) + "-" + type;
         session.setAttribute("oauth2State", state);
         String redirectUrl = String.format("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s&state=%s",
-                authorizationEndpoint, clientId, redirectUri.replace("/loading",""), "read,write", state);
+                oAuth2Properties.getProvider().getAuthorizationUri(),
+                oAuth2Properties.getClient().getRegistration().getClientId(),
+                oAuth2Properties.getClient().getRegistration().getRedirectUri().replace("/loading", ""),
+                "read,write",
+                state);
         return redirectUrl;
         //response.sendRedirect(redirectUrl);
     }
@@ -100,7 +85,7 @@ public class OAuthController {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        String auth = clientId + ":" + clientSecret;
+        String auth = oAuth2Properties.getClient().getRegistration().getClientId() + ":" + oAuth2Properties.getClient().getRegistration().getClientSecret();
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
         headers.add("Authorization", "Basic " + encodedAuth);
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
@@ -108,12 +93,15 @@ public class OAuthController {
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("grant_type", "authorization_code");
         requestBody.add("code", code);
-        requestBody.add("redirect_uri", redirectUri.replace("/loading",""));
+        requestBody.add("redirect_uri", oAuth2Properties.getClient().getRegistration().getRedirectUri().replace("/loading", ""));
 
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
         RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<Map> response = restTemplate.postForEntity(tokenEndpoint, requestEntity, Map.class);
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                oAuth2Properties.getProvider().getTokenUri(),
+                requestEntity,
+                Map.class);
 
         Map responseBody = response.getBody();
 
@@ -123,7 +111,10 @@ public class OAuthController {
             userHeaders.add("Host", "connect.linux.do");
             userHeaders.setBearerAuth(responseBody.get("access_token").toString());
             HttpEntity<String> entity = new HttpEntity<>(userHeaders);
-            ResponseEntity<Map> userResponse = restTemplate.exchange(userEndpoint, HttpMethod.GET, entity, Map.class);
+            ResponseEntity<Map> userResponse = restTemplate.exchange(oAuth2Properties.getProvider().getUserInfoUri(),
+                    HttpMethod.GET,
+                    entity,
+                    Map.class);
 
             Map userResBody = userResponse.getBody();
 
@@ -133,9 +124,9 @@ public class OAuthController {
                 userResBody.put("jmc", jmc);
                 if (state.contains("Claude")) {
                     userResBody.put("shareType", "Claude");
-                } else if (state.contains("panel")){
+                } else if (state.contains("panel")) {
                     userResBody.put("shareType", "panel");
-                }else {
+                } else {
                     userResBody.put("shareType", "ChatGPT");
                 }
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
@@ -156,14 +147,14 @@ public class OAuthController {
                     shareService.save(addUser);
                     try {
                         midjourneyService.addUser(addUser, "DISABLED");
-                    } catch (Exception e){
+                    } catch (Exception e) {
                         log.error("添加用户失败", e);
                     }
-                }else {
+                } else {
                     Integer trustLevel = share.getTrustLevel();
                     String avatarUrl = share.getAvatarUrl();
                     if (!trustLevel.equals(user.getTrustLevel()) || !avatarUrl.equals(user.getAvatarUrl())) {
-                        log.info("更新新用户{}，等级:{},头像:{}", share.getUsername(),share.getTrustLevel(),share.getAvatarUrl());
+                        log.info("更新新用户{}，等级:{},头像:{}", share.getUsername(), share.getTrustLevel(), share.getAvatarUrl());
                         Share toUpdate = new Share();
                         toUpdate.setId(user.getId());
                         toUpdate.setAvatarUrl(avatarUrl);

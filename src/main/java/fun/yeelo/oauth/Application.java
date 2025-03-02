@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -16,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Duration;
 
 @SpringBootApplication
+@EnableAspectJAutoProxy
 @EnableScheduling
 @MapperScan("fun.yeelo.oauth.dao")  // Adjust the package to match where your mappers are located
 public class Application {

@@ -49,15 +49,6 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
     @Autowired
     private AccountService accountService;
 
-
-    public List<ShareClaudeConfig> findAll() {
-        return claudeConfigMapper.selectList(null);
-    }
-
-    public ShareClaudeConfig findById(Integer id) {
-        return claudeConfigMapper.selectById(id);
-    }
-
     public ShareClaudeConfig getByShareId(Integer shareId) {
         List<ShareClaudeConfig> configs = claudeConfigMapper.selectList(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, shareId));
         if (CollectionUtils.isEmpty(configs)) {
@@ -69,7 +60,6 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
 
     public HttpResult<Boolean> addShare(Account account, int shareId, Integer duration, String expireAt) {
         if (duration != null) {
-
             ShareClaudeConfig byId = this.getByShareId(shareId);
             if (byId != null) {
                 LocalDateTime expireDateTime;
