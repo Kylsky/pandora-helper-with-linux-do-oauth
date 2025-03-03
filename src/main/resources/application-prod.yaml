@@ -42,7 +42,7 @@ mybatis-plus:
 
 admin-name: ${ADMIN_NAME:admin}
 chat_site: ${CHAT_SITE:https://next.yeelo.top}
-tokenProxy: ${TOKEN_PROXY:http://mysh.yeelo.fun：16666}
+tokenProxy: ${TOKEN_PROXY:https://token.yeelovo.com}
 task:
   refresh: ${REFRESH_TASK_EXPRESSION:0 0 2 * * ?}  # 使用环境变量，冒号后面是默认值
 midjourney:
