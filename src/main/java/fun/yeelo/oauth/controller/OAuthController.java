@@ -137,8 +137,10 @@ public class OAuthController {
                     userResBody.put("shareType", "Claude");
                 } else if (state.contains("panel")){
                     userResBody.put("shareType", "panel");
-                }else {
+                }else if (state.contains("pandora")){
                     userResBody.put("shareType", "ChatGPT");
+                }else if (state.contains("midjourney")){
+                    userResBody.put("shareType", "midjourney");
                 }
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
                         SerializerFeature.WriteDateUseDateFormat);
