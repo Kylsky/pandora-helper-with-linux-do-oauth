@@ -109,8 +109,10 @@ public class PandoraController {
         }
 
         BeanUtils.copyProperties(user, res);
-
-        if (mirrorEnable) {
+        if (StringUtils.hasText(user.getChatGptUrl())) {
+            return mirrorConfig.getMirrorUrl(user.getUniqueName(), byShareId.getAccountId(),user.getChatGptUrl(),user.getChatGptPassword());
+        }
+        else if (mirrorEnable) {
             return mirrorConfig.getMirrorUrl(user.getUniqueName(), byShareId.getAccountId());
         }else {
             try {
@@ -189,7 +191,10 @@ public class PandoraController {
             return HttpResult.error("密码错误，请重试");
         }
 
-        if (mirrorEnable) {
+        if (StringUtils.hasText(user.getChatGptUrl())) {
+            return mirrorConfig.getSimpleMirrorUrl(user.getUniqueName(), gptShare.getAccountId(),user.getChatGptUrl(),user.getChatGptPassword());
+        }
+        else if (mirrorEnable) {
             return mirrorConfig.getSimpleMirrorUrl(user.getUniqueName(), gptShare.getAccountId());
         }else {
             HttpHeaders headers = new HttpHeaders();

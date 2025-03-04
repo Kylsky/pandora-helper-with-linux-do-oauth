@@ -128,7 +128,7 @@ public class OpenAIUtil {
         }
     }
 
-    public void refresh(Integer accountId, String refreshToken, String accountEmail) {
+    public Boolean refresh(Integer accountId, String refreshToken, String accountEmail) {
         try {
             MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
             form.add("refresh_token", refreshToken);
@@ -151,12 +151,16 @@ public class OpenAIUtil {
                 updateDTO.setUpdateTime(LocalDateTime.now());
                 accountService.saveOrUpdate(updateDTO);
                 log.info("刷新账号{}成功", accountEmail);
+                return true;
             }
+            return false;
+
         } catch (Exception e) {
             log.error("刷新access_token异常,异常账号:{}", accountEmail, e);
             if (mailEnable) {
                 emailService.sendSimpleEmail(adminEmail, "刷新access_token异常", "刷新access_token异常,异常账号:" + accountEmail + ", 请检查对应 refresh_token 是否有效");
             }
+            return false;
         }
     }
 }

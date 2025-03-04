@@ -3,13 +3,13 @@ package fun.yeelo.oauth.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.share.Share;
 import fun.yeelo.oauth.domain.share.ShareVO;
 import fun.yeelo.oauth.service.MidjourneyService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.ConvertUtil;
+import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,9 +67,11 @@ public class OAuthController {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private MidjourneyService midjourneyService;
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
 
     @GetMapping("/config")
-    public JSONObject config() {
+    public JSONObject config(HttpServletRequest request) {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("apiUrl", apiUrl.replace("/loading",""));
         jsonObject.put("mjUrl", mjUrl);

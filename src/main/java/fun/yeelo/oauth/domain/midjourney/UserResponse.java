@@ -8,5 +8,6 @@ import java.util.List;
 public class UserResponse {
     private List<User> list;
     private Pagination pagination;
+    private Boolean customMjConfig;
 
 }

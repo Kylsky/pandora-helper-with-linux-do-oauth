@@ -65,7 +65,7 @@ public class LoginController {
     @PostConstruct
     public void initiate() {
         List<Share> list = shareService.list();
-        if (CollectionUtils.isEmpty(list)){
+        if (CollectionUtils.isEmpty(list)) {
             Share user = new Share();
             user.setId(1);
             user.setUniqueName(adminName);
@@ -107,7 +107,7 @@ public class LoginController {
         //if (gptConfig == null || !StringUtils.hasText(gptConfig.getShareToken())) {
         //    return HttpResult.error("用户未激活");
         //}
-        if (!passwordEncoder.matches(password,user.getPassword())){
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             return HttpResult.error("密码错误,请重试");
         }
         UserDetails userDetails = userDetailsService.loadUserByUsername(loginDTO.getUsername());
@@ -134,17 +134,18 @@ public class LoginController {
         }
         ShareVO shareVO = new ShareVO();
         // 根据user计算hash值
-        shareVO.setApiKey(user.getId()+"+"+user.getUniqueName()+"+"+user.getPassword().substring(0,10));
+        shareVO.setApiKey(user.getId() + "+" + user.getUniqueName() + "+" + user.getPassword().substring(0, 10));
         shareVO.setAvatarUrl(user.getAvatarUrl());
         shareVO.setUsername(user.getUniqueName());
         shareVO.setTrustLevel(user.getTrustLevel());
         shareVO.setId(user.getId());
+        shareVO.setMjProxyUrl(user.getMjProxyUrl());
         return HttpResult.success(shareVO);
     }
 
 
     @GetMapping("/checkToken")
-    public HttpResult<Boolean> checkToken(HttpServletRequest request){
+    public HttpResult<Boolean> checkToken(HttpServletRequest request) {
         final String authorizationHeader = request.getHeader("Authorization");
 
         String username;
@@ -153,21 +154,21 @@ public class LoginController {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             username = jwtTokenUtil.extractUsername(jwt);
-        }else {
-            return HttpResult.success(false,"用户未登录");
+        } else {
+            return HttpResult.success(false, "用户未登录");
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() != null) {
             return HttpResult.success(true);
         } else {
-            return HttpResult.success(false,"登录状态已失效，请重新登录");
+            return HttpResult.success(false, "登录状态已失效，请重新登录");
         }
     }
 
     @GetMapping("/refreshAll")
-    public HttpResult<Boolean> refreshAll(@RequestParam String password){
+    public HttpResult<Boolean> refreshAll(@RequestParam String password) {
         Share admin = shareService.findById(1);
-        if (!passwordEncoder.matches(password,admin.getPassword())){
+        if (!passwordEncoder.matches(password, admin.getPassword())) {
             return HttpResult.error("密码错误");
         }
         updateTimer.refreshAccessToken();
@@ -201,7 +202,7 @@ public class LoginController {
         if (newPassword.length() < 8) {
             return HttpResult.error("密码长度必须超过大于等于8位，请重新输入。");
         }
-        if (!passwordEncoder.matches(password,user.getPassword())){
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             return HttpResult.error("密码错误，请重试");
         }
         Share update = new ShareVO();

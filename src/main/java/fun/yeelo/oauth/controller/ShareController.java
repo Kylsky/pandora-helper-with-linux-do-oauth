@@ -64,8 +64,8 @@ public class ShareController {
     }
 
     @GetMapping("/getGptShare")
-    public HttpResult<String> getGptShare(@RequestParam Integer gptConfigId) {
-        return shareService.getGptShare(gptConfigId);
+    public HttpResult<String> getGptShare(@RequestParam Integer gptConfigId, HttpServletRequest request) {
+        return shareService.getGptShare(gptConfigId,request);
     }
 
     @GetMapping("/getClaudeShare")
@@ -81,5 +81,16 @@ public class ShareController {
     @GetMapping("/autoRenewal")
     public HttpResult<String> autoRenewal(@RequestParam String uniqueName,@RequestParam String code) {
         return shareService.autoRenewal(uniqueName,code);
+    }
+
+    @PostMapping("/updateUserConfig")
+    public HttpResult<String> updateUserConfig(@RequestBody UserConfigVO config, HttpServletRequest request) {
+        return shareService.updateUserConfig(config, request);
+    }
+
+
+    @GetMapping("/getUserConfig")
+    public HttpResult<UserConfigVO> getUserConfig(HttpServletRequest request) {
+        return shareService.getUserConfig(request);
     }
 }

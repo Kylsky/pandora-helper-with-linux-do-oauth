@@ -384,8 +384,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         try {
             Integer accountId = account.getId();
 
-            openAIUtil.refresh(accountId, account.getRefreshToken(), account.getEmail());
-
+            Boolean result = openAIUtil.refresh(accountId, account.getRefreshToken(), account.getEmail());
+            if (!result) {
+                return HttpResult.error("刷新 access_token异常 , 请检查 refresh_token 是否有效");
+            }
             //HttpHeaders headers = new HttpHeaders();
             //headers.set(HttpHeaders.CACHE_CONTROL, "no-cache");
             //headers.setContentType(MediaType.APPLICATION_JSON);

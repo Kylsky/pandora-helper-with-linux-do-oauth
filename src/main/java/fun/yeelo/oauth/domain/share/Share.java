@@ -45,4 +45,16 @@ public class Share {
 
     @TableField("mj_enable")
     private Boolean mjEnable;
+
+    @TableField("mj_proxy_url")
+    private String mjProxyUrl;
+
+    @TableField("mj_proxy_key")
+    private String mjProxyKey;
+
+    @TableField("chat_gpt_url")
+    private String chatGptUrl;
+
+    @TableField("chat_gpt_password")
+    private String chatGptPassword;
 }

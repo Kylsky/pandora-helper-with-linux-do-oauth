@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSONObject;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.midjourney.*;
 import fun.yeelo.oauth.domain.share.Share;
+import fun.yeelo.oauth.domain.share.ShareVO;
+import fun.yeelo.oauth.utils.ConvertUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.apache.bcel.generic.RET;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +39,9 @@ public class MidjourneyService {
     private Boolean mjEnable;
 
     public HttpResult<UserResponse> getUsers(String username) {
-        if (mjEnable == null || !mjEnable) {
+        Share byUserName = shareService.getByUserName(username);
+        Boolean useCustomMjConfig = StringUtils.hasText(byUserName.getMjProxyUrl());
+        if (!useCustomMjConfig && (mjEnable == null || !mjEnable)) {
             return HttpResult.error("未启用MJ");
         }
         Share admin = shareService.getById(1);
@@ -45,7 +49,11 @@ public class MidjourneyService {
         headers.set("accept", "application/json, text/plain, */*");
         headers.set("accept-language", "zh-CN");
         headers.set("content-type", "application/json");
-        headers.set("mj-api-secret", StringUtils.hasText(mjKey) ? mjKey : admin.getId() + "+" + admin.getUniqueName() + "+" + admin.getPassword().substring(0, 10));
+        if (useCustomMjConfig) {
+            headers.set("mj-api-secret", byUserName.getMjProxyKey());
+        } else {
+            headers.set("mj-api-secret", StringUtils.hasText(mjKey) ? mjKey : admin.getId() + "+" + admin.getUniqueName() + "+" + admin.getPassword().substring(0, 10));
+        }
         headers.set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0");
 
         // 创建请求体
@@ -78,21 +86,25 @@ public class MidjourneyService {
 
         // 发送请求并返回响应
         ResponseEntity<String> exchange = new RestTemplate().postForEntity(
-                mjUrl + "/mj/admin/users",
+                (!useCustomMjConfig ? mjUrl : byUserName.getMjProxyUrl()) + "/mj/admin/users",
                 requestEntity,
                 String.class
         );
         try {
             List<Share> allUser = shareService.list();
+            List<ShareVO> allUsers = ConvertUtil.convertList(allUser, ShareVO.class);
             UserResponse userResponse = JSONObject.parseObject(exchange.getBody(), UserResponse.class);
             Map<String, User> mjUserMap = userResponse.getList().stream().collect(Collectors.toMap(User::getName, Function.identity()));
 
-            allUser.stream().filter(e -> e.getMjUserId() == null && mjUserMap.containsKey(e.getUniqueName())).forEach(e -> {
-                Share share = new Share();
-                share.setId(e.getId());
-                share.setMjUserId(mjUserMap.get(e.getUniqueName()).getId());
-                shareService.updateById(share);
-            });
+            if (!useCustomMjConfig) {
+                allUsers.stream().filter(e -> e.getMjUserId() == null && mjUserMap.containsKey(e.getUniqueName())).forEach(e -> {
+                    ShareVO share = new ShareVO();
+                    share.setId(e.getId());
+                    share.setMjUserId(mjUserMap.get(e.getUniqueName()).getId());
+                    shareService.updateById(share);
+                });
+            }
+
             return HttpResult.success(userResponse);
         } catch (Exception e) {
             log.error("获取用户列表失败", e);

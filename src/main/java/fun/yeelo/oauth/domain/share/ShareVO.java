@@ -60,4 +60,6 @@ public class ShareVO extends Share{
 
     private Boolean mjEnable;
 
+    private Boolean customMjConfig;
+
 }

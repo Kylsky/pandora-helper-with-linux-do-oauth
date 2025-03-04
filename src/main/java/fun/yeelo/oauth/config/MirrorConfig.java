@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -38,12 +39,12 @@ public class MirrorConfig {
         ShareVO res = new ShareVO();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        if (!mirrorPwd.equals("-"))  {
+        if (!mirrorPwd.equals("-")) {
             headers.setBearerAuth(mirrorPwd);
         }
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
         ObjectNode personJsonObject = objectMapper.createObjectNode();
-        personJsonObject.put("user_name", username.length() < 4 ? username+"####" : username);
+        personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
         personJsonObject.put("isolated_session", true);
         personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
 
@@ -64,15 +65,45 @@ public class MirrorConfig {
         }
     }
 
+    public HttpResult<ShareVO> getMirrorUrl(String username, Integer accountId, String customHost, String customPwd) {
+        ShareVO res = new ShareVO();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (StringUtils.hasText(customPwd)) {
+            headers.setBearerAuth(customPwd);
+        }
+        headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
+        ObjectNode personJsonObject = objectMapper.createObjectNode();
+        personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
+        personJsonObject.put("isolated_session", true);
+        personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
+
+        ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(customHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
+        try {
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            if (map.containsKey("user-gateway-token")) {
+                String gatewayToken = map.get("user-gateway-token").toString();
+                res.setAddress(customHost + "/api/not-login?user_gateway_token=" + gatewayToken);
+                res.setIsShared(true);
+                return HttpResult.success(res);
+            } else {
+                return HttpResult.error("获取Gateway Token 异常");
+            }
+        } catch (IOException e) {
+            log.error("Check user error:", e);
+            return HttpResult.error("系统内部异常");
+        }
+    }
+
     public HttpResult<String> getSimpleMirrorUrl(String username, Integer accountId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        if (!mirrorPwd.equals("-"))  {
+        if (!mirrorPwd.equals("-")) {
             headers.setBearerAuth(mirrorPwd);
         }
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
         ObjectNode personJsonObject = objectMapper.createObjectNode();
-        personJsonObject.put("user_name", username.length() < 4 ? username+"####" : username);
+        personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
         personJsonObject.put("isolated_session", true);
         personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
 
@@ -88,6 +119,35 @@ public class MirrorConfig {
         } catch (IOException e) {
             log.error("Check user error:", e);
             return HttpResult.error("系统内部异常");
+        }
+    }
+
+    public HttpResult<String> getSimpleMirrorUrl(String username, Integer accountId, String customHost, String customPwd) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (StringUtils.hasText(customPwd)) {
+            headers.setBearerAuth(customPwd);
+        }
+        headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
+
+        ObjectNode personJsonObject = objectMapper.createObjectNode();
+        personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
+        personJsonObject.put("isolated_session", true);
+        personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
+
+        headers.setContentLength(personJsonObject.toString().getBytes().length);
+        try {
+            ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(customHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
+            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
+            if (map.containsKey("user-gateway-token")) {
+                String gatewayToken = map.get("user-gateway-token").toString();
+                return HttpResult.success(customHost + "/api/not-login?user_gateway_token=" + gatewayToken);
+            } else {
+                return HttpResult.error("获取Gateway Token 异常");
+            }
+        } catch (IOException e) {
+            log.error("Check user error:", e);
+            return HttpResult.error("系统内部异常:{}", e.getMessage());
         }
     }
 }

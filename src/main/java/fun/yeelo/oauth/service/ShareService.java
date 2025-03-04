@@ -448,13 +448,27 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success(jwt);
     }
 
-    public HttpResult<String> getGptShare(Integer gptConfigId) {
+    public HttpResult<String> getGptShare(Integer gptConfigId, HttpServletRequest request) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+
+
         ShareGptConfig gptShare = gptConfigService.getById(gptConfigId);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
 
-        if (mirrorEnable) {
+        if (StringUtils.hasText(user.getChatGptUrl())) {
+            return mirrorConfig.getSimpleMirrorUrl(user.getUniqueName(), gptShare.getAccountId(), user.getChatGptUrl(), user.getChatGptPassword());
+        }
+        else if (mirrorEnable) {
             return mirrorConfig.getSimpleMirrorUrl(shareService.getById(gptShare.getShareId()).getUniqueName(), gptShare.getAccountId());
         } else {
             ObjectNode personJsonObject = objectMapper.createObjectNode();
@@ -604,5 +618,46 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
 
         this.updateById(updatePO);
         return HttpResult.success();
+    }
+
+
+    public HttpResult<String> updateUserConfig(UserConfigVO config,HttpServletRequest request) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        Share share = new Share();
+        share.setId(user.getId());
+        share.setMjProxyUrl(config.getMjProxyUrl());
+        share.setMjProxyKey(config.getMjProxyKey());
+        share.setChatGptUrl(config.getChatGptUrl());
+        share.setChatGptPassword(config.getChatGptPassword());
+        updateById(share);
+
+        return HttpResult.success();
+    }
+
+    public HttpResult<UserConfigVO> getUserConfig(HttpServletRequest request) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String username = jwtTokenUtil.extractUsername(token);
+        Share user = getByUserName(username);
+        if (user == null) {
+            return HttpResult.error("用户不存在，请联系管理员");
+        }
+        UserConfigVO config = new UserConfigVO();
+        config.setMjProxyUrl(user.getMjProxyUrl());
+        config.setMjProxyKey(user.getMjProxyKey());
+        config.setChatGptUrl(user.getChatGptUrl());
+        config.setChatGptPassword(user.getChatGptPassword());
+
+        return HttpResult.success(config);
     }
 }
