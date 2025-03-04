@@ -193,6 +193,12 @@ public class MidJourneyController {
                 });
                 taskResponse.sort((a, b) -> {
                     if (a instanceof JSONObject && b instanceof JSONObject) {
+                        if (!((JSONObject) a).containsKey("startTime")) {
+                            return -1;
+                        }
+                        if (!((JSONObject) b).containsKey("startTime")) {
+                            return -1;
+                        }
                         return -1 * ((JSONObject) a).getLong("startTime").compareTo(((JSONObject) b).getLong("startTime"));
                     }
                     return 0;

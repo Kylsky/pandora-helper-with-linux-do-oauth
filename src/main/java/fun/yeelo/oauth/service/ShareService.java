@@ -332,7 +332,11 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         dto.setExpiresAt(null);
         getBaseMapper().insert(dto);
         if (user.getId().equals(1)) {
-            midjourneyService.addUser(dto, dto.getMjEnable() ? "NORMAL" : "DISABLED");
+            try {
+                midjourneyService.addUser(dto, dto.getMjEnable() ? "NORMAL" : "DISABLED");
+            }catch (Exception ex) {
+                log.error("添加Midjourney用户失败", ex);
+            }
         }
         int shareId = dto.getId();
 

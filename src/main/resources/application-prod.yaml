@@ -48,7 +48,7 @@ task:
 midjourney:
     url: ${MJ_URL:https://discord.com}
     key: ${MJ_KEY:}
-    enable: ${MJ_ENABLE:false}
+    enable: ${MJ_ENABLE:true}
 
 
 mirror:
