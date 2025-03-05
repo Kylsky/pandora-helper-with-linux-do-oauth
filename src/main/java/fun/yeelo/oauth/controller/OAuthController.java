@@ -141,6 +141,8 @@ public class OAuthController {
                     userResBody.put("shareType", "ChatGPT");
                 }else if (state.contains("midjourney")){
                     userResBody.put("shareType", "midjourney");
+                }else if (state.contains("api")){
+                    userResBody.put("shareType", "api");
                 }
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
                         SerializerFeature.WriteDateUseDateFormat);

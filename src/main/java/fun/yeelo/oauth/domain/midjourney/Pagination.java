@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 public class Pagination {
     private Integer current;
     private Integer pageSize;
+    private Integer total;
 
 }

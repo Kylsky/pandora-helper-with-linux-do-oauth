@@ -121,7 +121,7 @@ public class MidJourneyController {
         Page<MidjourneyTask> searchPage = new Page<>(page, size);
         LambdaQueryWrapper<MidjourneyTask> wrapper = new LambdaQueryWrapper<>();
         // 添加查询条件，例如按姓名模糊查询
-        wrapper.eq(MidjourneyTask::getUsername, user.getUniqueName());
+        wrapper.eq(MidjourneyTask::getUsername, user.getUniqueName()).orderByDesc(MidjourneyTask::getCreateTime);
 
         Page<MidjourneyTask> tasks = midjourneyTaskService.page(searchPage, wrapper);
 
@@ -193,18 +193,18 @@ public class MidJourneyController {
                 });
                 taskResponse.sort((a, b) -> {
                     if (a instanceof JSONObject && b instanceof JSONObject) {
-                        if (!((JSONObject) a).containsKey("startTime")) {
+                        if (!((JSONObject) a).containsKey("submitTime") || ((JSONObject) a).getLong("submitTime") == null) {
                             return -1;
                         }
-                        if (!((JSONObject) b).containsKey("startTime")) {
+                        if (!((JSONObject) b).containsKey("submitTime") || ((JSONObject) b).getLong("submitTime") == null) {
                             return -1;
                         }
-                        return -1 * ((JSONObject) a).getLong("startTime").compareTo(((JSONObject) b).getLong("startTime"));
+                        return -1 * ((JSONObject) a).getLong("submitTime").compareTo(((JSONObject) b).getLong("submitTime"));
                     }
                     return 0;
                 });
                 userResponse.setList(taskResponse);
-                userResponse.setPagination(new Pagination(page,size));
+                userResponse.setPagination(new Pagination(page,size,(int)tasks.getTotal()));
                 return HttpResult.success(userResponse);
             }
             return HttpResult.error("获取任务列表失败");
