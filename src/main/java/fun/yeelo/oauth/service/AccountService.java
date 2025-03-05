@@ -355,7 +355,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
             }
         }
         saveOrUpdate(dto);
-        if (StringUtils.hasText(dto.getAccessToken())) {
+        if ( dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
             CompletableFuture.runAsync(()->openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
         }
 
@@ -440,7 +440,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         dto.setUpdateTime(LocalDateTime.now());
         saveOrUpdate(dto);
 
-        if (StringUtils.hasText(dto.getAccessToken())) {
+        if ( dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
             CompletableFuture.runAsync(()->openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
         }
 

@@ -28,4 +28,8 @@
         <sqlFile path="classpath:db/changelog-mysql/V1-6.sql" relativeToChangelogFile="true" />
     </changeSet>
 
+    <changeSet id="1728551828043-8" author="kyle (generated)">
+        <sqlFile path="classpath:db/changelog-mysql/V1-7.sql" relativeToChangelogFile="true" />
+    </changeSet>
+
 </databaseChangeLog>

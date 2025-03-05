@@ -116,7 +116,9 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         }
 
         personJsonObject.put("session_key", account.getAccessToken());
-        personJsonObject.put("unique_name", byId.getUniqueName());
+        if (Boolean.TRUE.equals(account.getConversationIsolated())) {
+            personJsonObject.put("unique_name", byId.getUniqueName());
+        }
         if (duration <= 0L) {
             personJsonObject.put("expires_in", 3600 * 24 * 7);
         }

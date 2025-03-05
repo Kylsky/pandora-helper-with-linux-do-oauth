@@ -2,6 +2,7 @@ package fun.yeelo.oauth.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import fun.yeelo.oauth.domain.account.Account;
 import fun.yeelo.oauth.domain.share.ShareVO;
 import fun.yeelo.oauth.service.AccountService;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class MirrorConfig {
     ObjectMapper objectMapper = new ObjectMapper();
 
     public HttpResult<ShareVO> getMirrorUrl(String username, Integer accountId) {
+        Account account = accountService.getById(accountId);
         ShareVO res = new ShareVO();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -45,8 +47,12 @@ public class MirrorConfig {
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
         ObjectNode personJsonObject = objectMapper.createObjectNode();
         personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
-        personJsonObject.put("isolated_session", true);
-        personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
+        if (Boolean.TRUE.equals(account.getConversationIsolated())) {
+            personJsonObject.put("isolated_session", true);
+        }else {
+            personJsonObject.put("isolated_session", false);
+        }
+        personJsonObject.put("access_token", account.getAccessToken());
 
         ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(mirrorHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
         try {
@@ -66,6 +72,7 @@ public class MirrorConfig {
     }
 
     public HttpResult<ShareVO> getMirrorUrl(String username, Integer accountId, String customHost, String customPwd) {
+        Account account = accountService.getById(accountId);
         ShareVO res = new ShareVO();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -75,8 +82,12 @@ public class MirrorConfig {
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
         ObjectNode personJsonObject = objectMapper.createObjectNode();
         personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
-        personJsonObject.put("isolated_session", true);
-        personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
+        if (Boolean.TRUE.equals(account.getConversationIsolated())) {
+            personJsonObject.put("isolated_session", true);
+        }else {
+            personJsonObject.put("isolated_session", false);
+        }
+        personJsonObject.put("access_token", account.getAccessToken());
 
         ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(customHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
         try {
@@ -96,6 +107,7 @@ public class MirrorConfig {
     }
 
     public HttpResult<String> getSimpleMirrorUrl(String username, Integer accountId) {
+        Account account = accountService.getById(accountId);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (!mirrorPwd.equals("-")) {
@@ -104,8 +116,12 @@ public class MirrorConfig {
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
         ObjectNode personJsonObject = objectMapper.createObjectNode();
         personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
-        personJsonObject.put("isolated_session", true);
-        personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
+        if (Boolean.TRUE.equals(account.getConversationIsolated())) {
+            personJsonObject.put("isolated_session", true);
+        }else {
+            personJsonObject.put("isolated_session", false);
+        }
+        personJsonObject.put("access_token", account.getAccessToken());
 
         ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(mirrorHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
         try {
@@ -123,6 +139,7 @@ public class MirrorConfig {
     }
 
     public HttpResult<String> getSimpleMirrorUrl(String username, Integer accountId, String customHost, String customPwd) {
+        Account account = accountService.getById(accountId);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (StringUtils.hasText(customPwd)) {
@@ -132,8 +149,12 @@ public class MirrorConfig {
 
         ObjectNode personJsonObject = objectMapper.createObjectNode();
         personJsonObject.put("user_name", username.length() < 4 ? username + "####" : username);
-        personJsonObject.put("isolated_session", true);
-        personJsonObject.put("access_token", accountService.getById(accountId).getAccessToken());
+        if (Boolean.TRUE.equals(account.getConversationIsolated())) {
+            personJsonObject.put("isolated_session", true);
+        }else {
+            personJsonObject.put("isolated_session", false);
+        }
+        personJsonObject.put("access_token", account.getAccessToken());
 
         headers.setContentLength(personJsonObject.toString().getBytes().length);
         try {

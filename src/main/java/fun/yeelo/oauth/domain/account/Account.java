@@ -55,5 +55,8 @@ public class Account {
     @TableField("plan_type")
     private String planType;
 
+    @TableField("conversation_isolated")
+    private Boolean conversationIsolated;
+
 
 }
