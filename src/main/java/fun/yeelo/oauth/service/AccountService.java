@@ -67,6 +67,9 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     @Autowired
     private ApiConfigService apiConfigService;
     @Autowired
+    private GrokConfigService grokConfigService;
+
+    @Autowired
     private MirrorConfig mirrorConfig;
     @Autowired
     private OpenAIUtil openAIUtil;
@@ -244,7 +247,20 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         Map<Integer, List<CarApply>> accountIdMap = carService.list().stream().collect(Collectors.groupingBy(CarApply::getAccountId));
         accountVOS.forEach(e -> {
             //e.setEmail("车辆"+(num.getAndIncrement()));
-            e.setType(e.getAccountType().equals(1) ? "ChatGPT" : (e.getAccountType().equals(2)?"Claude":"API"));
+            switch (e.getAccountType()) {
+                case 1:
+                    e.setType("ChatGPT");
+                    break;
+                case 2:
+                    e.setType("Claude");
+                    break;
+                case 3:
+                    e.setType("API");
+                    break;
+                case 4:
+                    e.setType("Grok");
+                    break;
+            }
             e.setCount(accountIdMap.getOrDefault(e.getId(), new ArrayList<>()).size());
         });
         accountVOS = accountVOS.stream()
@@ -290,6 +306,9 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
                     break;
                 case 3:
                     apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId,id));
+                    break;
+                case 4:
+                    grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId,id));
                     break;
             }
         } else {
@@ -352,12 +371,19 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
                 case 3:
                     apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId,account.getId()));
                     break;
+                case 4:
+                    grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId,account.getId()));
+                    break;
             }
         }
-        saveOrUpdate(dto);
         if ( dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
             CompletableFuture.runAsync(()->openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
         }
+        if ( dto.getAccountType().equals(4) && StringUtils.hasText(dto.getAccessToken())) {
+            String md5 = mirrorConfig.getGrokMirrorMd5(dto.getAccessToken());
+            dto.setRefreshToken(md5);
+        }
+        saveOrUpdate(dto);
 
         return HttpResult.success(true);
     }
@@ -438,12 +464,17 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         dto.setUserId(user.getId());
         dto.setCreateTime(LocalDateTime.now());
         dto.setUpdateTime(LocalDateTime.now());
-        saveOrUpdate(dto);
 
         if ( dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
             CompletableFuture.runAsync(()->openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
         }
 
+        if ( dto.getAccountType().equals(4) && StringUtils.hasText(dto.getAccessToken())) {
+            String md5 = mirrorConfig.getGrokMirrorMd5(dto.getAccessToken());
+            dto.setRefreshToken(md5);
+        }
+
+        saveOrUpdate(dto);
         return HttpResult.success(true);
     }
 
@@ -479,7 +510,24 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
                                         .sorted(Comparator.comparing(LabelDTO::getLabel))
                                         .collect(Collectors.toList());
         List<LabelDTO> res = new ArrayList<>();
-        LabelDTO labelDTO = new LabelDTO(type.equals(1) ? "-1" : type.equals(2)?"-2":"-3", "----默认选项：下车----", "----默认选项：下车----");
+        LabelDTO labelDTO;
+        switch (type) {
+            case 1:
+                labelDTO = new LabelDTO("-1","----默认选项：下车----","----默认选项：下车----");
+                break;
+            case 2:
+                labelDTO = new LabelDTO("-2","----默认选项：下车----","----默认选项：下车----");
+                break;
+            case 3:
+                labelDTO = new LabelDTO("-3","----默认选项：下车----","----默认选项：下车----");
+                break;
+            case 4:
+                labelDTO = new LabelDTO("-4","----默认选项：下车----","----默认选项：下车----");
+                break;
+            default:
+                labelDTO = new LabelDTO("-1","----默认选项：下车----","----默认选项：下车----");
+                break;
+        }
         res.add(labelDTO);
         res.addAll(emails);
         return HttpResult.success(res);

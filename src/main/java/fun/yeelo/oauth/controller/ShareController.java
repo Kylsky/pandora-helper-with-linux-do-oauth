@@ -78,6 +78,11 @@ public class ShareController {
         return shareService.getApiShare(apiConfigId);
     }
 
+    @GetMapping("/getGrokShare")
+    public HttpResult<String> getGrokShare(@RequestParam Integer grokConfigId) {
+        return shareService.getGrokShare(grokConfigId);
+    }
+
     @GetMapping("/autoRenewal")
     public HttpResult<String> autoRenewal(@RequestParam String uniqueName,@RequestParam String code) {
         return shareService.autoRenewal(uniqueName,code);

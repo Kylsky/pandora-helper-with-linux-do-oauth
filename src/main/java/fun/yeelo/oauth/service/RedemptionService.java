@@ -47,7 +47,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         List<Redemption> list = list(new LambdaQueryWrapper<Redemption>().eq(Redemption::getUserId, user.getId()));
         List<RedemptionVO> redemptionVOS = ConvertUtil.convertList(list, RedemptionVO.class);
         Map<Integer, Account> accountMap = accountService.list().stream().collect(Collectors.toMap(Account::getId, Function.identity()));
-        redemptionVOS.stream().forEach(red -> {
+        redemptionVOS.forEach(red -> {
             Account account = accountMap.get(red.getAccountId());
             if (account == null) {
                 red.setEmail("");
@@ -63,6 +63,9 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
                         break;
                     case 3:
                         accType = "API";
+                        break;
+                    case 4:
+                        accType = "Grok";
                         break;
                     default:
                         accType = "ChatGPT";

@@ -6,6 +6,6 @@ spring:
     database-platform: org.hibernate.dialect.MySQLDialect
   datasource:
     driver-class-name: org.sqlite.JDBC
-    url: jdbc:sqlite:/Users/kyle/IdeaProjects/linuxdo-auth/src/main/resources/db/data.db
+    url: jdbc:sqlite:/app/db/data.db
     username:
     password:

@@ -143,6 +143,8 @@ public class OAuthController {
                     userResBody.put("shareType", "midjourney");
                 }else if (state.contains("api")){
                     userResBody.put("shareType", "api");
+                }else if (state.contains("grok")){
+                    userResBody.put("shareType", "grok");
                 }
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
                         SerializerFeature.WriteDateUseDateFormat);

@@ -36,6 +36,8 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
     @Autowired
     private ClaudeConfigService claudeConfigService;
     @Autowired
+    private GrokConfigService grokConfigService;
+    @Autowired
     private ApiConfigService apiConfigService;
     @Autowired
     private AccountService accountService;
@@ -82,6 +84,7 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         Map<Integer, List<ShareGptConfig>> gptMap = gptConfigService.list().stream().collect(Collectors.groupingBy(ShareGptConfig::getAccountId));
         Map<Integer, List<ShareClaudeConfig>> claudeMap = claudeConfigService.list().stream().collect(Collectors.groupingBy(ShareClaudeConfig::getAccountId));
         Map<Integer, List<ShareApiConfig>> apiMap = apiConfigService.list().stream().collect(Collectors.groupingBy(ShareApiConfig::getAccountId));
+        Map<Integer, List<ShareGrokConfig>> grokMap = grokConfigService.list().stream().collect(Collectors.groupingBy(ShareGrokConfig::getAccountId));
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
@@ -89,7 +92,20 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
         accountVOS.stream().filter(e->userMap.containsKey(e.getUserId())).forEach(e -> {
             Share targetUser = userMap.get(e.getUserId());
-            e.setType(e.getAccountType().equals(1) ? "ChatGPT" : e.getAccountType().equals(2) ? "Claude" : "API");
+            switch (e.getAccountType()) {
+                case 1:
+                    e.setType("ChatGPT");
+                    break;
+                case 2:
+                    e.setType("Claude");
+                    break;
+                case 3:
+                    e.setType("API");
+                    break;
+                case 4:
+                    e.setType("Grok");
+                    break;
+            }
             String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
                                        ? ""
                                        : " ( Lv." + userMap.get(e.getUserId()).getTrustLevel() + " )";
@@ -108,6 +124,9 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
                     break;
                 case 3:
                     count = apiMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                    break;
+                case 4:
+                    count = grokMap.getOrDefault(e.getId(), new ArrayList<>()).size();
                     break;
                 default:
                     count = 0;
@@ -188,6 +207,13 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
                 curAccountUser = apiConfigService.count(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId, account.getId()));
                 List<ShareApiConfig> apiList = apiConfigService.list(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, dto.getShareId()).eq(ShareApiConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(apiList)) {
+                    return HttpResult.error("您已该在车上，请勿重复申请");
+                }
+                break;
+            case 4:
+                curAccountUser = grokConfigService.count(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId, account.getId()));
+                List<ShareGrokConfig> grokList = grokConfigService.list(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, dto.getShareId()).eq(ShareGrokConfig::getAccountId, dto.getAccountId()));
+                if (!CollectionUtils.isEmpty(grokList)) {
                     return HttpResult.error("您已该在车上，请勿重复申请");
                 }
                 break;

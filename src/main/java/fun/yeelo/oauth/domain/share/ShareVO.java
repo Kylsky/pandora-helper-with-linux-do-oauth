@@ -23,6 +23,10 @@ public class ShareVO extends Share{
 
     private Integer apiConfigId;
 
+    private Integer grokConfigId;
+
+    private String grokEmail;
+
     private String token;
 
     // 共享类型，1gpt，2claude
@@ -36,6 +40,8 @@ public class ShareVO extends Share{
 
     private String claudeCarName;
 
+    private String grokCarName;
+
     private String apiCarName;
 
     private String username;
@@ -46,11 +52,15 @@ public class ShareVO extends Share{
 
     private Integer claudeUserCount;
 
+    private Integer grokUserCount;
+
     private Integer apiUserCount;
 
     private Boolean self = false;
 
     private String claudeExpiresAt;
+
+    private String grokExpiresAt;
 
     private String apiExpiresAt;
 

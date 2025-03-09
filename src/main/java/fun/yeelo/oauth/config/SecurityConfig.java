@@ -77,6 +77,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/pandora/**").permitAll()
                 .antMatchers("/fuclaude/**").permitAll()
                 .antMatchers("/api/**").permitAll()
+                .antMatchers("/grok/**").permitAll()
                 .antMatchers("/share/checkUser").permitAll()
                 .antMatchers("/oauth2/**").permitAll()
                 .antMatchers("/js/**").permitAll()

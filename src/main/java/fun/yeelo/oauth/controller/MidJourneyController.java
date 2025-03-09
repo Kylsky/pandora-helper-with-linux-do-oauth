@@ -65,6 +65,23 @@ public class MidJourneyController {
     @Autowired
     private MidjourneyTaskMapper midjourneyTaskMapper;
 
+    @DeleteMapping("/deleteByTaskId")
+    public HttpResult<Boolean> deleteByTaskId(HttpServletRequest request, @RequestParam(required = false) String taskId) {
+        String token = jwtTokenUtil.getTokenFromRequest(request);
+        if (!StringUtils.hasText(token)) {
+            return HttpResult.error("用户未登录，请尝试刷新页面");
+        }
+        String myName = jwtTokenUtil.extractUsername(token);
+        Share user = shareService.getByUserName(myName);
+        if (user == null) {
+            return HttpResult.error("用户不存在");
+        }
+        LambdaQueryWrapper<MidjourneyTask> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(MidjourneyTask::getUsername,user.getUniqueName()).eq(MidjourneyTask::getTaskId,taskId);
+        boolean remove = midjourneyTaskService.remove(wrapper);
+        return HttpResult.success(remove);
+    }
+
     @GetMapping("/users")
     public HttpResult<UserResponse> getUsers(HttpServletRequest request, @RequestParam(required = false) String username) {
         if (!mjEnable) {
@@ -173,24 +190,24 @@ public class MidJourneyController {
             JSONArray taskResponse = JSONArray.parseArray(exchange.getBody());
             String mjUserId = user.getMjUserId();
             if (taskResponse != null) {
-                taskResponse.forEach(node -> {
-                    JSONObject nodeJson = (JSONObject) node;
-                    if (!user.getId().equals(1) && (!StringUtils.hasText(mjUserId) || !nodeJson.getString("userId").equals(mjUserId))) {
-                        {
-                            ((JSONObject) node).put("prompt", "🔒");
-                            ((JSONObject) node).put("promptEn", "🔒");
-                            ((JSONObject) node).put("promptFull", "🔒");
-                            ((JSONObject) node).put("thumbnailUrl", "🔒");
-                            ((JSONObject) node).put("imageUrl", "🔒");
-                            ((JSONObject) node).put("description", "🔒");
-                            ((JSONObject) node).put("nonce", "🔒");
-                            ((JSONObject) node).put("jobId", "🔒");
-                            ((JSONObject) node).put("instanceId", "🔒");
-                            ((JSONObject) node).put("clientIp", "🔒");
-                            ((JSONObject) node).put("userId", "🔒");
-                        }
-                    }
-                });
+                //taskResponse.forEach(node -> {
+                //    JSONObject nodeJson = (JSONObject) node;
+                //    if (!user.getId().equals(1) && (!StringUtils.hasText(mjUserId) || !nodeJson.getString("userId").equals(mjUserId))) {
+                //        {
+                //            ((JSONObject) node).put("prompt", "🔒");
+                //            ((JSONObject) node).put("promptEn", "🔒");
+                //            ((JSONObject) node).put("promptFull", "🔒");
+                //            ((JSONObject) node).put("thumbnailUrl", "🔒");
+                //            ((JSONObject) node).put("imageUrl", "🔒");
+                //            ((JSONObject) node).put("description", "🔒");
+                //            ((JSONObject) node).put("nonce", "🔒");
+                //            ((JSONObject) node).put("jobId", "🔒");
+                //            ((JSONObject) node).put("instanceId", "🔒");
+                //            ((JSONObject) node).put("clientIp", "🔒");
+                //            ((JSONObject) node).put("userId", "🔒");
+                //        }
+                //    }
+                //});
                 taskResponse.sort((a, b) -> {
                     if (a instanceof JSONObject && b instanceof JSONObject) {
                         if (!((JSONObject) a).containsKey("submitTime") || ((JSONObject) a).getLong("submitTime") == null) {
@@ -249,11 +266,18 @@ public class MidJourneyController {
         if ((path.contains("imagine") || path.contains("modal") || path.contains("action")) && (result != null && result.containsKey("result"))) {
             List<MidjourneyTask> tasks = midjourneyTaskService.list(new LambdaQueryWrapper<MidjourneyTask>()
                                                                             .eq(MidjourneyTask::getUsername, user.getUniqueName())
-                                                                            .eq(MidjourneyTask::getTaskId, result.getString("result")));
+                                                                            .eq(result.containsKey("result"),MidjourneyTask::getTaskId, result.getString("result"))
+                                                                            .eq(result.containsKey("taskId"),MidjourneyTask::getTaskId, result.getString("taskId")));
             if (CollectionUtils.isEmpty(tasks)) {
                 MidjourneyTask midjourneyTask = new MidjourneyTask();
                 midjourneyTask.setUsername(user.getUniqueName());
-                midjourneyTask.setTaskId(result.getString("result"));
+                if (result.containsKey("result")) {
+                    midjourneyTask.setTaskId(result.getString("result"));
+                }
+                if (result.containsKey("taskId")) {
+                    midjourneyTask.setTaskId(result.getString("taskId"));
+
+                }
                 midjourneyTask.setCreateTime(LocalDateTime.now());
                 midjourneyTaskService.save(midjourneyTask);
             }

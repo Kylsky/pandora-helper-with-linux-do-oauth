@@ -20,11 +20,13 @@ services:
       SMTP_MAIL_USERNAME: "your_username"             # 邮件服务器用户名
       SMTP_MAIL_PASSWORD: "your_password"             # 邮件服务器密码
 
-      # 3.以下是ChatGPT相关配置，按需配置
+      # 3.以下是ChatGPT/Grok 镜像相关配置，按需配置
       MIRROR_ENABLE: true                             # 是否启用MIRROR镜像
       MIRROR_HOST: http://localhost:50002             # 填写你的mirror服务地址，由于该地址会直接在页面跳转，建议填写域名，避免局域网外无法访问/ip泄漏等问题
       MIRROR_PASSWORD: ""                             # mirror镜像的ADMIN_PASSWORD，如果你的mirror服务设置了密码，请填写
       REFRESH_TASK_EXPRESSION: 0 0 2 * * ?            # access token 定时刷新频率,默认每天凌晨 2 点,非必填
+      GROK_MIRROR_HOST: http://localhost:50005        # 填写你的grok mirror服务地址，由于该地址会直接在页面跳转，建议填写域名，避免局域网外无法访问/ip泄漏等问题
+      GROK_MIRROR_PASSWORD:                           # grok mirror镜像的ADMIN_PASSWORD，如果你的grok mirror服务设置了密码，请填写
 
       # 4.以下是Claude相关配置，按需配置
       FUCLAUDE_PROXY: "https://demo.fuclaude.com"     # 默认使用fuclaude，你可以填写你的fuclaude地址
@@ -34,8 +36,8 @@ services:
 
       # 6.以下是Midjourney相关配置，按需配置
       MJ_ENABLE: true                                 # 是否启用Midjourney画图，默认关闭
-      MJ_HOST: http://localhost:50002                 # Midjourney Proxy地址，使用域名或公网ip+端口访问
-      MJ_KEY: 123456                                  # Midjourney 管理员密码
+      MJ_HOST: http://localhost:50002                 # Midjourney Proxy地址/New-Api 地址，使用域名或公网ip+端口访问
+      MJ_KEY: 123456                                  # Midjourney 管理员密码/api-key
 
       # 7.以下是MySQL配置，使用默认的sqlite则无需配置
       DB_TYPE: "mysql"                                # 数据库类型，目前支持sqlite和mysql

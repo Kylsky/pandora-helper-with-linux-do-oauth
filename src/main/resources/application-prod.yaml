@@ -45,6 +45,7 @@ chat_site: ${CHAT_SITE:https://next.yeelo.top}
 tokenProxy: ${TOKEN_PROXY:https://token.yeelovo.com}
 task:
   refresh: ${REFRESH_TASK_EXPRESSION:0 0 2 * * ?}  # 使用环境变量，冒号后面是默认值
+
 midjourney:
     url: ${MJ_URL:https://discord.com}
     key: ${MJ_KEY:}
@@ -55,3 +56,6 @@ mirror:
   enable: ${MIRROR_ENABLE:true}
   host: ${MIRROR_HOST:http://127.0.0.1:5005}
   password: ${MIRROR_PASSWORD:-}
+  grok:
+    host: ${GROK_MIRROR_HOST:https://grok.dairoot.cn}
+    password: ${GROK_MIRROR_PASSWORD:}

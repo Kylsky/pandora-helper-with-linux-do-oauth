@@ -59,6 +59,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
     @Autowired
     private ApiConfigService apiConfigService;
     @Autowired
+    private GrokConfigService grokConfigService;
+    @Autowired
     private JwtTokenUtil jwtTokenUtil;
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -111,6 +113,9 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         } else if (share.getAccountId() != null && share.getAccountId().equals(-3)) {
             apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, share.getId()));
             return HttpResult.success();
+        } else if (share.getAccountId() != null && share.getAccountId().equals(-4)) {
+            grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, share.getId()));
+            return HttpResult.success();
         } else if (account == null) {
             return HttpResult.error("账号不存在");
         }
@@ -119,9 +124,11 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             case 1:
                 return gptConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             case 2:
-                return claudeConfigService.addShare(account, byId.getId(), share.getDuration(),null);
+                return claudeConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             case 3:
                 return apiConfigService.addShare(account, byId.getId(), share.getDuration(), null);
+            case 4:
+                return grokConfigService.addShare(account, byId.getId(), share.getDuration(), null);
             default:
                 return HttpResult.error("激活出现异常");
         }
@@ -173,7 +180,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         Map<Integer, List<ShareGptConfig>> gptAccountMap = gptConfigService.list().stream().collect(Collectors.groupingBy(ShareGptConfig::getAccountId));
         Map<Integer, List<ShareClaudeConfig>> claudeAccountMap = claudeConfigService.list().stream().collect(Collectors.groupingBy(ShareClaudeConfig::getAccountId));
         Map<Integer, List<ShareApiConfig>> apiAccountMap = apiConfigService.list().stream().collect(Collectors.groupingBy(ShareApiConfig::getAccountId));
-
+        Map<Integer, List<ShareGrokConfig>> grokAccountMap = grokConfigService.list().stream().collect(Collectors.groupingBy(ShareGrokConfig::getAccountId));
         // 获取claude config
         Map<Integer, ShareClaudeConfig> claudeMap = claudeConfigService.list()
                                                             .stream().filter(e -> e.getShareId().equals(user.getId()) || accountIdMap.containsKey(e.getAccountId()))
@@ -181,6 +188,9 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         Map<Integer, ShareApiConfig> apiMap = apiConfigService.list()
                                                       .stream().filter(e -> e.getShareId().equals(user.getId()) || accountIdMap.containsKey(e.getAccountId()))
                                                       .collect(Collectors.toMap(ShareApiConfig::getShareId, Function.identity()));
+        Map<Integer, ShareGrokConfig> grokMap = grokConfigService.list()
+                                                        .stream().filter(e -> e.getShareId().equals(user.getId()) || accountIdMap.containsKey(e.getAccountId()))
+                                                        .collect(Collectors.toMap(ShareGrokConfig::getShareId, Function.identity()));
 
         // 设置邮箱
         shareVOS = shareVOS.stream().filter(e -> user.getId().equals(1) || e.getParentId().equals(user.getId()) || e.getId().equals(user.getId()) || (claudeMap.containsKey(e.getId()) || gptMap.containsKey(e.getId()))).collect(Collectors.toList());
@@ -188,9 +198,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             ShareGptConfig gptConfig = gptMap.get(share.getId());
             ShareClaudeConfig claudeConfig = claudeMap.get(share.getId());
             ShareApiConfig apiConfig = apiMap.get(share.getId());
-            //if (gptConfig == null && claudeConfig == null) {
-            //    continue;
-            //}
+            ShareGrokConfig grokConfig = grokMap.get(share.getId());
             if (share.getId().equals(user.getId())) {
                 share.setUniqueName(share.getUniqueName() + "(我)");
                 share.setSelf(true);
@@ -220,7 +228,17 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             } else {
                 share.setClaudeEmail("-");
                 share.setClaudeCarName("-");
+            }
 
+            if (grokConfig != null) {
+                int total = grokAccountMap.getOrDefault(grokConfig.getAccountId(), new ArrayList<>()).size();
+                share.setGrokCarName(accountService.getById(grokConfig.getAccountId()).getName());
+                share.setGrokUserCount(total);
+                share.setGrokConfigId(grokConfig.getId());
+                share.setGrokExpiresAt(grokConfig.getExpiresAt() == null ? "-" : grokConfig.getExpiresAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+
+            } else {
+                share.setGrokCarName("-");
             }
 
             if (apiConfig != null) {
@@ -241,11 +259,16 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         }
         if (StringUtils.hasText(emailAddr)) {
             if (accountType == null) {
-                shareVOS = shareVOS.stream().filter(e -> (e.getGptEmail() != null && e.getGptEmail().contains(emailAddr)) || (e.getClaudeEmail() != null && e.getClaudeEmail().contains(emailAddr)) || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
+                shareVOS = shareVOS.stream().filter(e -> (e.getGptEmail() != null && e.getGptEmail().contains(emailAddr))
+                                                                 || (e.getClaudeEmail() != null && e.getClaudeEmail().contains(emailAddr))
+                                                                 || (e.getGrokEmail() != null && e.getGrokEmail().contains(emailAddr))
+                                                                 || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             } else if (accountType.equals(1)) {
                 shareVOS = shareVOS.stream().filter(e -> (e.getGptEmail() != null && e.getGptEmail().contains(emailAddr)) || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             } else if (accountType.equals(2)) {
                 shareVOS = shareVOS.stream().filter(e -> (e.getClaudeEmail() != null && e.getClaudeEmail().contains(emailAddr)) || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
+            }else if (accountType.equals(2)) {
+                shareVOS = shareVOS.stream().filter(e -> (e.getGrokEmail() != null && e.getGrokEmail().contains(emailAddr)) || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
         }
         PageVO<ShareVO> pageVO = new PageVO<>();
@@ -264,49 +287,24 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
+
         Share share = findById(id);
-        Account gptAccount = null;
         if (share != null && (user.getId().equals(1) || user.getId().equals(share.getId())) || user.getId().equals(share.getParentId())) {
             removeById(id);
-            ShareGptConfig one = gptConfigService.getOne(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
-            if (one != null) {
-                gptAccount = accountService.getById(one.getAccountId());
-            }
             gptConfigService.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
             claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, id));
             apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, id));
+            grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, id));
         } else {
             return HttpResult.error("您无权删除该账号");
         }
 
-        // 删除oaifree的share token
-        //if (gptAccount != null) {
-        //    try {
-        //        HttpHeaders headers = new HttpHeaders();
-        //        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        //        MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
-        //        personJsonObject.add("access_token", gptAccount.getAccessToken());
-        //        personJsonObject.add("unique_name", share.getUniqueName());
-        //        personJsonObject.add("expires_in", -1);
-        //        personJsonObject.add("gpt35_limit", -1);
-        //        personJsonObject.add("gpt4_limit", -1);
-        //        personJsonObject.add("site_limit", "");
-        //        personJsonObject.add("show_userinfo", false);
-        //        personJsonObject.add("show_conversations", false);
-        //        personJsonObject.add("reset_limit", true);
-        //        personJsonObject.add("temporary_chat", false);
-        //        ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
-        //        Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-        //        if (map.containsKey("detail") && map.get("detail").equals("revoke token key successfully")) {
-        //            log.info("delete success");
-        //            return HttpResult.success(true);
-        //        }
-        //    } catch (Exception e) {
-        //        log.error("Check user error:", e);
-        //        return HttpResult.error("删除用户异常");
-        //    }
-        //}
-        midjourneyService.deleteUser(share.getMjUserId());
+
+        try {
+            midjourneyService.deleteUser(share.getMjUserId());
+        }catch (Exception exception){
+            log.error(exception.getMessage());
+        }
         return HttpResult.success();
     }
 
@@ -334,7 +332,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         if (user.getId().equals(1)) {
             try {
                 midjourneyService.addUser(dto, dto.getMjEnable() ? "NORMAL" : "DISABLED");
-            }catch (Exception ex) {
+            } catch (Exception ex) {
                 log.error("添加Midjourney用户失败", ex);
             }
         }
@@ -370,7 +368,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         }
 
         Share share = getById(dto.getId());
-        if (dto.getMjEnable()!=null && !StringUtils.hasText(share.getMjUserId())) {
+        if (dto.getMjEnable() != null && !StringUtils.hasText(share.getMjUserId())) {
             midjourneyService.addUser(share, dto.getMjEnable() ? "NORMAL" : "DISABLED");
         }
         if (dto.getMjEnable() != null && dto.getMjEnable() && user.getId().equals(1)) {
@@ -410,6 +408,9 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         } else if (share.getAccountId() != null && share.getAccountId().equals(-3)) {
             apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, share.getId()));
             return HttpResult.success();
+        } else if (share.getAccountId() != null && share.getAccountId().equals(-4)) {
+            grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, share.getId()));
+            return HttpResult.success();
         } else if (account == null) {
             return HttpResult.error("账号不存在");
         }
@@ -421,6 +422,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
                 return claudeConfigService.addShare(account, byId.getId(), null, share.getExpiresAt());
             case 3:
                 return apiConfigService.addShare(account, byId.getId(), null, share.getExpiresAt());
+            case 4:
+                return grokConfigService.addShare(account, byId.getId(), null, share.getExpiresAt());
             default:
                 return HttpResult.error("激活出现异常");
         }
@@ -471,8 +474,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
 
         if (StringUtils.hasText(user.getChatGptUrl())) {
             return mirrorConfig.getSimpleMirrorUrl(user.getUniqueName(), gptShare.getAccountId(), user.getChatGptUrl(), user.getChatGptPassword());
-        }
-        else if (mirrorEnable) {
+        } else if (mirrorEnable) {
             return mirrorConfig.getSimpleMirrorUrl(shareService.getById(gptShare.getShareId()).getUniqueName(), gptShare.getAccountId());
         } else {
             ObjectNode personJsonObject = objectMapper.createObjectNode();
@@ -523,6 +525,19 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         Account account = accountService.getById(claudeShare.getAccountId());
         Share share = getById(claudeShare.getShareId());
         String token = claudeConfigService.generateAutoToken(account, share, null);
+
+        if (token == null) {
+            return HttpResult.error("获取登录信息失败");
+        } else {
+            return HttpResult.success(token);
+        }
+    }
+
+    public HttpResult<String> getGrokShare(Integer grokConfigId) {
+        ShareGrokConfig grokShare = grokConfigService.getById(grokConfigId);
+        Account account = accountService.getById(grokShare.getAccountId());
+        Share share = getById(grokShare.getShareId());
+        String token = grokConfigService.generateAutoToken(account, share, null);
 
         if (token == null) {
             return HttpResult.error("获取登录信息失败");
@@ -625,7 +640,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
     }
 
 
-    public HttpResult<String> updateUserConfig(UserConfigVO config,HttpServletRequest request) {
+    public HttpResult<String> updateUserConfig(UserConfigVO config, HttpServletRequest request) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
