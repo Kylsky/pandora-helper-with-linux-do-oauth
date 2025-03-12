@@ -8,7 +8,8 @@ import fun.yeelo.oauth.dao.ApiConfigMapper;
 import fun.yeelo.oauth.domain.account.Account;
 import fun.yeelo.oauth.domain.share.ShareApiConfig;
 import fun.yeelo.oauth.domain.share.ShareClaudeConfig;
-import fun.yeelo.oauth.domain.share.ShareGptConfig;
+import fun.yeelo.oauth.domain.share.
+               ShareGptConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;

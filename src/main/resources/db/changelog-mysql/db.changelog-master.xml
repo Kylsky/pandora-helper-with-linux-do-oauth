@@ -18,9 +18,6 @@
     <changeSet id="1728551828043-4" author="kyle (generated)">
         <sqlFile path="classpath:db/changelog-mysql/V1-3.sql" relativeToChangelogFile="true" />
     </changeSet>
-    <changeSet id="1728551828043-5" author="kyle (generated)">
-        <sqlFile path="classpath:db/changelog-mysql/V1-4.sql" relativeToChangelogFile="true" />
-    </changeSet>
     <changeSet id="1728551828043-6" author="kyle (generated)">
         <sqlFile path="classpath:db/changelog-mysql/V1-5.sql" relativeToChangelogFile="true" />
     </changeSet>
@@ -32,6 +29,9 @@
     </changeSet>
     <changeSet id="1728551828043-9" author="kyle (generated)">
         <sqlFile path="classpath:db/changelog-mysql/V1-8.sql" relativeToChangelogFile="true" />
+    </changeSet>
+    <changeSet id="1728551828043-10" author="kyle (generated)">
+        <sqlFile path="classpath:db/changelog-mysql/V1-9.sql" relativeToChangelogFile="true" />
     </changeSet>
 
 </databaseChangeLog>

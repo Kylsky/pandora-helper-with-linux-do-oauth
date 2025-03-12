@@ -30,6 +30,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -188,26 +189,9 @@ public class MidJourneyController {
         );
         try {
             JSONArray taskResponse = JSONArray.parseArray(exchange.getBody());
-            String mjUserId = user.getMjUserId();
             if (taskResponse != null) {
-                //taskResponse.forEach(node -> {
-                //    JSONObject nodeJson = (JSONObject) node;
-                //    if (!user.getId().equals(1) && (!StringUtils.hasText(mjUserId) || !nodeJson.getString("userId").equals(mjUserId))) {
-                //        {
-                //            ((JSONObject) node).put("prompt", "🔒");
-                //            ((JSONObject) node).put("promptEn", "🔒");
-                //            ((JSONObject) node).put("promptFull", "🔒");
-                //            ((JSONObject) node).put("thumbnailUrl", "🔒");
-                //            ((JSONObject) node).put("imageUrl", "🔒");
-                //            ((JSONObject) node).put("description", "🔒");
-                //            ((JSONObject) node).put("nonce", "🔒");
-                //            ((JSONObject) node).put("jobId", "🔒");
-                //            ((JSONObject) node).put("instanceId", "🔒");
-                //            ((JSONObject) node).put("clientIp", "🔒");
-                //            ((JSONObject) node).put("userId", "🔒");
-                //        }
-                //    }
-                //});
+                Map<String, String> idMap = new HashMap<>();
+                JSONArray jsonArray = new JSONArray();
                 taskResponse.sort((a, b) -> {
                     if (a instanceof JSONObject && b instanceof JSONObject) {
                         if (!((JSONObject) a).containsKey("submitTime") || ((JSONObject) a).getLong("submitTime") == null) {
@@ -220,7 +204,15 @@ public class MidJourneyController {
                     }
                     return 0;
                 });
-                userResponse.setList(taskResponse);
+                taskResponse.forEach(e->{
+                    String id = ((JSONObject) e).getString("id");
+                    if (!idMap.containsKey(id)) {
+                        idMap.put(id,id);
+                        jsonArray.add(e);
+                    }
+                });
+                userResponse.setList(jsonArray);
+
                 userResponse.setPagination(new Pagination(page,size,(int)tasks.getTotal()));
                 return HttpResult.success(userResponse);
             }
