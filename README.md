@@ -23,7 +23,7 @@
 
 - 🌟 已有 Linux DO 账号？[立即体验](https://helper.yeelo.fun)
 - 🤝 对项目感兴趣？[加入我们](https://github.com/Kylsky/pandora-helper-with-linux-do-oauth)
-- 👋 需要自己部署？ [进入文档站](https://wiki.yeelo.fun)
+- 👋 需要自己部署？ [进入文档站](https://wiki.yeelovo.com)
 
 ## ✨ 核心功能
 

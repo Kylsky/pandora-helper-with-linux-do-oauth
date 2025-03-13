@@ -108,24 +108,32 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         ObjectNode personJsonObject = objectMapper.createObjectNode();
 
         long duration = 0L;
-        String expiresAt = byId.getExpiresAt();
-        if (StringUtils.hasText(expiresAt) && !expiresAt.equals("-")) {
-            expiresAt += " 00:00:00";
-            LocalDateTime expireDay = LocalDateTime.parse(expiresAt, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            duration = Duration.between(LocalDateTime.now(), expireDay).getSeconds();
+        ShareClaudeConfig claudeConfig = getByShareId(byId.getId());
+        LocalDateTime expiresAt = claudeConfig == null ? null : claudeConfig.getExpiresAt();
+
+        if (expiresAt != null) {
+            LocalDateTime now = LocalDateTime.now();
+            long days = Duration.between(now, expiresAt).toDays();
+            duration = days > 7 ?
+                               Duration.between(now, now.plusDays(7)).getSeconds()
+                               :
+                               Duration.between(LocalDateTime.now(), expiresAt).getSeconds();
+        }
+        if (duration == 0L) {
+            personJsonObject.put("expires_in", 3600 * 24 * 7);
+        } else {
+            personJsonObject.put("expires_in", duration);
         }
 
-        personJsonObject.put("session_key", account.getAccessToken());
-        if (Boolean.TRUE.equals(account.getConversationIsolated())) {
-            personJsonObject.put("unique_name", byId.getUniqueName());
-        }
-        if (duration <= 0L) {
-            personJsonObject.put("expires_in", 3600 * 24 * 7);
-        }
+        // 如果是免费号池上车, 直接覆盖
         if (expire != null) {
             personJsonObject.put("expires_in", expire);
         }
 
+        if (Boolean.TRUE.equals(account.getConversationIsolated())) {
+            personJsonObject.put("unique_name", byId.getUniqueName());
+        }
+        personJsonObject.put("session_key", account.getAccessToken());
         HttpEntity<ObjectNode> requestEntity = new HttpEntity<>(personJsonObject, headers);
         try {
             ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(fuclaudeUrl + "/manage-api/auth/oauth_token", requestEntity, String.class);
