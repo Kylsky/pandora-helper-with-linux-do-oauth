@@ -55,7 +55,7 @@
 🏢 为企业团队打造统一的 AI 应用平台
 
 #### **共享平台**
-🚀 快速构建 ChatGPT 和 Claude 的专业共享服务
+🚀 快速构建 ChatGPT / Claude / Grok /Midjourney 的专业共享服务
 
 #### **账号管理**
 🔒 高效管理多账号,确保数据安全
@@ -95,7 +95,7 @@
 </div>
 
 ### 📱 Telegram
-加入我的 Telegram 频道，获取最新动态和交流：
+加入我的 Telegram 频道，获取最新动态和交流以及不定时发放的相关福利：
 <div class="contact-link">
 👉 <a href="https://t.me/+W7iplSdBGXhlMDc1" target="_blank">Pandora Helper Channel</a>
 </div>

@@ -269,7 +269,7 @@ public class MidJourneyController {
                 if (result.containsKey("taskId")) {
                     midjourneyTask.setTaskId(result.getString("taskId"));
                 }
-                if (midjourneyTask.getTaskId() == null) {
+                if (midjourneyTask.getTaskId() != null) {
                     midjourneyTask.setCreateTime(LocalDateTime.now());
                     midjourneyTaskService.save(midjourneyTask);
                 } else {
