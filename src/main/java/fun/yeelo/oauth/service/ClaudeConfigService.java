@@ -12,6 +12,7 @@ import fun.yeelo.oauth.domain.account.Account;
 import fun.yeelo.oauth.domain.share.Share;
 import fun.yeelo.oauth.domain.share.ShareClaudeConfig;
 import fun.yeelo.oauth.domain.share.ShareVO;
+import net.bytebuddy.asm.Advice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -108,11 +109,11 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         ObjectNode personJsonObject = objectMapper.createObjectNode();
 
         long duration = 0L;
+        LocalDateTime now = LocalDateTime.now();
         ShareClaudeConfig claudeConfig = getByShareId(byId.getId());
-        LocalDateTime expiresAt = claudeConfig == null ? null : claudeConfig.getExpiresAt();
+        LocalDateTime expiresAt = claudeConfig == null ? now : claudeConfig.getExpiresAt();
 
         if (expiresAt != null) {
-            LocalDateTime now = LocalDateTime.now();
             long days = Duration.between(now, expiresAt).toDays();
             duration = days > 7 ?
                                Duration.between(now, now.plusDays(7)).getSeconds()
