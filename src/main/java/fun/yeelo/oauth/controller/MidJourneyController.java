@@ -78,7 +78,7 @@ public class MidJourneyController {
             return HttpResult.error("用户不存在");
         }
         LambdaQueryWrapper<MidjourneyTask> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(MidjourneyTask::getUsername,user.getUniqueName()).eq(MidjourneyTask::getTaskId,taskId);
+        wrapper.eq(MidjourneyTask::getUsername, user.getUniqueName()).eq(MidjourneyTask::getTaskId, taskId);
         boolean remove = midjourneyTaskService.remove(wrapper);
         return HttpResult.success(remove);
     }
@@ -112,8 +112,8 @@ public class MidJourneyController {
 
     @GetMapping("/tasks")
     public HttpResult<TaskResponse> getTasks(HttpServletRequest request,
-                                          @RequestParam(required = false) Integer page,
-                                          @RequestParam(required = false) Integer size) {
+                                             @RequestParam(required = false) Integer page,
+                                             @RequestParam(required = false) Integer size) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -204,16 +204,16 @@ public class MidJourneyController {
                     }
                     return 0;
                 });
-                taskResponse.forEach(e->{
+                taskResponse.forEach(e -> {
                     String id = ((JSONObject) e).getString("id");
                     if (!idMap.containsKey(id)) {
-                        idMap.put(id,id);
+                        idMap.put(id, id);
                         jsonArray.add(e);
                     }
                 });
                 userResponse.setList(jsonArray);
 
-                userResponse.setPagination(new Pagination(page,size,(int)tasks.getTotal()));
+                userResponse.setPagination(new Pagination(page, size, (int) tasks.getTotal()));
                 return HttpResult.success(userResponse);
             }
             return HttpResult.error("获取任务列表失败");
@@ -258,8 +258,8 @@ public class MidJourneyController {
         if ((path.contains("imagine") || path.contains("modal") || path.contains("action")) && (result != null && result.containsKey("result"))) {
             List<MidjourneyTask> tasks = midjourneyTaskService.list(new LambdaQueryWrapper<MidjourneyTask>()
                                                                             .eq(MidjourneyTask::getUsername, user.getUniqueName())
-                                                                            .eq(result.containsKey("result"),MidjourneyTask::getTaskId, result.getString("result"))
-                                                                            .eq(result.containsKey("taskId"),MidjourneyTask::getTaskId, result.getString("taskId")));
+                                                                            .eq(result.containsKey("result"), MidjourneyTask::getTaskId, result.getString("result"))
+                                                                            .eq(result.containsKey("taskId"), MidjourneyTask::getTaskId, result.getString("taskId")));
             if (CollectionUtils.isEmpty(tasks)) {
                 MidjourneyTask midjourneyTask = new MidjourneyTask();
                 midjourneyTask.setUsername(user.getUniqueName());
@@ -268,10 +268,14 @@ public class MidJourneyController {
                 }
                 if (result.containsKey("taskId")) {
                     midjourneyTask.setTaskId(result.getString("taskId"));
-
                 }
-                midjourneyTask.setCreateTime(LocalDateTime.now());
-                midjourneyTaskService.save(midjourneyTask);
+                if (midjourneyTask.getTaskId() == null) {
+                    midjourneyTask.setCreateTime(LocalDateTime.now());
+                    midjourneyTaskService.save(midjourneyTask);
+                } else {
+                    log.info(result.toJSONString());
+                    return HttpResult.error(result.toJSONString());
+                }
             }
         }
 
