@@ -656,6 +656,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         share.setMjProxyKey(config.getMjProxyKey());
         share.setChatGptUrl(config.getChatGptUrl());
         share.setChatGptPassword(config.getChatGptPassword());
+        share.setProxyUrl(config.getProxyUrl());
         updateById(share);
 
         return HttpResult.success();
@@ -676,7 +677,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         config.setMjProxyKey(user.getMjProxyKey());
         config.setChatGptUrl(user.getChatGptUrl());
         config.setChatGptPassword(user.getChatGptPassword());
-
+        config.setProxyUrl(user.getProxyUrl());
         return HttpResult.success(config);
     }
 }

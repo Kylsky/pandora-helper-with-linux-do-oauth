@@ -10,6 +10,7 @@ import fun.yeelo.oauth.domain.share.ShareGrokConfig;
 import fun.yeelo.oauth.domain.share.ShareVO;
 import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.GrokConfigService;
+import fun.yeelo.oauth.service.ShareService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,9 @@ public class MirrorConfig {
     private AccountService accountService;
 
     @Autowired
+    private ShareService shareService;
+
+    @Autowired
     private RestTemplate restTemplate;
 
     ObjectMapper objectMapper = new ObjectMapper();
@@ -64,6 +68,10 @@ public class MirrorConfig {
             personJsonObject.put("isolated_session", true);
         }else {
             personJsonObject.put("isolated_session", false);
+        }
+        Share user = shareService.getByUserName(username);
+        if (StringUtils.hasText(user.getProxyUrl())) {
+            personJsonObject.put("proxy_url",user.getProxyUrl());
         }
         personJsonObject.put("access_token", account.getAccessToken());
 
@@ -100,6 +108,10 @@ public class MirrorConfig {
         }else {
             personJsonObject.put("isolated_session", false);
         }
+        Share user = shareService.getByUserName(username);
+        if (StringUtils.hasText(user.getProxyUrl())) {
+            personJsonObject.put("proxy_url",user.getProxyUrl());
+        }
         personJsonObject.put("access_token", account.getAccessToken());
 
         ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(customHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
@@ -134,6 +146,10 @@ public class MirrorConfig {
         }else {
             personJsonObject.put("isolated_session", false);
         }
+        Share user = shareService.getByUserName(username);
+        if (StringUtils.hasText(user.getProxyUrl())) {
+            personJsonObject.put("proxy_url",user.getProxyUrl());
+        }
         personJsonObject.put("access_token", account.getAccessToken());
 
         ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(gptMirrorHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
@@ -166,6 +182,10 @@ public class MirrorConfig {
             personJsonObject.put("isolated_session", true);
         }else {
             personJsonObject.put("isolated_session", false);
+        }
+        Share user = shareService.getByUserName(username);
+        if (StringUtils.hasText(user.getProxyUrl())) {
+            personJsonObject.put("proxy_url",user.getProxyUrl());
         }
         personJsonObject.put("access_token", account.getAccessToken());
 

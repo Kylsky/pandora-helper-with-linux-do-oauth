@@ -9,4 +9,6 @@ public class UserConfigVO {
 
     private String chatGptUrl;
     private String chatGptPassword;
+
+    private String proxyUrl;
 }

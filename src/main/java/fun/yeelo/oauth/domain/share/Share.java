@@ -57,4 +57,7 @@ public class Share {
 
     @TableField("chat_gpt_password")
     private String chatGptPassword;
+
+    @TableField("proxy_url")
+    private String proxyUrl;
 }
