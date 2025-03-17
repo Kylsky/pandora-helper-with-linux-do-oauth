@@ -12,6 +12,7 @@ import fun.yeelo.oauth.config.MirrorConfig;
 import fun.yeelo.oauth.dao.ShareMapper;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.domain.account.Account;
+import fun.yeelo.oauth.domain.redemption.Redemption;
 import fun.yeelo.oauth.domain.share.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.EncryptDecryptUtil;
@@ -82,6 +83,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
     private MirrorConfig mirrorConfig;
     @Autowired
     private MidjourneyService midjourneyService;
+    @Autowired
+    private RedemptionService redemptionService;
 
 
     public List<Share> findAll() {
@@ -287,14 +290,22 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
+        if (id.equals(1)) {
+            return HttpResult.error("管理员无法被删除!");
+        }
 
         Share share = findById(id);
         if (share != null && (user.getId().equals(1) || user.getId().equals(share.getId())) || user.getId().equals(share.getParentId())) {
             removeById(id);
+            // 删除账号
+            accountService.remove(new LambdaQueryWrapper<Account>().eq(Account::getUserId, id));
+            // 删除共享
             gptConfigService.remove(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, id));
             claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, id));
             apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, id));
             grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, id));
+            // 删除激活码
+            redemptionService.remove(new LambdaQueryWrapper<Redemption>().eq(Redemption::getUserId, id));
         } else {
             return HttpResult.error("您无权删除该账号");
         }
