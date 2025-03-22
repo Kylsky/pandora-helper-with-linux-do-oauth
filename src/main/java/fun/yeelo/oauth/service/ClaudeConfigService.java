@@ -111,17 +111,18 @@ public class ClaudeConfigService extends ServiceImpl<ClaudeConfigMapper, ShareCl
         long duration = 0L;
         LocalDateTime now = LocalDateTime.now();
         ShareClaudeConfig claudeConfig = getByShareId(byId.getId());
-        LocalDateTime expiresAt = claudeConfig == null ? now : claudeConfig.getExpiresAt();
+        // 为空代表下车, 60秒后过期, 其他情况按照配置的时间过期
+        LocalDateTime expiresAt = claudeConfig == null ? now.plusSeconds(60) : claudeConfig.getExpiresAt();
 
         if (expiresAt != null) {
             long days = Duration.between(now, expiresAt).toDays();
-            duration = days > 7 ?
-                               Duration.between(now, now.plusDays(7)).getSeconds()
+            duration = days > 1 ?
+                               Duration.between(now, now.plusDays(1)).getSeconds()
                                :
                                Duration.between(LocalDateTime.now(), expiresAt).getSeconds();
         }
         if (duration == 0L) {
-            personJsonObject.put("expires_in", 3600 * 24 * 7);
+            personJsonObject.put("expires_in", 3600 * 24);
         } else {
             personJsonObject.put("expires_in", duration);
         }
