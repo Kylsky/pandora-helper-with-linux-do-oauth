@@ -59,3 +59,9 @@ mirror:
   grok:
     host: ${GROK_MIRROR_HOST:https://grok.dairoot.cn}
     password: ${GROK_MIRROR_PASSWORD:}
+
+redemption_auto_generate:
+  chatgpt: ${GPT_AUTO_REDEMPTION:false}
+  claude: ${CLAUDE_AUTO_REDEMPTION:false}
+  api: ${API_AUTO_REDEMPTION:false}
+  grok: ${GROK_AUTO_REDEMPTION:false}

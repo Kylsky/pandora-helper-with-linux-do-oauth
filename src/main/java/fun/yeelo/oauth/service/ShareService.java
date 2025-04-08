@@ -2,6 +2,8 @@ package fun.yeelo.oauth.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +35,9 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -270,7 +275,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
                 shareVOS = shareVOS.stream().filter(e -> (e.getGptEmail() != null && e.getGptEmail().contains(emailAddr)) || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             } else if (accountType.equals(2)) {
                 shareVOS = shareVOS.stream().filter(e -> (e.getClaudeEmail() != null && e.getClaudeEmail().contains(emailAddr)) || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
-            }else if (accountType.equals(2)) {
+            } else if (accountType.equals(2)) {
                 shareVOS = shareVOS.stream().filter(e -> (e.getGrokEmail() != null && e.getGrokEmail().contains(emailAddr)) || e.getUniqueName().contains(emailAddr)).collect(Collectors.toList());
             }
         }
@@ -313,7 +318,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
 
         try {
             midjourneyService.deleteUser(share.getMjUserId());
-        }catch (Exception exception){
+        } catch (Exception exception) {
             log.error(exception.getMessage());
         }
         return HttpResult.success();
@@ -616,37 +621,89 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return null;
     }
 
-    public HttpResult<String> autoRenewal(String uniqueName, String code) {
+    public HttpResult<String> autoRenewal(String uniqueName, String code, Integer type) {
         Share user = getByUserName(uniqueName);
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
-        ShareGptConfig gptConfig = gptConfigService.getOne(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, user.getId()));
-        if (gptConfig == null) {
-            return HttpResult.error("用户未开通GPT服务");
+        Account account = null;
+        ShareGptConfig gptConfig = null;
+        ShareClaudeConfig claudeConfig = null;
+        ShareApiConfig apiConfig = null;
+        ShareGrokConfig grokConfig = null;
+        switch (type) {
+            case 1:
+                gptConfig = gptConfigService.getOne(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, user.getId()));
+                if (gptConfig == null) {
+                    return HttpResult.error("用户未开通ChatGPT服务");
+                }
+                account = accountService.getById(gptConfig.getAccountId());
+                break;
+            case 2:
+                claudeConfig = claudeConfigService.getOne(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, user.getId()));
+                if (claudeConfig == null) {
+                    return HttpResult.error("用户未开通Claude服务");
+                }
+                account = accountService.getById(claudeConfig.getAccountId());
+                break;
+            case 3:
+                apiConfig = apiConfigService.getOne(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, user.getId()));
+                if (apiConfig == null) {
+                    return HttpResult.error("用户未开通API服务");
+                }
+                account = accountService.getById(apiConfig.getAccountId());
+                break;
+            case 4:
+                grokConfig = grokConfigService.getOne(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, user.getId()));
+                if (grokConfig == null) {
+                    return HttpResult.error("用户未开通Grok服务");
+                }
+                account = accountService.getById(grokConfig.getAccountId());
+                break;
         }
-        Account account = accountService.getById(gptConfig.getAccountId());
         if (account == null) {
-            return HttpResult.error("用户账号异常");
+            return HttpResult.error("User Account Error");
         }
-        Share updatePO = new Share();
         try {
             String redemptionCode = EncryptDecryptUtil.decrypt(code, user.getPassword().substring(0, 16));
             JSONObject jsonObject = JSONObject.parseObject(redemptionCode);
             if (!jsonObject.containsKey("username") || !jsonObject.containsKey("date")) {
-                return HttpResult.error("验证码解析异常");
+                return HttpResult.error("Code Parse Error");
             }
             if (!jsonObject.getString("username").equals(user.getUniqueName())) {
-                return HttpResult.error("用户名校验异常");
+                return HttpResult.error("User Check Error");
             }
-            updatePO.setId(user.getId());
-            updatePO.setExpiresAt(jsonObject.getString("date"));
+
+            String date = jsonObject.getString("date");
+            if (gptConfig!=null){
+                LambdaUpdateWrapper<ShareGptConfig> updateChainWrapper = new LambdaUpdateWrapper<ShareGptConfig>()
+                                                                                    .eq(ShareGptConfig::getShareId, user.getId())
+                                                                                      .set(ShareGptConfig::getExpiresAt, LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                gptConfigService.update(updateChainWrapper);
+            }
+            if (claudeConfig!=null){
+                LambdaUpdateWrapper<ShareClaudeConfig> updateChainWrapper = new LambdaUpdateWrapper<ShareClaudeConfig>()
+                                                                                         .eq(ShareClaudeConfig::getShareId, user.getId())
+                                                                                         .set(ShareClaudeConfig::getExpiresAt, LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                claudeConfigService.update(updateChainWrapper);
+            }
+            if (apiConfig!=null){
+                LambdaUpdateWrapper<ShareApiConfig> updateChainWrapper = new LambdaUpdateWrapper<ShareApiConfig>()
+                                                                                      .eq(ShareApiConfig::getShareId, user.getId())
+                                                                                      .set(ShareApiConfig::getExpiresAt, LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                apiConfigService.update(updateChainWrapper);
+            }
+            if (grokConfig!=null){
+                LambdaUpdateWrapper<ShareGrokConfig> updateChainWrapper = new LambdaUpdateWrapper<ShareGrokConfig>()
+                                                                                       .eq(ShareGrokConfig::getShareId, user.getId())
+                                                                                       .set(ShareGrokConfig::getExpiresAt, LocalDateTime.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                grokConfigService.update(updateChainWrapper);
+            }
 
         } catch (Exception exception) {
-            return HttpResult.error("验证码校验异常");
+            return HttpResult.error("Catch Error:",exception);
         }
 
-        this.updateById(updatePO);
         return HttpResult.success();
     }
 

@@ -196,6 +196,29 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         return HttpResult.success(true);
     }
 
+    public void addRedemption(RedemptionVO dto) {
+        if (dto.getAccountId()==null){
+            HttpResult.error("尚未选择账号，请重试");
+            return;
+        }
+        if (dto.getCount() > 4) {
+            HttpResult.error("最多支持一次性生成4个兑换码");
+            return;
+        }
+        if (dto.getDuration() > 30){
+            HttpResult.error("最多支持30天");
+            return;
+        }
+        Account account = accountService.getById(dto.getAccountId());
+        for (int i = 0; i < dto.getCount(); i++) {
+            dto.setId(null);
+            dto.setUserId(account.getUserId());
+            dto.setCreateTime(LocalDateTime.now());
+            dto.setCode(UUID.randomUUID().toString().replace("-","").substring(0,10));
+            save(dto);
+        }
+    }
+
     public HttpResult<Boolean> updateRedemption(HttpServletRequest request, Redemption dto) {
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)){

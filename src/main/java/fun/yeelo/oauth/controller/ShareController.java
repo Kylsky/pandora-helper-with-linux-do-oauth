@@ -84,8 +84,8 @@ public class ShareController {
     }
 
     @GetMapping("/autoRenewal")
-    public HttpResult<String> autoRenewal(@RequestParam String uniqueName,@RequestParam String code) {
-        return shareService.autoRenewal(uniqueName,code);
+    public HttpResult<String> autoRenewal(@RequestParam String uniqueName,@RequestParam String code,@RequestParam Integer type) {
+        return shareService.autoRenewal(uniqueName,code,type);
     }
 
     @PostMapping("/updateUserConfig")
