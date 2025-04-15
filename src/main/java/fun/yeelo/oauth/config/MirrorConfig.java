@@ -236,14 +236,15 @@ public class MirrorConfig {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (!grokMirrorPwd.equals("-")) {
-            headers.setBearerAuth(gptMirrorPwd);
+            headers.setBearerAuth(grokMirrorPwd);
         }
         headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
         ObjectNode personJsonObject = objectMapper.createObjectNode();
         personJsonObject.put("user_name", user.getUniqueName());
-        personJsonObject.put("email_md5", account.getRefreshToken());
+        //personJsonObject.put("email_md5", account.getRefreshToken());
+        personJsonObject.put("sso_token", account.getAccessToken());
 
-        ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(grokMirrorHost + "/api/login", new HttpEntity<>(personJsonObject, headers), String.class);
+        ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(grokMirrorHost + "/api/login-v2", new HttpEntity<>(personJsonObject, headers), String.class);
         try {
             JSONObject map = objectMapper.readValue(stringResponseEntity.getBody(), JSONObject.class);
             if (map.containsKey("login_url")) {
