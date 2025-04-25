@@ -1,11 +1,9 @@
 package fun.yeelo.oauth.service;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.config.MirrorConfig;
 import fun.yeelo.oauth.dao.AccountMapper;
@@ -15,7 +13,6 @@ import fun.yeelo.oauth.domain.account.AccountVO;
 import fun.yeelo.oauth.domain.car.CarApply;
 import fun.yeelo.oauth.domain.share.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
-import fun.yeelo.oauth.utils.JwtTokenUtil;
 import fun.yeelo.oauth.utils.OpenAIUtil;
 import fun.yeelo.oauth.utils.UserContextUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -48,9 +45,6 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     private CacheManager cacheManager;
 
     @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-
-    @Autowired
     private ShareService shareService;
 
     @Autowired
@@ -81,9 +75,9 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<String> share(Integer id) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
-        boolean b = checkIdWithinFiveMinutes(id,true);
-        if (b){
+
+        boolean b = checkIdWithinFiveMinutes(id, true);
+        if (b) {
             return HttpResult.error("当前账号使用繁忙，请稍后再试");
         }
         Account account = getById(id);
@@ -92,10 +86,9 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
             case 1 -> {
                 //addr = shareService.generateGPTUrl(user,account);
                 HttpResult<ShareVO> mirrorRes = mirrorConfig.getMirrorUrl(user.getUniqueName(), account.getId());
-                if (mirrorRes.isStatus()){
+                if (mirrorRes.isStatus()) {
                     addr = mirrorRes.getData().getAddress();
-                }
-                else {
+                } else {
                     return HttpResult.error("当前账号异常，请选择其他账号");
                 }
             }
@@ -165,7 +158,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<List<InfoVO>> statistic(Integer id) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         Account byId = getById(id);
         List<ShareGptConfig> gptShares = gptConfigService.list().stream().filter(e -> e.getAccountId().equals(id)).collect(Collectors.toList());
         //String chatUrl = "https://chat.oaifree.com/token/info/";
@@ -208,8 +201,8 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<PageVO<AccountVO>> listAccount(String emailAddr, Integer page, Integer size, Integer type) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
-        List<Account> accountList = type != null ? list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType,type)) : findByUserId(user.getId());
+
+        List<Account> accountList = type != null ? list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType, type)) : findByUserId(user.getId());
         if (StringUtils.hasText(emailAddr)) {
             accountList = accountList.stream().filter(e -> e.getEmail().contains(emailAddr)).collect(Collectors.toList());
         }
@@ -226,18 +219,18 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
             e.setCount(accountIdMap.getOrDefault(e.getId(), new ArrayList<>()).size());
         });
         accountVOS = accountVOS.stream()
-                             .filter(e -> type == null || (type.equals(e.getAccountType())&&e.getShared().equals(1)&&e.getAuto().equals(1)))
+                             .filter(e -> type == null || (type.equals(e.getAccountType()) && e.getShared().equals(1) && e.getAuto().equals(1)))
                              .sorted(Comparator.comparing(AccountVO::getType)).collect(Collectors.toList());
-        accountVOS.stream().forEach(e->{
+        accountVOS.stream().forEach(e -> {
             e.setRefreshToken(null);
             e.setAccessToken(null);
-            if (type!=null){
+            if (type != null) {
                 e.setEmail(null);
             }
         });
         for (AccountVO accountVO : accountVOS) {
             Integer id = accountVO.getId();
-            accountVO.setSessionToken(checkIdWithinFiveMinutes(id,false) ?"1":"");
+            accountVO.setSessionToken(checkIdWithinFiveMinutes(id, false) ? "1" : "");
         }
         PageVO<AccountVO> pageVO = new PageVO<>();
         pageVO.setTotal(accountVOS.size());
@@ -248,7 +241,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<Boolean> deleteAccount(Integer id) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         Account account = findById(id);
         if (account != null && account.getUserId().equals(user.getId())) {
             delete(id);
@@ -261,10 +254,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
                     claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, id));
                     break;
                 case 3:
-                    apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId,id));
+                    apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId, id));
                     break;
                 case 4:
-                    grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId,id));
+                    grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId, id));
                     break;
             }
         } else {
@@ -278,7 +271,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         Account byId = getById(id);
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         if (!byId.getUserId().equals(user.getId()) && user.getId() != 1) {
             return HttpResult.error("你无权访问该账号");
         }
@@ -288,11 +281,11 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<Boolean> saveOrUpdateAccount(Account dto) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         if (!StringUtils.hasText(dto.getName())) {
             dto.setName(dto.getEmail());
         }
-        if (dto.getId()==null) {
+        if (dto.getId() == null) {
             return HttpResult.error("账号ID不存在");
 
         }
@@ -303,7 +296,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         if (account != null
                     && account.getUserId().equals(user.getId())
                     && account.getShared().equals(1)
-                    && dto.getShared().equals(0)){
+                    && dto.getShared().equals(0)) {
             Integer accountType = account.getAccountType();
             switch (accountType) {
                 case 1:
@@ -313,17 +306,17 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
                     claudeConfigService.remove(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, account.getId()));
                     break;
                 case 3:
-                    apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId,account.getId()));
+                    apiConfigService.remove(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId, account.getId()));
                     break;
                 case 4:
-                    grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId,account.getId()));
+                    grokConfigService.remove(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId, account.getId()));
                     break;
             }
         }
-        if ( dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
-            CompletableFuture.runAsync(()->openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
+        if (dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
+            CompletableFuture.runAsync(() -> openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
         }
-        if ( dto.getAccountType().equals(4) && StringUtils.hasText(dto.getAccessToken())) {
+        if (dto.getAccountType().equals(4) && StringUtils.hasText(dto.getAccessToken())) {
             String md5 = mirrorConfig.getGrokMirrorMd5(dto.getAccessToken());
             dto.setRefreshToken(md5);
         }
@@ -335,7 +328,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<Boolean> refresh(Integer id) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         Account account = getById(id);
         if (account == null) {
             return HttpResult.error("账号不存在");
@@ -363,16 +356,16 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<Boolean> addAccount(AccountVO dto) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         dto.setUserId(user.getId());
         dto.setCreateTime(LocalDateTime.now());
         dto.setUpdateTime(LocalDateTime.now());
 
-        if ( dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
-            CompletableFuture.runAsync(()->openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
+        if (dto.getAccountType().equals(1) && StringUtils.hasText(dto.getAccessToken())) {
+            CompletableFuture.runAsync(() -> openAIUtil.checkAccount(dto.getAccessToken(), dto.getEmail(), dto.getId()));
         }
 
-        if ( dto.getAccountType().equals(4) && StringUtils.hasText(dto.getAccessToken())) {
+        if (dto.getAccountType().equals(4) && StringUtils.hasText(dto.getAccessToken())) {
             String md5 = mirrorConfig.getGrokMirrorMd5(dto.getAccessToken());
             dto.setRefreshToken(md5);
         }
@@ -384,7 +377,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<Account> getAccount(Integer accountId) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         Account account = getById(accountId);
         if (account == null) {
             return HttpResult.error("账号不存在");
@@ -396,7 +389,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
     public HttpResult<List<LabelDTO>> emailOptions(Integer type) {
         // 使用 UserContextUtil 获取当前用户
         Share user = UserContextUtil.getCurrentUser();
-        
+
         List<LabelDTO> emails = list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType, type))
                                         .stream()
                                         .filter(e -> e.getUserId().equals(user.getId()))
@@ -406,10 +399,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         List<LabelDTO> res = new ArrayList<>();
         LabelDTO labelDTO;
         switch (type) {
-            case 2 -> labelDTO = new LabelDTO("-2","----默认选项：下车----","----默认选项：下车----");
-            case 3 -> labelDTO = new LabelDTO("-3","----默认选项：下车----","----默认选项：下车----");
-            case 4 -> labelDTO = new LabelDTO("-4","----默认选项：下车----","----默认选项：下车----");
-            default -> labelDTO = new LabelDTO("-1","----默认选项：下车----","----默认选项：下车----");
+            case 2 -> labelDTO = new LabelDTO("-2", "----默认选项：下车----", "----默认选项：下车----");
+            case 3 -> labelDTO = new LabelDTO("-3", "----默认选项：下车----", "----默认选项：下车----");
+            case 4 -> labelDTO = new LabelDTO("-4", "----默认选项：下车----", "----默认选项：下车----");
+            default -> labelDTO = new LabelDTO("-1", "----默认选项：下车----", "----默认选项：下车----");
         }
         res.add(labelDTO);
         res.addAll(emails);

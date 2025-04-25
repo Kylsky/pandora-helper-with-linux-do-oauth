@@ -52,9 +52,6 @@ public class MidJourneyController {
     private ShareService shareService;
 
     @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-
-    @Autowired
     private MidjourneyService midjourneyService;
 
     @Value("${midjourney.enable}")
@@ -128,41 +125,9 @@ public class MidJourneyController {
         UserRequest requestBody = new UserRequest();
         requestBody.setIds(tasks.getRecords().stream().map(MidjourneyTask::getTaskId).collect(Collectors.toList()));
         TaskResponse userResponse = new TaskResponse();
-        // 设置分页信息
-        //Pagination pagination = new Pagination();
-        //pagination.setCurrent(page);
-        //pagination.setPageSize(size);
-        //requestBody.setPagination(pagination);
-
-        // 查询条件
-        //TaskInfo taskInfo = new TaskInfo();
-        //taskInfo.setUserId(user.getMjUserId());
-        //if (StringUtils.hasText(user.getMjProxyUrl())) {
-        //    requestBody.setTaskInfo(taskInfo);
-        //}
-
-        // 设置排序信息
-        //Sort sort = new Sort();
-        //sort.setPredicate("");
-        //sort.setReverse(true);
-        //requestBody.setSort(sort);
-
-        // 设置搜索信息
-        //Search search = new Search();
-        //search.setCurrent(page);
-        //search.setPageSize(size);
-        //search.setPageNumber(0);
-        //requestBody.setSearch(search);
 
         // 创建HTTP实体，包含头部和请求体
         HttpEntity<UserRequest> requestEntity = new HttpEntity<>(requestBody, headers);
-
-        // 发送请求并返回响应
-        //ResponseEntity<String> exchange = new RestTemplate().postForEntity(
-        //        (StringUtils.hasText(user.getMjProxyUrl()) ? user.getMjProxyUrl() : mjUrl) + "/mj/admin/tasks",
-        //        requestEntity,
-        //        String.class
-        //);
 
         ResponseEntity<String> exchange = new RestTemplate().postForEntity(
                 (StringUtils.hasText(user.getMjProxyUrl()) ? user.getMjProxyUrl() : mjUrl) + "/mj/task/list-by-condition",

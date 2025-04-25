@@ -39,8 +39,6 @@ public class OAuthController {
 
     @Value("${midjourney.url}")
     private String mjUrl;
-    @Value("${midjourney.key}")
-    private String mjKey;
 
     private static final Logger log = LoggerFactory.getLogger(OAuthController.class);
     @Value("${linux-do.oauth2.client.registration.client-id}")

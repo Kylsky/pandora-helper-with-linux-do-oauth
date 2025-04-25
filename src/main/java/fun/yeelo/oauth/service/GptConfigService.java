@@ -3,20 +3,16 @@ package fun.yeelo.oauth.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.GptConfigMapper;
 import fun.yeelo.oauth.domain.account.Account;
 import fun.yeelo.oauth.domain.share.Share;
-import fun.yeelo.oauth.domain.share.ShareClaudeConfig;
 import fun.yeelo.oauth.domain.share.ShareGptConfig;
-import fun.yeelo.oauth.utils.JwtTokenUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,12 +24,7 @@ public class GptConfigService extends ServiceImpl<GptConfigMapper, ShareGptConfi
     @Autowired
     private GptConfigMapper gptConfigMapper;
     @Autowired
-    private RestTemplate restTemplate;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    @Autowired
     private ShareService shareService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private AccountService accountService;

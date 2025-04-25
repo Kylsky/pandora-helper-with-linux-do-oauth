@@ -13,6 +13,7 @@ import fun.yeelo.oauth.domain.car.CarApplyVO;
 import fun.yeelo.oauth.domain.share.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import fun.yeelo.oauth.utils.UserContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -42,16 +43,8 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
     @Autowired
     private AccountService accountService;
 
-    public HttpResult<Boolean> audit(HttpServletRequest request, CarApplyVO dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> audit(CarApplyVO dto) {
+        Share user = UserContextUtil.getCurrentUser();
         if (dto.getIds() == null && dto.getShareId() != null) {
             dto.setIds(Collections.singletonList(dto.getShareId()));
         }
@@ -73,21 +66,13 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         return HttpResult.success();
     }
 
-    public HttpResult<PageVO<AccountVO>> listCars(HttpServletRequest request, String owner, Integer page, Integer size) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
+    public HttpResult<PageVO<AccountVO>> listCars(String owner, Integer page, Integer size) {
+        Share user = UserContextUtil.getCurrentUser();
         Map<Integer, Share> userMap = shareService.list().stream().collect(Collectors.toMap(Share::getId, Function.identity()));
         Map<Integer, List<ShareGptConfig>> gptMap = gptConfigService.list().stream().collect(Collectors.groupingBy(ShareGptConfig::getAccountId));
         Map<Integer, List<ShareClaudeConfig>> claudeMap = claudeConfigService.list().stream().collect(Collectors.groupingBy(ShareClaudeConfig::getAccountId));
         Map<Integer, List<ShareApiConfig>> apiMap = apiConfigService.list().stream().collect(Collectors.groupingBy(ShareApiConfig::getAccountId));
         Map<Integer, List<ShareGrokConfig>> grokMap = grokConfigService.list().stream().collect(Collectors.groupingBy(ShareGrokConfig::getAccountId));
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
         List<Account> accountList = new ArrayList<>(accountService.list(new LambdaQueryWrapper<Account>().eq(Account::getShared, true)));
         List<AccountVO> accountVOS = ConvertUtil.convertList(accountList, AccountVO.class);
         accountVOS.stream().filter(e->userMap.containsKey(e.getUserId())).forEach(e -> {
@@ -133,16 +118,7 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         return HttpResult.success(pageVO);
     }
 
-    public HttpResult<List<LabelDTO>> fetchApplies(HttpServletRequest request, Integer accountId) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<List<LabelDTO>> fetchApplies(Integer accountId) {
         Map<Integer, Share> userMap = shareService.list().stream().collect(Collectors.toMap(Share::getId, Function.identity()));
         List<LabelDTO> labels = list(new LambdaQueryWrapper<CarApply>().eq(CarApply::getAccountId, accountId))
                                         .stream()
@@ -155,16 +131,8 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         return HttpResult.success(labels);
     }
 
-    public HttpResult<Boolean> carApply(HttpServletRequest request, CarApply dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> carApply(CarApply dto) {
+        Share user = UserContextUtil.getCurrentUser();
         dto.setShareId(user.getId());
         Account account = accountService.getById(dto.getAccountId());
         Integer accountType = account.getAccountType();
@@ -225,7 +193,7 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
             carApplyVO.setAllowApply(1);
             carApplyVO.setShareId(user.getId());
             carApplyVO.setAccountId(account.getId());
-            audit(request, carApplyVO);
+            audit(carApplyVO);
             return HttpResult.success();
         }
 

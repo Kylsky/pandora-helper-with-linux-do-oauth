@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.config.MirrorConfig;
 import fun.yeelo.oauth.dao.GrokConfigMapper;
@@ -12,34 +11,24 @@ import fun.yeelo.oauth.domain.LoginDTO;
 import fun.yeelo.oauth.domain.account.Account;
 import fun.yeelo.oauth.domain.share.Share;
 import fun.yeelo.oauth.domain.share.ShareGrokConfig;
-import fun.yeelo.oauth.domain.share.ShareGrokConfig;
 import fun.yeelo.oauth.domain.share.ShareVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 @Service
 public class GrokConfigService extends ServiceImpl<GrokConfigMapper, ShareGrokConfig> implements IService<ShareGrokConfig> {
     @Autowired
     private GrokConfigMapper grokConfigMapper;
-    @Autowired
-    private RestTemplate restTemplate;
     @Autowired
     private ShareService shareService;
 
@@ -55,15 +44,6 @@ public class GrokConfigService extends ServiceImpl<GrokConfigMapper, ShareGrokCo
     private AccountService accountService;
     @Autowired
     private MirrorConfig mirrorConfig;
-
-
-    public List<ShareGrokConfig> findAll() {
-        return grokConfigMapper.selectList(null);
-    }
-
-    public ShareGrokConfig findById(Integer id) {
-        return grokConfigMapper.selectById(id);
-    }
 
     public ShareGrokConfig getByShareId(Integer shareId) {
         List<ShareGrokConfig> configs = grokConfigMapper.selectList(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, shareId));
@@ -108,7 +88,7 @@ public class GrokConfigService extends ServiceImpl<GrokConfigMapper, ShareGrokCo
     }
 
     public String generateAutoToken(Account account, Share byId, Integer expire) {
-        return mirrorConfig.getGrokMirrorUrl(account,byId).getData();
+        return mirrorConfig.getGrokMirrorUrl(account, byId).getData();
     }
 
     public HttpResult<String> checkLinuxDoUser(String username, String jmc, HttpServletRequest request) {

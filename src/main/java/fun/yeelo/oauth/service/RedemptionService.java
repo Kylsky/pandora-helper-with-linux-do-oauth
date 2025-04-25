@@ -13,6 +13,7 @@ import fun.yeelo.oauth.domain.share.Share;
 import fun.yeelo.oauth.domain.share.ShareVO;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import fun.yeelo.oauth.utils.UserContextUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -28,22 +29,12 @@ import java.util.stream.Collectors;
 @Service
 public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption> implements IService<Redemption> {
     @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-    @Autowired
     private ShareService shareService;
     @Autowired
     private AccountService accountService;
 
-    public HttpResult<PageVO<RedemptionVO>> listRedemptions(HttpServletRequest request, String email, Integer page, Integer size) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<PageVO<RedemptionVO>> listRedemptions(String email, Integer page, Integer size) {
+        Share user = UserContextUtil.getCurrentUser();
         List<Redemption> list = list(new LambdaQueryWrapper<Redemption>().eq(Redemption::getUserId, user.getId()));
         List<RedemptionVO> redemptionVOS = ConvertUtil.convertList(list, RedemptionVO.class);
         Map<Integer, Account> accountMap = accountService.list().stream().collect(Collectors.toMap(Account::getId, Function.identity()));
@@ -51,50 +42,33 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
             Account account = accountMap.get(red.getAccountId());
             if (account == null) {
                 red.setEmail("");
-            }else {
+            } else {
                 red.setEmail(account.getEmail());
                 String accType;
-                switch (account.getAccountType()){
-                    case 1:
-                        accType = "ChatGPT";
-                        break;
-                    case 2:
-                        accType = "Claude";
-                        break;
-                    case 3:
-                        accType = "API";
-                        break;
-                    case 4:
-                        accType = "Grok";
-                        break;
-                    default:
-                        accType = "ChatGPT";
+                switch (account.getAccountType()) {
+                    case 1 -> accType = "ChatGPT";
+                    case 2 -> accType = "Claude";
+                    case 3 -> accType = "API";
+                    case 4 -> accType = "Grok";
+                    default -> accType = "ChatGPT";
                 }
                 red.setAccountType(accType);
             }
         });
-        redemptionVOS = redemptionVOS.stream().filter(e->StringUtils.hasText(e.getEmail()) && (!StringUtils.hasText(email)||(StringUtils.hasText(email) && e.getEmail().contains(email)))).collect(Collectors.toList());
+        redemptionVOS = redemptionVOS.stream().filter(e -> StringUtils.hasText(e.getEmail()) && (!StringUtils.hasText(email) || (StringUtils.hasText(email) && e.getEmail().contains(email)))).collect(Collectors.toList());
         PageVO<RedemptionVO> pageVO = new PageVO<>();
-        pageVO.setData(page==null ? redemptionVOS : redemptionVOS.subList(10*(page-1),Math.min(10*(page-1)+size,redemptionVOS.size())));
+        pageVO.setData(page == null ? redemptionVOS : redemptionVOS.subList(10 * (page - 1), Math.min(10 * (page - 1) + size, redemptionVOS.size())));
         pageVO.setTotal(redemptionVOS.size());
         return HttpResult.success(pageVO);
     }
 
-    public HttpResult<Boolean> activate(HttpServletRequest request, String code) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> activate(String code) {
+        Share user = UserContextUtil.getCurrentUser();
         Redemption one = getOne(new LambdaQueryWrapper<Redemption>().eq(Redemption::getCode, code));
         if (one == null) {
             return HttpResult.error("兑换码不存在");
         }
-        if (StringUtils.hasText(one.getTargetUserName()) && !one.getTargetUserName().equals(username)) {
+        if (StringUtils.hasText(one.getTargetUserName()) && !one.getTargetUserName().equals(user.getUniqueName())) {
             return HttpResult.error("您无法使用此兑换码");
         }
         ShareVO shareVO = new ShareVO();
@@ -102,7 +76,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         shareVO.setAccountId(one.getAccountId());
         shareVO.setDuration(one.getDuration().equals(-1) || user.getId().equals(1) ? null : one.getDuration());
         HttpResult<Boolean> distribute = shareService.distribute(shareVO);
-        if (distribute.isStatus()){
+        if (distribute.isStatus()) {
             removeById(one.getId());
             return distribute;
         }
@@ -119,21 +93,16 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         shareVO.setAccountId(one.getAccountId());
         shareVO.setDuration(one.getDuration().equals(-1) ? null : one.getDuration());
         HttpResult<Boolean> distribute = shareService.distribute(shareVO);
-        if (distribute.isStatus()){
+        if (distribute.isStatus()) {
             removeById(one.getId());
             return distribute;
         }
         return distribute;
     }
 
-    public HttpResult<Redemption> getRedemptionById(HttpServletRequest request, Integer id) {
+    public HttpResult<Redemption> getRedemptionById(Integer id) {
+        Share user = UserContextUtil.getCurrentUser();
         Redemption byId = getById(id);
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
@@ -143,20 +112,12 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         return HttpResult.success(byId);
     }
 
-    public HttpResult<Boolean> deleteRedemption(HttpServletRequest request, Integer id) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> deleteRedemption(Integer id) {
+        Share user = UserContextUtil.getCurrentUser();
         Redemption redemption = getById(id);
-        if (redemption!=null && redemption.getUserId().equals(user.getId())) {
+        if (redemption != null && redemption.getUserId().equals(user.getId())) {
             removeById(id);
-        }else {
+        } else {
             return HttpResult.error("您无权删除该兑换码");
         }
 
@@ -164,32 +125,24 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
     }
 
     public HttpResult<Boolean> addRedemption(HttpServletRequest request, RedemptionVO dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
-        if (dto.getCount()==null || dto.getCount()<=0){
+        Share user = UserContextUtil.getCurrentUser();
+        if (dto.getCount() == null || dto.getCount() <= 0) {
             dto.setCount(1);
         }
-        if (dto.getAccountId()==null){
+        if (dto.getAccountId() == null) {
             return HttpResult.error("尚未选择账号，请重试");
         }
         if (dto.getCount() > 4) {
             return HttpResult.error("最多支持一次性生成4个兑换码");
         }
-        if (dto.getDuration() > 30){
+        if (dto.getDuration() > 30) {
             return HttpResult.error("最多支持30天");
         }
         for (int i = 0; i < dto.getCount(); i++) {
             dto.setId(null);
             dto.setUserId(user.getId());
             dto.setCreateTime(LocalDateTime.now());
-            dto.setCode(UUID.randomUUID().toString().replace("-","").substring(0,10));
+            dto.setCode(UUID.randomUUID().toString().replace("-", "").substring(0, 10));
             save(dto);
         }
 
@@ -197,7 +150,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
     }
 
     public void addRedemption(RedemptionVO dto) {
-        if (dto.getAccountId()==null){
+        if (dto.getAccountId() == null) {
             HttpResult.error("尚未选择账号，请重试");
             return;
         }
@@ -205,7 +158,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
             HttpResult.error("最多支持一次性生成4个兑换码");
             return;
         }
-        if (dto.getDuration() > 30){
+        if (dto.getDuration() > 30) {
             HttpResult.error("最多支持30天");
             return;
         }
@@ -214,21 +167,12 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
             dto.setId(null);
             dto.setUserId(account.getUserId());
             dto.setCreateTime(LocalDateTime.now());
-            dto.setCode(UUID.randomUUID().toString().replace("-","").substring(0,10));
+            dto.setCode(UUID.randomUUID().toString().replace("-", "").substring(0, 10));
             save(dto);
         }
     }
 
-    public HttpResult<Boolean> updateRedemption(HttpServletRequest request, Redemption dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)){
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> updateRedemption(Redemption dto) {
         Redemption updatePO = new Redemption();
         if (!StringUtils.hasText(dto.getTargetUserName())) {
             updatePO.setTargetUserName(dto.getTargetUserName());
@@ -236,7 +180,7 @@ public class RedemptionService extends ServiceImpl<RedemptionMapper, Redemption>
         updatePO.setDuration(dto.getDuration());
         updatePO.setTimeUnit(dto.getTimeUnit());
         updatePO.setId(dto.getId());
-        if (updatePO.getId()!=null){
+        if (updatePO.getId() != null) {
             updateById(updatePO);
         }
 

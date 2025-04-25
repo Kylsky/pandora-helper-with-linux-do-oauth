@@ -55,8 +55,7 @@ public class LoginController {
 
     @Autowired
     private ShareService shareService;
-    @Autowired
-    private AccountService accountService;
+
     @Value("${admin-name:admin}")
     private String adminName;
     @Autowired
@@ -103,10 +102,6 @@ public class LoginController {
         if (user == null) {
             return HttpResult.error("用户不存在，请重试");
         }
-        //ShareGptConfig gptConfig = gptConfigService.getByShareId(user.getId());
-        //if (gptConfig == null || !StringUtils.hasText(gptConfig.getShareToken())) {
-        //    return HttpResult.error("用户未激活");
-        //}
         if (!passwordEncoder.matches(password, user.getPassword())) {
             return HttpResult.error("密码错误,请重试");
         }

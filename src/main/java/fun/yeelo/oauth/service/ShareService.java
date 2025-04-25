@@ -19,6 +19,7 @@ import fun.yeelo.oauth.domain.share.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.EncryptDecryptUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import fun.yeelo.oauth.utils.UserContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -142,14 +143,9 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         }
     }
 
-    public HttpResult<Share> getShareById(HttpServletRequest request, Integer id) {
+    public HttpResult<Share> getShareById(Integer id) {
         Share byId = getById(id);
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
+        Share user = UserContextUtil.getCurrentUser();
         if (user == null) {
             return HttpResult.error("用户不存在，请联系管理员");
         }
@@ -159,17 +155,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success(byId);
     }
 
-    public HttpResult<PageVO<ShareVO>> listShares(HttpServletRequest request, String emailAddr, Integer accountType, Integer page, Integer size) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<PageVO<ShareVO>> listShares(String emailAddr, Integer accountType, Integer page, Integer size) {
+        Share user = UserContextUtil.getCurrentUser();
         // 根据邮箱和用户id获取账号
         List<Account> accounts = accountService.findAll().stream()
                                          .filter(e -> user.getId().equals(1) || e.getUserId().equals(user.getId())
@@ -285,16 +272,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success(pageVO);
     }
 
-    public HttpResult<Boolean> deleteShare(HttpServletRequest request, Integer id) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> deleteShare(Integer id) {
+        Share user = UserContextUtil.getCurrentUser();
         if (id.equals(1)) {
             return HttpResult.error("管理员无法被删除!");
         }
@@ -324,16 +303,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success();
     }
 
-    public HttpResult<Boolean> addShare(HttpServletRequest request, ShareVO dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> addShare(ShareVO dto) {
+        Share user = UserContextUtil.getCurrentUser();
         LambdaQueryWrapper<Share> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.eq(Share::getUniqueName, dto.getUniqueName());
         List<Share> shareList = list(lambdaQueryWrapper);
@@ -368,16 +339,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         }
     }
 
-    public HttpResult<Boolean> updateShare(HttpServletRequest request, ShareVO dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> updateShare(ShareVO dto) {
+        Share user = UserContextUtil.getCurrentUser();
         if (dto.getId() == null) {
             log.error("更新用户出错，用户id为空");
             return HttpResult.error("更新用户异常，用户id为空");
@@ -404,16 +367,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success(true);
     }
 
-    public HttpResult<Boolean> distributeShare(HttpServletRequest request, ShareVO share) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> distributeShare(ShareVO share) {
         Account account = accountService.getById(share.getAccountId());
         Share byId = getById(share.getId());
         if (share.getAccountId() != null && share.getAccountId().equals(-1)) {
@@ -471,18 +425,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success(jwt);
     }
 
-    public HttpResult<String> getGptShare(Integer gptConfigId, HttpServletRequest request) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
-
-
+    public HttpResult<String> getGptShare(Integer gptConfigId) {
+        Share user = UserContextUtil.getCurrentUser();
         ShareGptConfig gptShare = gptConfigService.getById(gptConfigId);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -512,16 +456,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         }
     }
 
-    public HttpResult<Boolean> updateParent(Integer shareId, HttpServletRequest request) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> updateParent(Integer shareId) {
+        Share user = UserContextUtil.getCurrentUser();
         Share byId = getById(shareId);
         if (byId != null && byId.getParentId().equals(user.getId())) {
             byId.setParentId(user.getParentId());
@@ -708,16 +644,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
     }
 
 
-    public HttpResult<String> updateUserConfig(UserConfigVO config, HttpServletRequest request) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<String> updateUserConfig(UserConfigVO config) {
+        Share user = UserContextUtil.getCurrentUser();
         Share share = new Share();
         share.setId(user.getId());
         share.setMjProxyUrl(config.getMjProxyUrl());
@@ -730,16 +658,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         return HttpResult.success();
     }
 
-    public HttpResult<UserConfigVO> getUserConfig(HttpServletRequest request) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<UserConfigVO> getUserConfig() {
+        Share user = UserContextUtil.getCurrentUser();
         UserConfigVO config = new UserConfigVO();
         config.setMjProxyUrl(user.getMjProxyUrl());
         config.setMjProxyKey(user.getMjProxyKey());

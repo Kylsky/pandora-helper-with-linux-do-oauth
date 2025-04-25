@@ -9,18 +9,15 @@ import fun.yeelo.oauth.domain.share.ResetDTO;
 import fun.yeelo.oauth.domain.share.Share;
 import fun.yeelo.oauth.domain.share.ShareGptConfig;
 import fun.yeelo.oauth.domain.share.ShareVO;
-import fun.yeelo.oauth.service.AccountService;
 import fun.yeelo.oauth.service.GptConfigService;
 import fun.yeelo.oauth.service.MidjourneyService;
 import fun.yeelo.oauth.service.ShareService;
-import fun.yeelo.oauth.utils.JwtTokenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -34,11 +31,6 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/pandora")
 public class PandoraController {
-    @Autowired
-    private UserDetailsService userDetailsService;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
-
     private static final Logger log = LoggerFactory.getLogger(PandoraController.class);
     @Autowired
     private RestTemplate restTemplate;
@@ -53,12 +45,6 @@ public class PandoraController {
 
     @Value("${mirror.enable}")
     private Boolean mirrorEnable;
-
-    @Value("${mirror.host}")
-    private String mirrorHost;
-
-    @Value("${mirror.password}")
-    private String mirrorPwd;
 
     @Autowired
     private ShareService shareService;

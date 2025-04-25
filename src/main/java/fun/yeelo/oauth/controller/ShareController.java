@@ -75,16 +75,19 @@ public class ShareController {
         return shareService.getGptShare(gptConfigId);
     }
 
+    @RequireLogin
     @GetMapping("/getClaudeShare")
     public HttpResult<String> getClaudeShare(@RequestParam Integer claudeConfigId) {
         return shareService.getClaudeShare(claudeConfigId);
     }
 
+    @RequireLogin
     @GetMapping("/getApiShare")
     public HttpResult<String> getApiShare(@RequestParam Integer apiConfigId) {
         return shareService.getApiShare(apiConfigId);
     }
 
+    @RequireLogin
     @GetMapping("/getGrokShare")
     public HttpResult<String> getGrokShare(@RequestParam Integer grokConfigId) {
         return shareService.getGrokShare(grokConfigId);
