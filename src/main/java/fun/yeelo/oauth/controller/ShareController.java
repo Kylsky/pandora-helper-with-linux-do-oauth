@@ -1,5 +1,6 @@
 package fun.yeelo.oauth.controller;
 
+import fun.yeelo.oauth.annotation.RequireLogin;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.domain.share.Share;
@@ -18,54 +19,60 @@ public class ShareController {
     @Autowired
     private ShareService shareService;
 
+    @RequireLogin
     @GetMapping("/getById")
-    public HttpResult<Share> getById(HttpServletRequest request, @RequestParam Integer id){
-        return shareService.getShareById(request,id);
+    public HttpResult<Share> getById(@RequestParam Integer id){
+        return shareService.getShareById(id);
     }
 
+    @RequireLogin
     @GetMapping("/list")
-    public HttpResult<PageVO<ShareVO>> list(HttpServletRequest request,
-                                            @RequestParam(required = false) String emailAddr,
+    public HttpResult<PageVO<ShareVO>> list(@RequestParam(required = false) String emailAddr,
                                             @RequestParam(required = false) Integer accountType,
                                             @RequestParam(required = false) Integer page,
                                             @RequestParam(required = false) Integer size) {
-        return shareService.listShares(request,emailAddr,accountType,page,size);
+        return shareService.listShares(emailAddr, accountType, page, size);
     }
 
+    @RequireLogin
     @DeleteMapping("/delete")
-    public HttpResult<Boolean> delete(HttpServletRequest request, @RequestParam Integer id) {
-        return shareService.deleteShare(request,id);
+    public HttpResult<Boolean> delete(@RequestParam Integer id) {
+        return shareService.deleteShare(id);
     }
 
-
+    @RequireLogin
     @PostMapping("/add")
-    public HttpResult<Boolean> add(HttpServletRequest request, @RequestBody ShareVO dto) {
-        return shareService.addShare(request,dto);
+    public HttpResult<Boolean> add(@RequestBody ShareVO dto) {
+        return shareService.addShare(dto);
     }
 
+    @RequireLogin
     @PatchMapping("/update")
-    public HttpResult<Boolean> update(HttpServletRequest request, @RequestBody ShareVO dto) {
-        return shareService.updateShare(request,dto);
+    public HttpResult<Boolean> update(@RequestBody ShareVO dto) {
+        return shareService.updateShare(dto);
     }
 
+    @RequireLogin
     @PostMapping("/distribute")
-    public HttpResult<Boolean> distribute(HttpServletRequest request, @RequestBody ShareVO share) {
-        return shareService.distributeShare(request,share);
+    public HttpResult<Boolean> distribute(@RequestBody ShareVO share) {
+        return shareService.distributeShare(share);
     }
 
     @GetMapping("/checkUser")
     public HttpResult<String> checkLinuxDoUser(@RequestParam String username, @RequestParam String jmc, HttpServletRequest request) {
-        return shareService.checkLinuxDoUser(username,jmc,request);
+        return shareService.checkLinuxDoUser(username, jmc, request);
     }
 
+    @RequireLogin
     @GetMapping("/updateParent")
-    public HttpResult<Boolean> updateParent(@RequestParam Integer shareId, HttpServletRequest request) {
-        return shareService.updateParent(shareId,request);
+    public HttpResult<Boolean> updateParent(@RequestParam Integer shareId) {
+        return shareService.updateParent(shareId);
     }
 
+    @RequireLogin
     @GetMapping("/getGptShare")
-    public HttpResult<String> getGptShare(@RequestParam Integer gptConfigId, HttpServletRequest request) {
-        return shareService.getGptShare(gptConfigId,request);
+    public HttpResult<String> getGptShare(@RequestParam Integer gptConfigId) {
+        return shareService.getGptShare(gptConfigId);
     }
 
     @GetMapping("/getClaudeShare")
@@ -84,18 +91,19 @@ public class ShareController {
     }
 
     @GetMapping("/autoRenewal")
-    public HttpResult<String> autoRenewal(@RequestParam String uniqueName,@RequestParam String code,@RequestParam Integer type) {
-        return shareService.autoRenewal(uniqueName,code,type);
+    public HttpResult<String> autoRenewal(@RequestParam String uniqueName, @RequestParam String code, @RequestParam Integer type) {
+        return shareService.autoRenewal(uniqueName, code, type);
     }
 
+    @RequireLogin
     @PostMapping("/updateUserConfig")
-    public HttpResult<String> updateUserConfig(@RequestBody UserConfigVO config, HttpServletRequest request) {
-        return shareService.updateUserConfig(config, request);
+    public HttpResult<String> updateUserConfig(@RequestBody UserConfigVO config) {
+        return shareService.updateUserConfig(config);
     }
 
-
+    @RequireLogin
     @GetMapping("/getUserConfig")
-    public HttpResult<UserConfigVO> getUserConfig(HttpServletRequest request) {
-        return shareService.getUserConfig(request);
+    public HttpResult<UserConfigVO> getUserConfig() {
+        return shareService.getUserConfig();
     }
 }

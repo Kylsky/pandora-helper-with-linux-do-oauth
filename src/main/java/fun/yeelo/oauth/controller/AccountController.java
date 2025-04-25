@@ -1,6 +1,7 @@
 package fun.yeelo.oauth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fun.yeelo.oauth.annotation.RequireLogin;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.domain.account.Account;
@@ -11,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 @RestController
@@ -27,62 +27,66 @@ public class AccountController {
     @Autowired
     private AccountService accountService;
 
+    @RequireLogin
     @GetMapping("/share")
-    public HttpResult<String> share(HttpServletRequest request,
-                                    @RequestParam(required = false) Integer id) {
-        return accountService.share(request,id);
+    public HttpResult<String> share(@RequestParam(required = false) Integer id) {
+        return accountService.share(id);
     }
 
+    @RequireLogin
     @GetMapping("/statistic")
-    public HttpResult<List<InfoVO>> statistic(HttpServletRequest request, Integer id) {
-        return accountService.statistic(request,id);
+    public HttpResult<List<InfoVO>> statistic(Integer id) {
+        return accountService.statistic(id);
     }
 
+    @RequireLogin
     @GetMapping("/list")
-    public HttpResult<PageVO<AccountVO>> list(HttpServletRequest request,
-                                              @RequestParam(required = false) String emailAddr,
-                                              @RequestParam(required = false) Integer page,
-                                              @RequestParam(required = false) Integer size,
-                                              @RequestParam(required = false) Integer type) {
-        return accountService.listAccount(request,emailAddr,page,size,type);
+    public HttpResult<PageVO<AccountVO>> list(@RequestParam(required = false) String emailAddr,
+                                          @RequestParam(required = false) Integer page,
+                                          @RequestParam(required = false) Integer size,
+                                          @RequestParam(required = false) Integer type) {
+        return accountService.listAccount(emailAddr, page, size, type);
     }
 
+    @RequireLogin
     @DeleteMapping("/delete")
-    public HttpResult<Boolean> delete(HttpServletRequest request, @RequestParam Integer id) {
-        return accountService.deleteAccount(request,id);
+    public HttpResult<Boolean> delete(@RequestParam Integer id) {
+        return accountService.deleteAccount(id);
     }
 
+    @RequireLogin
     @GetMapping("/getById")
-    public HttpResult<Account> getById(HttpServletRequest request, @RequestParam Integer id) {
-        return accountService.getAccountById(request,id);
+    public HttpResult<Account> getById(@RequestParam Integer id) {
+        return accountService.getAccountById(id);
     }
 
-
+    @RequireLogin
     @PostMapping("/add")
-    public HttpResult<Boolean> add(HttpServletRequest request, @RequestBody AccountVO dto) {
-        return accountService.addAccount(request,dto);
+    public HttpResult<Boolean> add(@RequestBody AccountVO dto) {
+        return accountService.addAccount(dto);
     }
 
+    @RequireLogin
     @PatchMapping("/update")
-    public HttpResult<Boolean> update(HttpServletRequest request, @RequestBody Account dto) {
-        return accountService.saveOrUpdateAccount(request,dto);
+    public HttpResult<Boolean> update(@RequestBody Account dto) {
+        return accountService.saveOrUpdateAccount(dto);
     }
 
+    @RequireLogin
     @PostMapping("/refresh")
-    public HttpResult<Boolean> refresh(HttpServletRequest request, @RequestParam Integer id) {
-        return accountService.refresh(request,id);
+    public HttpResult<Boolean> refresh(@RequestParam Integer id) {
+        return accountService.refresh(id);
     }
 
+    @RequireLogin
     @GetMapping("/getAccount")
-    public HttpResult<Account> getAccount(HttpServletRequest request, @RequestParam Integer accountId) {
-        return accountService.getAccount(request,accountId);
+    public HttpResult<Account> getAccount(@RequestParam Integer accountId) {
+        return accountService.getAccount(accountId);
     }
 
-
+    @RequireLogin
     @GetMapping("/options")
-    public HttpResult<List<LabelDTO>> emailOptions(HttpServletRequest request,
-                                                   @RequestParam Integer type) {
-        return accountService.emailOptions(request,type);
+    public HttpResult<List<LabelDTO>> emailOptions(@RequestParam Integer type) {
+        return accountService.emailOptions(type);
     }
-
 }

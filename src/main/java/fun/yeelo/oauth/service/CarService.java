@@ -93,18 +93,10 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         accountVOS.stream().filter(e->userMap.containsKey(e.getUserId())).forEach(e -> {
             Share targetUser = userMap.get(e.getUserId());
             switch (e.getAccountType()) {
-                case 1:
-                    e.setType("ChatGPT");
-                    break;
-                case 2:
-                    e.setType("Claude");
-                    break;
-                case 3:
-                    e.setType("API");
-                    break;
-                case 4:
-                    e.setType("Grok");
-                    break;
+                case 1 -> e.setType("ChatGPT");
+                case 2 -> e.setType("Claude");
+                case 3 -> e.setType("API");
+                case 4 -> e.setType("Grok");
             }
             String levelDesc = userMap.get(e.getUserId()).getTrustLevel() == null
                                        ? ""
@@ -113,24 +105,13 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
             e.setUsernameDesc(userMap.get(e.getUserId()).getUniqueName() + levelDesc);
             e.setEmail(e.getName());
 
-            Integer count;
-
-            switch (e.getAccountType()) {
-                case 1:
-                    count = gptMap.getOrDefault(e.getId(), new ArrayList<>()).size();
-                    break;
-                case 2:
-                    count = claudeMap.getOrDefault(e.getId(), new ArrayList<>()).size();
-                    break;
-                case 3:
-                    count = apiMap.getOrDefault(e.getId(), new ArrayList<>()).size();
-                    break;
-                case 4:
-                    count = grokMap.getOrDefault(e.getId(), new ArrayList<>()).size();
-                    break;
-                default:
-                    count = 0;
-            }
+            Integer count = switch (e.getAccountType()) {
+                case 1 -> gptMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                case 2 -> claudeMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                case 3 -> apiMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                case 4 -> grokMap.getOrDefault(e.getId(), new ArrayList<>()).size();
+                default -> 0;
+            };
             e.setCountDesc(count + " / " + (e.getUserLimit().equals(-1) ? "无限制" : e.getUserLimit()));
             e.setCount(count);
         });
@@ -189,34 +170,34 @@ public class CarService extends ServiceImpl<CarMapper, CarApply> implements ISer
         Integer accountType = account.getAccountType();
         Integer curAccountUser = 0;
         switch (accountType) {
-            case 1:
+            case 1 -> {
                 curAccountUser = gptConfigService.count(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getAccountId, account.getId()));
                 List<ShareGptConfig> list = gptConfigService.list(new LambdaQueryWrapper<ShareGptConfig>().eq(ShareGptConfig::getShareId, dto.getShareId()).eq(ShareGptConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(list)) {
                     return HttpResult.error("您已在该车上，请勿重复申请");
                 }
-                break;
-            case 2:
+            }
+            case 2 -> {
                 curAccountUser = claudeConfigService.count(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getAccountId, account.getId()));
                 List<ShareClaudeConfig> cladueList = claudeConfigService.list(new LambdaQueryWrapper<ShareClaudeConfig>().eq(ShareClaudeConfig::getShareId, dto.getShareId()).eq(ShareClaudeConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(cladueList)) {
                     return HttpResult.error("您已该在车上，请勿重复申请");
                 }
-                break;
-            case 3:
+            }
+            case 3 -> {
                 curAccountUser = apiConfigService.count(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getAccountId, account.getId()));
                 List<ShareApiConfig> apiList = apiConfigService.list(new LambdaQueryWrapper<ShareApiConfig>().eq(ShareApiConfig::getShareId, dto.getShareId()).eq(ShareApiConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(apiList)) {
                     return HttpResult.error("您已该在车上，请勿重复申请");
                 }
-                break;
-            case 4:
+            }
+            case 4 -> {
                 curAccountUser = grokConfigService.count(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getAccountId, account.getId()));
                 List<ShareGrokConfig> grokList = grokConfigService.list(new LambdaQueryWrapper<ShareGrokConfig>().eq(ShareGrokConfig::getShareId, dto.getShareId()).eq(ShareGrokConfig::getAccountId, dto.getAccountId()));
                 if (!CollectionUtils.isEmpty(grokList)) {
                     return HttpResult.error("您已该在车上，请勿重复申请");
                 }
-                break;
+            }
         }
 
         if (!account.getUserLimit().equals(-1) && curAccountUser >= account.getUserLimit()) {

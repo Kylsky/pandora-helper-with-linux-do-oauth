@@ -17,6 +17,7 @@ import fun.yeelo.oauth.domain.share.*;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
 import fun.yeelo.oauth.utils.OpenAIUtil;
+import fun.yeelo.oauth.utils.UserContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
@@ -28,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -78,16 +78,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return accountMapper.selectList(null);
     }
 
-    public HttpResult<String> share(HttpServletRequest request, Integer id) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<String> share(Integer id) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         boolean b = checkIdWithinFiveMinutes(id,true);
         if (b){
             return HttpResult.error("当前账号使用繁忙，请稍后再试");
@@ -95,7 +89,7 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         Account account = getById(id);
         String addr = "";
         switch (account.getAccountType()) {
-            case 1:
+            case 1 -> {
                 //addr = shareService.generateGPTUrl(user,account);
                 HttpResult<ShareVO> mirrorRes = mirrorConfig.getMirrorUrl(user.getUniqueName(), account.getId());
                 if (mirrorRes.isStatus()){
@@ -104,10 +98,8 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
                 else {
                     return HttpResult.error("当前账号异常，请选择其他账号");
                 }
-                break;
-            case 2:
-                addr = claudeConfigService.generateAutoToken(account, user, 3600);
-                break;
+            }
+            case 2 -> addr = claudeConfigService.generateAutoToken(account, user, 3600);
         }
 
         return HttpResult.success(addr);
@@ -170,16 +162,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return false;
     }
 
-    public HttpResult<List<InfoVO>> statistic(HttpServletRequest request, Integer id) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<List<InfoVO>> statistic(Integer id) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         Account byId = getById(id);
         List<ShareGptConfig> gptShares = gptConfigService.list().stream().filter(e -> e.getAccountId().equals(id)).collect(Collectors.toList());
         //String chatUrl = "https://chat.oaifree.com/token/info/";
@@ -203,21 +189,11 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
                 Map<String, Integer> usage = (Map<String, Integer>) map.get("data");
                 usage.entrySet().stream().forEach(entry -> {
                     switch (entry.getKey()) {
-                        case "gpt-4o":
-                            usageVO.setGpt_4o(entry.getValue());
-                            break;
-                        case "gpt-4":
-                            usageVO.setGpt_4(entry.getValue());
-                            break;
-                        case "gpt-4o-mini":
-                            usageVO.setGpt_4o_mini(entry.getValue());
-                            break;
-                        case "o1":
-                            usageVO.setO1(entry.getValue());
-                            break;
-                        case "o1-mini":
-                            usageVO.setO1_mini(entry.getValue());
-                            break;
+                        case "gpt-4o" -> usageVO.setGpt_4o(entry.getValue());
+                        case "gpt-4" -> usageVO.setGpt_4(entry.getValue());
+                        case "gpt-4o-mini" -> usageVO.setGpt_4o_mini(entry.getValue());
+                        case "o1" -> usageVO.setO1(entry.getValue());
+                        case "o1-mini" -> usageVO.setO1_mini(entry.getValue());
                     }
                 });
                 infoVO.setUsage(usageVO);
@@ -229,16 +205,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return HttpResult.success(info);
     }
 
-    public HttpResult<PageVO<AccountVO>> listAccount(HttpServletRequest request, String emailAddr, Integer page, Integer size, Integer type) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<PageVO<AccountVO>> listAccount(String emailAddr, Integer page, Integer size, Integer type) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         List<Account> accountList = type != null ? list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType,type)) : findByUserId(user.getId());
         if (StringUtils.hasText(emailAddr)) {
             accountList = accountList.stream().filter(e -> e.getEmail().contains(emailAddr)).collect(Collectors.toList());
@@ -248,18 +218,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         accountVOS.forEach(e -> {
             //e.setEmail("车辆"+(num.getAndIncrement()));
             switch (e.getAccountType()) {
-                case 1:
-                    e.setType("ChatGPT");
-                    break;
-                case 2:
-                    e.setType("Claude");
-                    break;
-                case 3:
-                    e.setType("API");
-                    break;
-                case 4:
-                    e.setType("Grok");
-                    break;
+                case 1 -> e.setType("ChatGPT");
+                case 2 -> e.setType("Claude");
+                case 3 -> e.setType("API");
+                case 4 -> e.setType("Grok");
             }
             e.setCount(accountIdMap.getOrDefault(e.getId(), new ArrayList<>()).size());
         });
@@ -283,16 +245,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return HttpResult.success(pageVO);
     }
 
-    public HttpResult<Boolean> deleteAccount(HttpServletRequest request, Integer id) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> deleteAccount(Integer id) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         Account account = findById(id);
         if (account != null && account.getUserId().equals(user.getId())) {
             delete(id);
@@ -318,33 +274,21 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return HttpResult.success(true);
     }
 
-    public HttpResult<Account> getAccountById(HttpServletRequest request, Integer id) {
+    public HttpResult<Account> getAccountById(Integer id) {
         Account byId = getById(id);
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         if (!byId.getUserId().equals(user.getId()) && user.getId() != 1) {
             return HttpResult.error("你无权访问该账号");
         }
         return HttpResult.success(byId);
     }
 
-    public HttpResult<Boolean> saveOrUpdateAccount(HttpServletRequest request,Account dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> saveOrUpdateAccount(Account dto) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         if (!StringUtils.hasText(dto.getName())) {
             dto.setName(dto.getEmail());
         }
@@ -388,17 +332,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return HttpResult.success(true);
     }
 
-    public HttpResult<Boolean> refresh(HttpServletRequest request, Integer id) {
-
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> refresh(Integer id) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         Account account = getById(id);
         if (account == null) {
             return HttpResult.error("账号不存在");
@@ -414,34 +351,6 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
             if (!result) {
                 return HttpResult.error("刷新 access_token异常 , 请检查 refresh_token 是否有效");
             }
-            //HttpHeaders headers = new HttpHeaders();
-            //headers.set(HttpHeaders.CACHE_CONTROL, "no-cache");
-            //headers.setContentType(MediaType.APPLICATION_JSON);
-            //headers.set(HttpHeaders.ACCEPT, "*/*");
-            //headers.set(HttpHeaders.USER_AGENT,"PostmanRuntime/7.43.0");
-            //headers.set(HttpHeaders.CONNECTION,"keep-alive");
-            //headers.set(HttpHeaders.HOST,"auth0.openai.com");
-            //ObjectNode body = objectMapper.createObjectNode();
-            //body.put("refresh_token", account.getRefreshToken());
-            //body.put("redirect_uri", "com.openai.chat://auth0.openai.com/ios/com.openai.chat/callback");
-            //body.put("grant_type", "refresh_token");
-            //body.put("client_id", "pdlLIX2Y72MIl2rhLhTE9VV9bN905kBh");
-            //headers.set("Accept-Charset", "UTF-8"); // 声明接受的字符集
-            //headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.toString().length()));
-            //ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity("https://auth0.openai.com/oauth/token", new HttpEntity<>(body, headers), String.class);
-            //Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-            //if (map.containsKey("access_token")) {
-            //    log.info("refresh success");
-            //    String newToken = map.get("access_token").toString();
-            //    Account updateDTO = new Account();
-            //    updateDTO.setId(accountId);
-            //    updateDTO.setAccessToken(newToken);
-            //    // 刷新后校验账号
-            //    openAIUtil.checkAccount(newToken, account.getEmail(), accountId);
-            //    updateDTO.setUpdateTime(LocalDateTime.now());
-            //    this.saveOrUpdate(updateDTO);
-            //    log.info("刷新账号{}成功", account.getEmail());
-            //}
         } catch (Exception e) {
             log.error("刷新access_token异常,异常账号:{}", account.getEmail(), e);
             return HttpResult.error("刷新 access_token异常 , 请检查 refresh_token 是否有效");
@@ -451,16 +360,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return HttpResult.success(true);
     }
 
-    public HttpResult<Boolean> addAccount(HttpServletRequest request, AccountVO dto) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Boolean> addAccount(AccountVO dto) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         dto.setUserId(user.getId());
         dto.setCreateTime(LocalDateTime.now());
         dto.setUpdateTime(LocalDateTime.now());
@@ -478,16 +381,10 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return HttpResult.success(true);
     }
 
-    public HttpResult<Account> getAccount(HttpServletRequest request, Integer accountId) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+    public HttpResult<Account> getAccount(Integer accountId) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         Account account = getById(accountId);
         if (account == null) {
             return HttpResult.error("账号不存在");
@@ -496,37 +393,23 @@ public class AccountService extends ServiceImpl<AccountMapper, Account> implemen
         return HttpResult.success(account);
     }
 
-    public HttpResult<List<LabelDTO>> emailOptions(HttpServletRequest request, Integer type) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String s = jwtTokenUtil.extractUsername(token);
-        Share byUserName = shareService.getByUserName(s);
+    public HttpResult<List<LabelDTO>> emailOptions(Integer type) {
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         List<LabelDTO> emails = list(new LambdaQueryWrapper<Account>().eq(Account::getAccountType, type))
                                         .stream()
-                                        .filter(e -> e.getUserId().equals(byUserName.getId()))
+                                        .filter(e -> e.getUserId().equals(user.getId()))
                                         .map(e -> new LabelDTO(e.getId().toString(), e.getName(), e.getName()))
                                         .sorted(Comparator.comparing(LabelDTO::getLabel))
-                                        .collect(Collectors.toList());
+                                        .toList();
         List<LabelDTO> res = new ArrayList<>();
         LabelDTO labelDTO;
         switch (type) {
-            case 1:
-                labelDTO = new LabelDTO("-1","----默认选项：下车----","----默认选项：下车----");
-                break;
-            case 2:
-                labelDTO = new LabelDTO("-2","----默认选项：下车----","----默认选项：下车----");
-                break;
-            case 3:
-                labelDTO = new LabelDTO("-3","----默认选项：下车----","----默认选项：下车----");
-                break;
-            case 4:
-                labelDTO = new LabelDTO("-4","----默认选项：下车----","----默认选项：下车----");
-                break;
-            default:
-                labelDTO = new LabelDTO("-1","----默认选项：下车----","----默认选项：下车----");
-                break;
+            case 2 -> labelDTO = new LabelDTO("-2","----默认选项：下车----","----默认选项：下车----");
+            case 3 -> labelDTO = new LabelDTO("-3","----默认选项：下车----","----默认选项：下车----");
+            case 4 -> labelDTO = new LabelDTO("-4","----默认选项：下车----","----默认选项：下车----");
+            default -> labelDTO = new LabelDTO("-1","----默认选项：下车----","----默认选项：下车----");
         }
         res.add(labelDTO);
         res.addAll(emails);

@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import fun.yeelo.oauth.annotation.RequireLogin;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.dao.MidjourneyTaskMapper;
 import fun.yeelo.oauth.domain.midjourney.*;
@@ -15,6 +16,7 @@ import fun.yeelo.oauth.service.MidjourneyService;
 import fun.yeelo.oauth.service.MidjourneyTaskService;
 import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import fun.yeelo.oauth.utils.UserContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,7 +51,6 @@ public class MidJourneyController {
     @Autowired
     private ShareService shareService;
 
-
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
@@ -66,37 +67,26 @@ public class MidJourneyController {
     @Autowired
     private MidjourneyTaskMapper midjourneyTaskMapper;
 
+    @RequireLogin
     @DeleteMapping("/deleteByTaskId")
-    public HttpResult<Boolean> deleteByTaskId(HttpServletRequest request, @RequestParam(required = false) String taskId) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String myName = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(myName);
-        if (user == null) {
-            return HttpResult.error("用户不存在");
-        }
+    public HttpResult<Boolean> deleteByTaskId(@RequestParam(required = false) String taskId) {
+        Share user = UserContextUtil.getCurrentUser();
         LambdaQueryWrapper<MidjourneyTask> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(MidjourneyTask::getUsername, user.getUniqueName()).eq(MidjourneyTask::getTaskId, taskId);
         boolean remove = midjourneyTaskService.remove(wrapper);
         return HttpResult.success(remove);
     }
 
+    @RequireLogin
     @GetMapping("/users")
-    public HttpResult<UserResponse> getUsers(HttpServletRequest request, @RequestParam(required = false) String username) {
+    public HttpResult<UserResponse> getUsers(@RequestParam(required = false) String username) {
         if (!mjEnable) {
             return HttpResult.error("未启用MJ");
         }
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String myName = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(myName);
-        if (user == null) {
-            return HttpResult.error("无权访问数据");
-        }
+        
+        // 使用 UserContextUtil 获取当前用户
+        Share user = UserContextUtil.getCurrentUser();
+        
         HttpResult<UserResponse> users;
         if (StringUtils.hasText(user.getMjProxyUrl())) {
             UserResponse userResponse = new UserResponse();
@@ -110,19 +100,11 @@ public class MidJourneyController {
         return users;
     }
 
+    @RequireLogin
     @GetMapping("/tasks")
-    public HttpResult<TaskResponse> getTasks(HttpServletRequest request,
-                                             @RequestParam(required = false) Integer page,
+    public HttpResult<TaskResponse> getTasks(@RequestParam(required = false) Integer page,
                                              @RequestParam(required = false) Integer size) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String myName = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(myName);
-        if (user == null) {
-            return HttpResult.error("用户不存在");
-        }
+        Share user = UserContextUtil.getCurrentUser();
         Share admin = shareService.getById(1);
         HttpHeaders headers = new HttpHeaders();
         headers.set("accept", "application/json, text/plain, */*");
@@ -223,18 +205,10 @@ public class MidJourneyController {
         }
     }
 
-
+    @RequireLogin
     @RequestMapping("/**")
     public HttpResult<JSONObject> proxyRequest(HttpServletRequest request, @RequestBody(required = false) String body) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+        Share user = UserContextUtil.getCurrentUser();
         String secret = StringUtils.hasText(user.getMjProxyKey()) ? user.getMjProxyKey() : mjKey;
         String path = request.getRequestURI();
         //path = path.replaceFirst("^/mj", "");
@@ -244,7 +218,7 @@ public class MidJourneyController {
         HttpMethod method = HttpMethod.valueOf(request.getMethod());
 
         // 设置请求头
-        HttpEntity<String> entity = new HttpEntity<>(body, extractHeaders(request, secret));
+        HttpEntity<String> entity = new HttpEntity<>(body, extractHeaders(secret));
 
         // 转发请求
         ResponseEntity<String> response = restTemplate.exchange(
@@ -283,7 +257,7 @@ public class MidJourneyController {
     }
 
     // 从原始请求中提取请求头
-    private HttpHeaders extractHeaders(HttpServletRequest request, String secret) {
+    private HttpHeaders extractHeaders(String secret) {
         HttpHeaders headers = new HttpHeaders();
         // 只添加必要的请求头
         headers.set("accept", "application/json, text/plain, */*");
@@ -293,6 +267,4 @@ public class MidJourneyController {
         headers.set("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0");
         return headers;
     }
-
-
 }
