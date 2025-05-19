@@ -61,17 +61,17 @@ public class OAuthController {
 
     @Autowired
     private ShareService shareService;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
+
     @Autowired
     private MidjourneyService midjourneyService;
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
 
     @GetMapping("/config")
-    public JSONObject config(HttpServletRequest request) {
+    public JSONObject config() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("apiUrl", apiUrl.replace("/loading",""));
+        jsonObject.put("apiUrl", apiUrl.replace("/loading", ""));
         jsonObject.put("mjUrl", mjUrl);
         return jsonObject;
     }
@@ -83,9 +83,8 @@ public class OAuthController {
         String state = new BigInteger(130, new SecureRandom()).toString(32) + "-" + type;
         session.setAttribute("oauth2State", state);
         String redirectUrl = String.format("%s?client_id=%s&response_type=code&redirect_uri=%s&scope=%s&state=%s",
-                authorizationEndpoint, clientId, redirectUri.replace("/loading",""), "read,write", state);
+                authorizationEndpoint, clientId, redirectUri.replace("/loading", ""), "read,write", state);
         return redirectUrl;
-        //response.sendRedirect(redirectUrl);
     }
 
     @GetMapping("/callback")
@@ -108,7 +107,7 @@ public class OAuthController {
         MultiValueMap<String, String> requestBody = new LinkedMultiValueMap<>();
         requestBody.add("grant_type", "authorization_code");
         requestBody.add("code", code);
-        requestBody.add("redirect_uri", redirectUri.replace("/loading",""));
+        requestBody.add("redirect_uri", redirectUri.replace("/loading", ""));
 
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(requestBody, headers);
 
@@ -133,15 +132,15 @@ public class OAuthController {
                 userResBody.put("jmc", jmc);
                 if (state.contains("Claude")) {
                     userResBody.put("shareType", "Claude");
-                } else if (state.contains("panel")){
+                } else if (state.contains("panel")) {
                     userResBody.put("shareType", "panel");
-                }else if (state.contains("pandora")){
+                } else if (state.contains("pandora")) {
                     userResBody.put("shareType", "ChatGPT");
-                }else if (state.contains("midjourney")){
+                } else if (state.contains("midjourney")) {
                     userResBody.put("shareType", "midjourney");
-                }else if (state.contains("api")){
+                } else if (state.contains("api")) {
                     userResBody.put("shareType", "api");
-                }else if (state.contains("grok")){
+                } else if (state.contains("grok")) {
                     userResBody.put("shareType", "grok");
                 }
                 String jsonString = JSON.toJSONString(userResBody, SerializerFeature.PrettyFormat, SerializerFeature.WriteMapNullValue,
@@ -162,14 +161,14 @@ public class OAuthController {
                     shareService.save(addUser);
                     try {
                         midjourneyService.addUser(addUser, "DISABLED");
-                    } catch (Exception e){
+                    } catch (Exception e) {
                         log.error("添加用户失败", e);
                     }
-                }else {
+                } else {
                     Integer trustLevel = share.getTrustLevel();
                     String avatarUrl = share.getAvatarUrl();
                     if (!trustLevel.equals(user.getTrustLevel()) || !avatarUrl.equals(user.getAvatarUrl())) {
-                        log.info("更新新用户{}，等级:{},头像:{}", share.getUsername(),share.getTrustLevel(),share.getAvatarUrl());
+                        log.info("更新新用户{}，等级:{},头像:{}", share.getUsername(), share.getTrustLevel(), share.getAvatarUrl());
                         Share toUpdate = new Share();
                         toUpdate.setId(user.getId());
                         toUpdate.setAvatarUrl(avatarUrl);

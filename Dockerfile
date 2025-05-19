@@ -17,4 +17,5 @@ COPY ./target/classes/db/data.db /app/db/data.db
 
 
 # 设置运行 jar 文件的命令
-CMD ["java", "-jar", "/app/my-app.jar"]
+CMD ["java", "-jar", "/app/my-app.jar", "--add-opens java.base/java.lang.invoke=ALL-UNNAMED
+"]

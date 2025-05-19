@@ -81,8 +81,8 @@
         </dependency>
         <!-- MySQL驱动 -->
         <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
             <version>8.0.33</version>
         </dependency>
         <!-- Spring Boot Starter JDBC -->

@@ -3,12 +3,9 @@ package fun.yeelo.oauth.service;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import fun.yeelo.oauth.config.CommonConst;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.config.MirrorConfig;
 import fun.yeelo.oauth.dao.ShareMapper;
@@ -29,16 +26,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -436,23 +428,8 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
             return mirrorConfig.getSimpleMirrorUrl(user.getUniqueName(), gptShare.getAccountId(), user.getChatGptUrl(), user.getChatGptPassword());
         } else if (mirrorEnable) {
             return mirrorConfig.getSimpleMirrorUrl(shareService.getById(gptShare.getShareId()).getUniqueName(), gptShare.getAccountId());
-        } else {
-            ObjectNode personJsonObject = objectMapper.createObjectNode();
-            personJsonObject.put("share_token", gptShare.getShareToken());
-            ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(tokenUrl, new HttpEntity<>(personJsonObject, headers), String.class);
-            try {
-                Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-                if (map.containsKey("login_url")) {
-                    String loginUrl = map.get("login_url").toString();
-                    loginUrl = loginUrl.replace(CommonConst.DEFAULT_AUTH_URL, authUrl);
-                    log.info("获取login url成功:{}", loginUrl);
-                    return HttpResult.success(loginUrl);
-                }
-            } catch (IOException e) {
-                log.error("Check user error:", e);
-                return HttpResult.error("获取登录信息异常");
-            }
-            return HttpResult.error("获取登录信息失败");
+        }else {
+            return  HttpResult.error("Unsupported");
         }
     }
 
@@ -508,53 +485,6 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         } else {
             return HttpResult.success(token);
         }
-    }
-
-    public String generateGPTUrl(Share share, Account account) {
-        String shareToken = "";
-        try {
-            log.info("开始新增share");
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            MultiValueMap<String, Object> personJsonObject = new LinkedMultiValueMap<>();
-            personJsonObject.add("access_token", account.getAccessToken());
-            personJsonObject.add("unique_name", share.getUniqueName());
-            personJsonObject.add("expires_in", 3600);
-            personJsonObject.add("gpt35_limit", -1);
-            personJsonObject.add("gpt4_limit", -1);
-            personJsonObject.add("site_limit", "");
-            personJsonObject.add("show_userinfo", false);
-            personJsonObject.add("show_conversations", false);
-            personJsonObject.add("reset_limit", true);
-            personJsonObject.add("temporary_chat", false);
-            ResponseEntity<String> stringResponseEntity = restTemplate.exchange(CommonConst.SHARE_TOKEN_URL, HttpMethod.POST, new HttpEntity<>(personJsonObject, headers), String.class);
-            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-            shareToken = map.get("token_key").toString();
-            log.info("新增share完成,share_token:{}", shareToken);
-        } catch (Exception e) {
-            log.error("新增 chatgpt share 异常:", e);
-            return null;
-        }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36");
-
-        ObjectNode personJsonObject = objectMapper.createObjectNode();
-        personJsonObject.put("share_token", shareToken);
-        ResponseEntity<String> stringResponseEntity = restTemplate.postForEntity(tokenUrl, new HttpEntity<>(personJsonObject, headers), String.class);
-        try {
-            Map map = objectMapper.readValue(stringResponseEntity.getBody(), Map.class);
-            if (map.containsKey("login_url")) {
-                String loginUrl = map.get("login_url").toString();
-                loginUrl = loginUrl.replace(CommonConst.DEFAULT_AUTH_URL, authUrl);
-                log.info("获取login url成功:{}", loginUrl);
-                return loginUrl;
-            }
-        } catch (IOException e) {
-            log.error("Check user error:", e);
-            return null;
-        }
-        return null;
     }
 
     public HttpResult<String> autoRenewal(String uniqueName, String code, Integer type) {

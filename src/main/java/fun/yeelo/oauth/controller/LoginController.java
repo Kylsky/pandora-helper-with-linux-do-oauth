@@ -1,6 +1,7 @@
 package fun.yeelo.oauth.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import fun.yeelo.oauth.annotation.RequireLogin;
 import fun.yeelo.oauth.config.HttpResult;
 import fun.yeelo.oauth.domain.*;
 import fun.yeelo.oauth.domain.redemption.Redemption;
@@ -14,6 +15,7 @@ import fun.yeelo.oauth.service.ShareService;
 import fun.yeelo.oauth.timer.UpdateTimer;
 import fun.yeelo.oauth.utils.ConvertUtil;
 import fun.yeelo.oauth.utils.JwtTokenUtil;
+import fun.yeelo.oauth.utils.UserContextUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,18 +117,10 @@ public class LoginController {
         return HttpResult.success(shareVO);
     }
 
+    @RequireLogin
     @GetMapping("/info")
     public HttpResult<ShareVO> userInfo(HttpServletRequest request) {
-        String token = jwtTokenUtil.getTokenFromRequest(request);
-        if (!StringUtils.hasText(token)) {
-
-            return HttpResult.error("用户未登录，请尝试刷新页面");
-        }
-        String username = jwtTokenUtil.extractUsername(token);
-        Share user = shareService.getByUserName(username);
-        if (user == null) {
-            return HttpResult.error("用户不存在，请联系管理员");
-        }
+        Share user = UserContextUtil.getCurrentUser();
         ShareVO shareVO = new ShareVO();
         // 根据user计算hash值
         shareVO.setApiKey(user.getId() + "+" + user.getUniqueName() + "+" + user.getPassword().substring(0, 10));
