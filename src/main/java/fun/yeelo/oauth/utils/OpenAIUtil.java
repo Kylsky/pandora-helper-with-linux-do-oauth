@@ -86,6 +86,7 @@ public class OpenAIUtil {
             return LocalDateTime.parse(JSON.parseObject(response.getBody()).getJSONObject("accounts").getJSONObject("default").getJSONObject("entitlement").getString("expires_at"), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX"));
         } catch (Exception e) {
             log.error("获取账号信息异常，账号：{}", email);
+            log.error("异常信息：{}", e.getMessage());
             return null;
         }
     }
