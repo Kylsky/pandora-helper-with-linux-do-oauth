@@ -9,6 +9,7 @@ import fun.yeelo.oauth.service.*;
 import fun.yeelo.oauth.utils.EncryptDecryptUtil;
 import fun.yeelo.oauth.utils.OpenAIUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -73,7 +74,7 @@ public class UpdateTimer {
     private ApiConfigService apiConfigService;
 
     @Autowired
-    private MidjourneyService  midjourneyService;
+    private MidjourneyService midjourneyService;
     @Autowired
     private RedemptionService redemptionService;
     @Autowired
@@ -197,11 +198,9 @@ public class UpdateTimer {
     }
 
 
+    @ConditionalOnProperty(name = "spring.mail.enable", havingValue = "true")
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendShareExpiringEmail() {
-        if (!mailEnable) {
-            return;
-        }
         log.info("开始处理订阅过期通知");
         List<ShareGptConfig> gptConfigs = gptConfigService.list().stream().filter(e -> Objects.nonNull(e.getExpiresAt())).collect(Collectors.toList());
         List<ShareClaudeConfig> claudeConfigs = claudeConfigService.list().stream().filter(e -> Objects.nonNull(e.getExpiresAt())).collect(Collectors.toList());
@@ -209,24 +208,24 @@ public class UpdateTimer {
         List<ShareGrokConfig> grokConfigs = grokConfigService.list().stream().filter(e -> Objects.nonNull(e.getExpiresAt())).collect(Collectors.toList());
         for (ShareGptConfig share : gptConfigs) {
             Share user = shareService.getById(share.getShareId());
-            processExpireUser(user, share.getExpiresAt(),1);
+            processExpireUser(user, share.getExpiresAt(), 1);
         }
         for (ShareClaudeConfig share : claudeConfigs) {
             Share user = shareService.getById(share.getShareId());
-            processExpireUser(user, share.getExpiresAt(),2);
+            processExpireUser(user, share.getExpiresAt(), 2);
         }
         for (ShareApiConfig share : apiConfigs) {
             Share user = shareService.getById(share.getShareId());
-            processExpireUser(user, share.getExpiresAt(),3);
+            processExpireUser(user, share.getExpiresAt(), 3);
         }
         for (ShareGrokConfig share : grokConfigs) {
             Share user = shareService.getById(share.getShareId());
-            processExpireUser(user, share.getExpiresAt(),4);
+            processExpireUser(user, share.getExpiresAt(), 4);
         }
         log.info("处理订阅过期通知结束");
     }
 
-    public void processExpireUser(Share user, LocalDateTime expireData,Integer type) {
+    public void processExpireUser(Share user, LocalDateTime expireData, Integer type) {
         try {
             if (expireData.toLocalDate().isEqual(LocalDate.now().plusDays(1))) {
                 String password = user.getPassword();
@@ -246,7 +245,6 @@ public class UpdateTimer {
 
     @Scheduled(cron = "0 0 8 * * ?")
     public void sendAccountExpiringEmail() {
-
         log.info("开始处理ChatGPT账号过期通知");
         List<Account> accounts = accountService.list().stream().filter(e -> e.getAccountType().equals(1) && StringUtils.hasText(e.getAccessToken())).collect(Collectors.toList());
         for (Account account : accounts) {
