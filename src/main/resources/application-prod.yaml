@@ -18,7 +18,7 @@ spring:
             factory:
               class: javax.net.ssl.SSLSocketFactory
 
-fuclaudeProxy: ${FUCLAUDE_PROXY:https://demo.fuclaude.com}
+
 linux-do:
   oaifree:
     auth-api: ${OAIFREE_AUTH_API:https://new.oaifree.com}
@@ -40,6 +40,7 @@ linux-do:
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
 
+fuclaudeProxy: ${FUCLAUDE_PROXY:https://demo.fuclaude.com}
 admin-name: ${ADMIN_NAME:admin}
 chat_site: ${CHAT_SITE:https://next.yeelo.top}
 tokenProxy: ${TOKEN_PROXY:https://token.yeelovo.com}
@@ -50,7 +51,6 @@ midjourney:
     url: ${MJ_URL:https://discord.com}
     key: ${MJ_KEY:}
     enable: ${MJ_ENABLE:true}
-
 
 mirror:
   enable: ${MIRROR_ENABLE:true}
