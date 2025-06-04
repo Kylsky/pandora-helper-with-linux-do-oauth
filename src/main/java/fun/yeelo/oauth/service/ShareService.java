@@ -325,6 +325,7 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
     }
 
     public HttpResult<Boolean> addShare(HttpServletRequest request, ShareVO dto) {
+        String expiresAt = dto.getExpiresAt();
         String token = jwtTokenUtil.getTokenFromRequest(request);
         if (!StringUtils.hasText(token)) {
             return HttpResult.error("用户未登录，请尝试刷新页面");
@@ -357,11 +358,11 @@ public class ShareService extends ServiceImpl<ShareMapper, Share> implements ISe
         Account account = accountService.getById(dto.getAccountId());
         switch (account.getAccountType()) {
             case 1:
-                return gptConfigService.addShare(account, shareId, null, dto.getExpiresAt());
+                return gptConfigService.addShare(account, shareId, null, expiresAt);
             case 2:
-                return claudeConfigService.addShare(account, shareId, null, dto.getExpiresAt());
+                return claudeConfigService.addShare(account, shareId, null, expiresAt);
             case 3:
-                return apiConfigService.addShare(account, shareId, null, dto.getExpiresAt());
+                return apiConfigService.addShare(account, shareId, null, expiresAt);
             default:
                 return HttpResult.success(false);
 
