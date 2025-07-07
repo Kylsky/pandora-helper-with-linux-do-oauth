@@ -26,7 +26,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <version>5.3.1</version>
+            <version>5.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>io.github.bonigarcia</groupId>
             <artifactId>webdrivermanager</artifactId>
-            <version>5.7.0</version>
+            <version>6.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>3.4.3.1</version>
+            <version>3.4.3</version>
         </dependency>
 
         <!-- SQLite JDBC Driver -->
@@ -83,7 +83,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>8.0.33</version>
+            <version>8.2.0</version>
         </dependency>
         <!-- Spring Boot Starter JDBC -->
         <dependency>
@@ -93,7 +93,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.2.78</version>
+            <version>1.2.83_noneautotype</version>
         </dependency>
 
         <!-- Lombok (for easier coding with models and logs) -->
